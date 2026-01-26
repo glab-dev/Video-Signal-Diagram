@@ -1,0 +1,219 @@
+import { useCallback, useState, useRef } from 'react';
+import {
+  ReactFlow,
+  Controls,
+  Background,
+  MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  BackgroundVariant,
+  Panel,
+  useReactFlow,
+  ReactFlowProvider,
+} from '@xyflow/react';
+import type { Connection, Edge, Node } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { v4 as uuidv4 } from 'uuid';
+
+import { nodeTypes } from './components/nodes';
+import Sidebar from './components/Sidebar';
+import type { ProjectData } from './types';
+import './App.css';
+
+const defaultProject: ProjectData = {
+  id: uuidv4(),
+  name: 'Untitled Project',
+  nodes: [],
+  edges: [],
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+};
+
+function Flow() {
+  const [nodes, setNodes, onNodesChange] = useNodesState(defaultProject.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(defaultProject.edges);
+  const [projectName, setProjectName] = useState(defaultProject.name);
+  const [projectId, setProjectId] = useState(defaultProject.id);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      const label = prompt('Connection label (optional):') || '';
+      const edge: Edge = {
+        ...params,
+        id: uuidv4(),
+        type: 'default',
+        style: { stroke: '#888', strokeWidth: 2 },
+        label: label || undefined,
+        labelStyle: { fill: '#fff', fontWeight: 600 },
+        labelBgStyle: { fill: '#333', fillOpacity: 0.8 },
+        labelBgPadding: [4, 8] as [number, number],
+      } as Edge;
+      setEdges((eds) => addEdge(edge, eds));
+    },
+    [setEdges]
+  );
+
+  const onAddNode = useCallback(
+    (node: Node) => {
+      setNodes((nds) => [...nds, node]);
+    },
+    [setNodes]
+  );
+
+  const projectData: ProjectData = {
+    id: projectId,
+    name: projectName,
+    nodes,
+    edges,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  const onLoadProject = useCallback(
+    (project: ProjectData) => {
+      setNodes(project.nodes);
+      setEdges(project.edges);
+      setProjectName(project.name);
+      setProjectId(project.id);
+    },
+    [setNodes, setEdges]
+  );
+
+  const onNewProject = useCallback(() => {
+    if (nodes.length > 0 && !confirm('Create new project? Unsaved changes will be lost.')) {
+      return;
+    }
+    setNodes([]);
+    setEdges([]);
+    setProjectName('Untitled Project');
+    setProjectId(uuidv4());
+  }, [nodes.length, setNodes, setEdges]);
+
+  const onEdgeDoubleClick = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      const newLabel = prompt('Edit connection label:', (edge.label as string) || '');
+      if (newLabel !== null) {
+        setEdges((eds) =>
+          eds.map((e) =>
+            e.id === edge.id
+              ? { ...e, label: newLabel || undefined }
+              : e
+          )
+        );
+      }
+    },
+    [setEdges]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      const files = event.dataTransfer.files;
+      if (files.length > 0 && files[0].type.startsWith('image/')) {
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const position = screenToFlowPosition({
+            x: event.clientX,
+            y: event.clientY,
+          });
+          const node: Node = {
+            id: uuidv4(),
+            type: 'image',
+            position,
+            data: {
+              label: file.name,
+              imageUrl: e.target?.result as string,
+            },
+          };
+          setNodes((nds) => [...nds, node]);
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    [screenToFlowPosition, setNodes]
+  );
+
+  const onNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      const deletedIds = new Set(deleted.map((n) => n.id));
+      setEdges((eds) =>
+        eds.filter((e) => !deletedIds.has(e.source) && !deletedIds.has(e.target))
+      );
+    },
+    [setEdges]
+  );
+
+  return (
+    <div className="app">
+      <Sidebar
+        onAddNode={onAddNode}
+        projectData={projectData}
+        onLoadProject={onLoadProject}
+        onNewProject={onNewProject}
+      />
+
+      <div className="flow-wrapper" ref={reactFlowWrapper}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodesDelete={onNodesDelete}
+          onEdgeDoubleClick={onEdgeDoubleClick}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          nodeTypes={nodeTypes}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
+          snapToGrid
+          snapGrid={[10, 10]}
+          deleteKeyCode={['Backspace', 'Delete']}
+          multiSelectionKeyCode={['Shift', 'Meta']}
+          minZoom={0.1}
+          maxZoom={2}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
+          <Controls />
+          <MiniMap
+            nodeColor={(node) => {
+              if (node.type === 'note') return '#ffeb3b';
+              if (node.type === 'ledWall') return '#ff6600';
+              if (node.type === 'processor') return '#0088cc';
+              if (node.type === 'switcher') return '#4a148c';
+              return '#666';
+            }}
+            maskColor="rgba(0, 0, 0, 0.8)"
+          />
+          <Panel position="top-left" className="project-panel">
+            <input
+              className="project-name-input"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="Project Name"
+            />
+          </Panel>
+        </ReactFlow>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <ReactFlowProvider>
+      <Flow />
+    </ReactFlowProvider>
+  );
+}
+
+export default App;
