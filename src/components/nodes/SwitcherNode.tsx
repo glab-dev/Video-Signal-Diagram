@@ -73,11 +73,6 @@ function SwitcherNode({ id, data, selected }: SwitcherNodeProps) {
     [id, updateNodeData]
   );
 
-  // Calculate handle positions
-  const inputHandleOffset = 45;
-  const outputHandleOffset = 45;
-  const rowHeight = 24;
-
   return (
     <div
       className={`node-switcher ${selected ? 'selected' : ''}`}
@@ -99,29 +94,31 @@ function SwitcherNode({ id, data, selected }: SwitcherNodeProps) {
             <span>INPUTS</span>
             <button className="add-btn" onClick={addInput}>+</button>
           </div>
-          {data.inputs.map((port, index) => (
-            <div key={port.id} className="switcher-port">
-              <Handle
-                type="target"
-                position={Position.Left}
-                id={`input-${port.id}`}
-                style={{ top: inputHandleOffset + index * rowHeight }}
-              />
-              <input
-                value={port.name}
-                onChange={(e) => updateInput(port.id, 'name', e.target.value)}
-                className="port-input name"
-                placeholder="Name"
-              />
-              <input
-                value={port.connection}
-                onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
-                className="port-input connection"
-                placeholder="Type"
-              />
-              <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
-            </div>
-          ))}
+          <div className="port-list">
+            {data.inputs.map((port) => (
+              <div key={port.id} className="port-row">
+                <Handle
+                  type="target"
+                  position={Position.Left}
+                  id={`input-${port.id}`}
+                  className="port-handle left"
+                />
+                <input
+                  value={port.name}
+                  onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+                  className="port-field name"
+                  placeholder="Name"
+                />
+                <input
+                  value={port.connection}
+                  onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+                  className="port-field connection"
+                  placeholder="Type"
+                />
+                <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Outputs Column */}
@@ -130,29 +127,31 @@ function SwitcherNode({ id, data, selected }: SwitcherNodeProps) {
             <span>OUTPUTS</span>
             <button className="add-btn" onClick={addOutput}>+</button>
           </div>
-          {data.outputs.map((port, index) => (
-            <div key={port.id} className="switcher-port output">
-              <input
-                value={port.name}
-                onChange={(e) => updateOutput(port.id, 'name', e.target.value)}
-                className="port-input name"
-                placeholder="Name"
-              />
-              <input
-                value={port.connection}
-                onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
-                className="port-input connection"
-                placeholder="Type"
-              />
-              <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={`output-${port.id}`}
-                style={{ top: outputHandleOffset + index * rowHeight }}
-              />
-            </div>
-          ))}
+          <div className="port-list">
+            {data.outputs.map((port) => (
+              <div key={port.id} className="port-row output">
+                <input
+                  value={port.name}
+                  onChange={(e) => updateOutput(port.id, 'name', e.target.value)}
+                  className="port-field name"
+                  placeholder="Name"
+                />
+                <input
+                  value={port.connection}
+                  onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
+                  className="port-field connection"
+                  placeholder="Type"
+                />
+                <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={`output-${port.id}`}
+                  className="port-handle right"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

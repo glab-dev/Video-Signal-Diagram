@@ -93,49 +93,37 @@ function ProcessorNode({ id, data, selected }: ProcessorNodeProps) {
             <span>INPUTS</span>
             <button className="add-btn" onClick={addInput}>+</button>
           </div>
-          <table className="port-table">
-            <thead>
-              <tr>
-                <th>SOURCE</th>
-                <th>CONNECTION</th>
-                <th>RESOLUTION</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.inputs.map((port, index) => (
-                <tr key={port.id}>
-                  <td>
-                    <Handle
-                      type="target"
-                      position={Position.Left}
-                      id={`input-${port.id}`}
-                      style={{ top: 95 + index * 32 }}
-                    />
-                    <input
-                      value={port.name}
-                      onChange={(e) => updateInput(port.id, 'name', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={port.connection}
-                      onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={port.resolution}
-                      onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="port-list">
+            {data.inputs.map((port) => (
+              <div key={port.id} className="port-row">
+                <Handle
+                  type="target"
+                  position={Position.Left}
+                  id={`input-${port.id}`}
+                  className="port-handle left"
+                />
+                <input
+                  value={port.name}
+                  onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+                  className="port-field name"
+                  placeholder="Source"
+                />
+                <input
+                  value={port.connection}
+                  onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+                  className="port-field connection"
+                  placeholder="Connection"
+                />
+                <input
+                  value={port.resolution}
+                  onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+                  className="port-field resolution"
+                  placeholder="Resolution"
+                />
+                <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="processor-section">
@@ -143,49 +131,37 @@ function ProcessorNode({ id, data, selected }: ProcessorNodeProps) {
             <span>OUTPUTS</span>
             <button className="add-btn" onClick={addOutput}>+</button>
           </div>
-          <table className="port-table">
-            <thead>
-              <tr>
-                <th>CONNECTION</th>
-                <th>RESOLUTION</th>
-                <th>DESTINATION</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.outputs.map((port, index) => (
-                <tr key={port.id}>
-                  <td>
-                    <input
-                      value={port.connection}
-                      onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={port.resolution}
-                      onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={port.destination || ''}
-                      onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
-                    />
-                    <Handle
-                      type="source"
-                      position={Position.Right}
-                      id={`output-${port.id}`}
-                      style={{ top: 95 + data.inputs.length * 32 + 60 + index * 32 }}
-                    />
-                  </td>
-                  <td>
-                    <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="port-list">
+            {data.outputs.map((port) => (
+              <div key={port.id} className="port-row">
+                <input
+                  value={port.connection}
+                  onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
+                  className="port-field connection"
+                  placeholder="Connection"
+                />
+                <input
+                  value={port.resolution}
+                  onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+                  className="port-field resolution"
+                  placeholder="Resolution"
+                />
+                <input
+                  value={port.destination || ''}
+                  onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                  className="port-field destination"
+                  placeholder="Destination"
+                />
+                <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={`output-${port.id}`}
+                  className="port-handle right"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

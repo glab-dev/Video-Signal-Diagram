@@ -146,7 +146,7 @@
   color: #666;
 }
 
-/* Node Base Styles - Compact sizes */
+/* Node Base Styles */
 .node-router,
 .node-processor,
 .node-switcher,
@@ -154,8 +154,8 @@
 .node-generic-io {
   background: #1a1a2e;
   border: 2px solid #444;
-  border-radius: 4px;
-  font-size: 10px;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
 .node-router.selected,
@@ -169,8 +169,8 @@
 }
 
 .node-header {
-  padding: 4px 8px;
-  border-radius: 2px 2px 0 0;
+  padding: 8px 12px;
+  border-radius: 4px 4px 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -180,7 +180,7 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   text-align: center;
   outline: none;
@@ -196,9 +196,118 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Router Node - Compact */
+/* Section Headers */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #222;
+  border-radius: 3px;
+  margin-bottom: 6px;
+}
+
+.section-header span {
+  font-size: 10px;
+  color: #888;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.add-btn {
+  background: #444;
+  border: none;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-btn:hover {
+  background: #555;
+}
+
+/* Port List and Row - Shared styles for all nodes */
+.port-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.port-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #252538;
+  border-radius: 3px;
+  min-height: 36px;
+}
+
+.port-row.output {
+  justify-content: flex-end;
+}
+
+.port-field {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 11px;
+  outline: none;
+  padding: 4px 6px;
+}
+
+.port-field:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #444;
+}
+
+.port-field.name {
+  width: 80px;
+  font-weight: 500;
+}
+
+.port-field.connection {
+  width: 80px;
+  color: #aaa;
+}
+
+.port-field.resolution {
+  width: 100px;
+  color: #888;
+}
+
+.port-field.destination {
+  width: 80px;
+  color: #888;
+}
+
+/* Port Handles - positioned relative to row */
+.port-handle {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.port-handle.left {
+  left: -6px !important;
+}
+
+.port-handle.right {
+  right: -6px !important;
+}
+
+/* Router Node */
 .node-router {
-  min-width: 200px;
+  min-width: 240px;
 }
 
 .router-table {
@@ -208,7 +317,7 @@
 
 .router-table th,
 .router-table td {
-  padding: 2px 4px;
+  padding: 6px 8px;
   text-align: left;
   border-bottom: 1px solid #333;
 }
@@ -216,7 +325,7 @@
 .router-table th {
   background: #222;
   color: #888;
-  font-size: 8px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
@@ -225,9 +334,9 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 9px;
+  font-size: 11px;
   outline: none;
-  padding: 1px;
+  padding: 2px;
 }
 
 .router-table input:focus {
@@ -235,19 +344,19 @@
 }
 
 .router-table .small-input {
-  width: 24px;
+  width: 30px;
   text-align: center;
 }
 
 .add-row-btn {
   width: 100%;
-  padding: 3px;
+  padding: 6px;
   background: #222;
   border: none;
   color: #666;
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
-  border-radius: 0 0 2px 2px;
+  border-radius: 0 0 4px 4px;
 }
 
 .add-row-btn:hover {
@@ -255,91 +364,32 @@
   color: #fff;
 }
 
-/* Processor Node - Compact */
+/* Processor Node */
 .node-processor {
-  min-width: 280px;
+  min-width: 340px;
 }
 
 .processor-content {
-  padding: 6px;
+  padding: 10px;
 }
 
 .processor-section {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 6px;
-  background: #222;
-  border-radius: 2px;
-  margin-bottom: 3px;
-}
-
-.section-header span {
-  font-size: 8px;
-  color: #888;
-  font-weight: 600;
-}
-
-.add-btn {
-  background: #444;
-  border: none;
-  color: #fff;
-  width: 14px;
-  height: 14px;
-  border-radius: 2px;
-  cursor: pointer;
-  font-size: 10px;
-  line-height: 1;
-}
-
-.add-btn:hover {
-  background: #555;
-}
-
-.port-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.port-table th,
-.port-table td {
-  padding: 2px 4px;
-  text-align: left;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.port-table th {
-  color: #666;
-  font-size: 7px;
-  text-transform: uppercase;
-}
-
-.port-table input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 9px;
-  outline: none;
-}
-
-.port-table input:focus {
-  background: rgba(255, 255, 255, 0.1);
+.processor-section:last-child {
+  margin-bottom: 0;
 }
 
 /* Switcher Node */
 .node-switcher {
-  min-width: 260px;
+  min-width: 320px;
 }
 
 .switcher-content {
   display: flex;
-  gap: 8px;
-  padding: 6px;
+  gap: 12px;
+  padding: 10px;
 }
 
 .switcher-column {
@@ -350,60 +400,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 6px;
+  padding: 6px 10px;
   background: #222;
-  border-radius: 2px;
-  margin-bottom: 4px;
+  border-radius: 3px;
+  margin-bottom: 6px;
 }
 
 .switcher-column .column-header span {
-  font-size: 8px;
+  font-size: 10px;
   color: #888;
   font-weight: 600;
 }
 
-.switcher-port {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 0;
-  position: relative;
-}
-
-.switcher-port.output {
-  justify-content: flex-end;
-}
-
-.switcher-port .port-input {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 9px;
-  outline: none;
-  padding: 1px 2px;
-}
-
-.switcher-port .port-input.name {
-  width: 50px;
-}
-
-.switcher-port .port-input.connection {
-  width: 40px;
-  color: #888;
-}
-
-.switcher-port .port-input:focus {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* LED Wall Node - Compact */
+/* LED Wall Node */
 .node-led-wall {
-  min-width: 150px;
+  min-width: 180px;
 }
 
 .led-wall-content {
-  padding: 6px;
-  min-height: 60px;
+  padding: 10px;
+  min-height: 80px;
 }
 
 .led-wall-placeholder {
@@ -411,12 +427,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px;
-  border: 1px dashed #444;
-  border-radius: 3px;
+  padding: 20px;
+  border: 2px dashed #444;
+  border-radius: 4px;
   cursor: pointer;
   color: #666;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .led-wall-placeholder:hover {
@@ -425,8 +441,8 @@
 }
 
 .placeholder-icon {
-  font-size: 18px;
-  margin-top: 4px;
+  font-size: 24px;
+  margin-top: 6px;
 }
 
 .led-wall-image-container {
@@ -435,20 +451,20 @@
 
 .led-wall-image {
   width: 100%;
-  max-width: 200px;
-  border-radius: 3px;
+  max-width: 240px;
+  border-radius: 4px;
 }
 
 .change-image-btn {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  padding: 2px 6px;
+  bottom: 6px;
+  right: 6px;
+  padding: 4px 8px;
   background: rgba(0, 0, 0, 0.7);
   border: 1px solid #444;
-  border-radius: 2px;
+  border-radius: 3px;
   color: #fff;
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -456,17 +472,17 @@
   background: rgba(0, 0, 0, 0.9);
 }
 
-/* Note Node - Compact */
+/* Note Node */
 .node-note {
-  min-width: 150px;
-  max-width: 220px;
+  min-width: 180px;
+  max-width: 280px;
   background: #ffeb3b;
-  border-radius: 3px;
+  border-radius: 4px;
   color: #000;
 }
 
 .note-header {
-  padding: 6px;
+  padding: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: space-between;
@@ -477,7 +493,7 @@
   background: transparent;
   border: none;
   color: #000;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   outline: none;
   flex: 1;
@@ -485,14 +501,14 @@
 
 .note-color-picker {
   display: flex;
-  gap: 2px;
+  gap: 3px;
 }
 
 .color-btn {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: pointer;
   padding: 0;
 }
@@ -503,75 +519,54 @@
 
 .note-content {
   width: 100%;
-  min-height: 50px;
-  padding: 6px;
+  min-height: 60px;
+  padding: 10px;
   background: transparent;
   border: none;
   color: #000;
-  font-size: 9px;
+  font-size: 11px;
   resize: vertical;
   outline: none;
   font-family: inherit;
 }
 
-/* Generic I/O Node - Compact */
+/* Generic I/O Node */
 .node-generic-io {
-  min-width: 130px;
+  min-width: 180px;
 }
 
 .color-picker-row {
   display: flex;
-  gap: 2px;
-  padding: 4px 6px;
+  gap: 3px;
+  padding: 6px 10px;
   justify-content: center;
   border-bottom: 1px solid #333;
 }
 
 .generic-io-content {
-  padding: 6px;
+  padding: 10px;
 }
 
 .io-section {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
-.io-port {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 0;
-  position: relative;
+.io-section:last-child {
+  margin-bottom: 0;
 }
 
-.io-port.output {
-  justify-content: flex-end;
-}
-
-.port-name-input {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 9px;
-  outline: none;
-  width: 70px;
-}
-
-.port-name-input:focus {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Image Node - Compact */
+/* Image Node */
 .node-image {
   background: #1a1a2e;
   border: 2px solid #444;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
-  min-width: 80px;
-  min-height: 80px;
+  min-width: 100px;
+  min-height: 100px;
 }
 
 .image-label {
-  padding: 3px 6px;
+  padding: 6px 10px;
   background: rgba(0, 0, 0, 0.5);
 }
 
@@ -579,7 +574,7 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 9px;
+  font-size: 11px;
   outline: none;
   width: 100%;
 }
@@ -601,11 +596,11 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 80px;
+  min-height: 100px;
   color: #666;
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
-  border: 1px dashed #444;
+  border: 2px dashed #444;
 }
 
 .image-placeholder:hover {
@@ -616,35 +611,32 @@
 .remove-btn {
   background: transparent;
   border: none;
-  color: #666;
+  color: #555;
   cursor: pointer;
-  font-size: 12px;
-  padding: 0 2px;
+  font-size: 16px;
+  padding: 0 4px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .remove-btn:hover {
   color: #ff4444;
 }
 
-.remove-btn.small {
-  font-size: 10px;
-}
-
 /* React Flow Customization */
 .react-flow__handle {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   background: #00aaff;
   border: 2px solid #fff;
 }
 
 .react-flow__handle-left {
-  left: -5px;
+  left: -6px;
 }
 
 .react-flow__handle-right {
-  right: -5px;
+  right: -6px;
 }
 
 .react-flow__edge-path {
@@ -661,8 +653,8 @@
   background: #2a2a4a;
   border-bottom: 1px solid #444;
   fill: #fff;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .react-flow__controls-button:hover {

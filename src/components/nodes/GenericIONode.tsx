@@ -121,22 +121,25 @@ function GenericIONode({ id, data, selected }: GenericIONodeProps) {
             <span>INPUTS</span>
             <button className="add-btn" onClick={addInput}>+</button>
           </div>
-          {data.inputs.map((port, index) => (
-            <div key={port.id} className="io-port">
-              <Handle
-                type="target"
-                position={Position.Left}
-                id={`input-${port.id}`}
-                style={{ top: 90 + index * 30 }}
-              />
-              <input
-                value={port.name}
-                onChange={(e) => updateInput(port.id, e.target.value)}
-                className="port-name-input"
-              />
-              <button className="remove-btn small" onClick={() => removeInput(port.id)}>×</button>
-            </div>
-          ))}
+          <div className="port-list">
+            {data.inputs.map((port) => (
+              <div key={port.id} className="port-row">
+                <Handle
+                  type="target"
+                  position={Position.Left}
+                  id={`input-${port.id}`}
+                  className="port-handle left"
+                />
+                <input
+                  value={port.name}
+                  onChange={(e) => updateInput(port.id, e.target.value)}
+                  className="port-field name"
+                  placeholder="Input name"
+                />
+                <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="io-section">
@@ -144,22 +147,25 @@ function GenericIONode({ id, data, selected }: GenericIONodeProps) {
             <span>OUTPUTS</span>
             <button className="add-btn" onClick={addOutput}>+</button>
           </div>
-          {data.outputs.map((port, index) => (
-            <div key={port.id} className="io-port output">
-              <input
-                value={port.name}
-                onChange={(e) => updateOutput(port.id, e.target.value)}
-                className="port-name-input"
-              />
-              <button className="remove-btn small" onClick={() => removeOutput(port.id)}>×</button>
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={`output-${port.id}`}
-                style={{ top: 90 + data.inputs.length * 30 + 40 + index * 30 }}
-              />
-            </div>
-          ))}
+          <div className="port-list">
+            {data.outputs.map((port) => (
+              <div key={port.id} className="port-row output">
+                <input
+                  value={port.name}
+                  onChange={(e) => updateOutput(port.id, e.target.value)}
+                  className="port-field name"
+                  placeholder="Output name"
+                />
+                <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={`output-${port.id}`}
+                  className="port-handle right"
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
