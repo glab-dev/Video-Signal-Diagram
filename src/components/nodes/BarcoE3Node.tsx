@@ -4,6 +4,26 @@ import type { NodeProps } from '@xyflow/react';
 import type { BarcoE3NodeData, BarcoCard, CardConnector } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Top 15 video resolutions plus Custom option
+const VIDEO_RESOLUTIONS = [
+  '3840x2160@60',
+  '3840x2160@30',
+  '1920x1080@60',
+  '1920x1080@30',
+  '1920x1080@24',
+  '1280x720@60',
+  '1280x720@30',
+  '4096x2160@60',
+  '4096x2160@24',
+  '2560x1440@60',
+  '7680x4320@60',
+  '1920x1200@60',
+  '2048x1080@60',
+  '1366x768@60',
+  '1600x1200@60',
+  'Custom',
+] as const;
+
 type BarcoE3NodeProps = NodeProps & {
   data: BarcoE3NodeData;
   measured?: { width: number; height: number };
@@ -178,12 +198,41 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                           <option value="HDMI 2.0">HDMI 2.0</option>
                           <option value="12G SDI">12G SDI</option>
                         </select>
-                        <input
-                          value={connector.resolution || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                          className="card-field-stacked"
-                          placeholder="Resolution"
-                        />
+                        {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                          <select
+                            value={connector.resolution || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                            className="card-field-stacked"
+                          >
+                            <option value="">Select Resolution</option>
+                            {VIDEO_RESOLUTIONS.map((res) => (
+                              <option key={res} value={res}>{res}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <>
+                            <select
+                              value="Custom"
+                              onChange={(e) => {
+                                if (e.target.value !== 'Custom') {
+                                  updateConnector(card.id, connector.id, 'resolution', e.target.value);
+                                }
+                              }}
+                              className="card-field-stacked"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field-stacked"
+                              placeholder="Custom Resolution"
+                            />
+                          </>
+                        )}
                       </div>
                       <button className="remove-btn-stacked" onClick={() => removeConnector(card.id, connector.id)}>×</button>
                     </div>
@@ -217,12 +266,41 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={connector.id} className="card-connector-stacked">
                       <div className="card-fields-wrapper">
-                        <input
-                          value={connector.resolution || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                          className="card-field-stacked"
-                          placeholder="Resolution"
-                        />
+                        {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                          <select
+                            value={connector.resolution || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                            className="card-field-stacked"
+                          >
+                            <option value="">Select Resolution</option>
+                            {VIDEO_RESOLUTIONS.map((res) => (
+                              <option key={res} value={res}>{res}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <>
+                            <select
+                              value="Custom"
+                              onChange={(e) => {
+                                if (e.target.value !== 'Custom') {
+                                  updateConnector(card.id, connector.id, 'resolution', e.target.value);
+                                }
+                              }}
+                              className="card-field-stacked"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field-stacked"
+                              placeholder="Custom Resolution"
+                            />
+                          </>
+                        )}
                         <select
                           value={connector.type}
                           onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
