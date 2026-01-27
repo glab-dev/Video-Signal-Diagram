@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
+  measured?: { width: number; height: number };
 };
 
 function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {

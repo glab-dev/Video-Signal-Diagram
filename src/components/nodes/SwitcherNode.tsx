@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 type SwitcherNodeProps = NodeProps & {
   data: ProcessorNodeData;
+  measured?: { width: number; height: number };
 };
 
 function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {

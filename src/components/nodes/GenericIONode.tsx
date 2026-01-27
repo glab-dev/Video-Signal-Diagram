@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 type GenericIONodeProps = NodeProps & {
   data: GenericIONodeData;
+  measured?: { width: number; height: number };
 };
 
 const NODE_COLORS = [

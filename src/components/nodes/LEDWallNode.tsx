@@ -5,10 +5,10 @@ import type { LEDWallNodeData } from '../../types';
 
 type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
+  measured?: { width: number; height: number };
 };
-
-function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
   const { updateNodeData } = useReactFlow();
+function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateLabel = useCallback(

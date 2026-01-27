@@ -5,7 +5,9 @@ import type { NoteNodeData } from '../../types';
 
 type NoteNodeProps = NodeProps & {
   data: NoteNodeData;
+  measured?: { width: number; height: number };
 };
+
 
 const NOTE_COLORS = [
   '#ffeb3b', // Yellow

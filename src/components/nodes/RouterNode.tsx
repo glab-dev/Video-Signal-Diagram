@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
+  measured?: { width: number; height: number };
 };
 
 function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
