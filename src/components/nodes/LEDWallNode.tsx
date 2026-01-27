@@ -7,8 +7,9 @@ type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
   measured?: { width: number; height: number };
 };
-  const { updateNodeData } = useReactFlow();
+
 function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
+  const { updateNodeData } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateLabel = useCallback(
