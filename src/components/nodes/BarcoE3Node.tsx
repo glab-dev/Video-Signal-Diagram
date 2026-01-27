@@ -190,69 +190,117 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
                 <div className="card-header-row">
-                  <span className="card-col-header source">SOURCE</span>
-                  <span className="card-col-header connector">CONNECTOR</span>
-                  <span className="card-col-header resolution">RESOLUTION</span>
+                  {card.handleSide !== 'right' ? (
+                    <>
+                      <span className="card-col-header source">SOURCE</span>
+                      <span className="card-col-header connector">CONNECTOR</span>
+                      <span className="card-col-header resolution">RESOLUTION</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="card-col-header resolution">RESOLUTION</span>
+                      <span className="card-col-header connector">CONNECTOR</span>
+                      <span className="card-col-header source">SOURCE</span>
+                    </>
+                  )}
                 </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={connector.id} className="card-row">
-                      {card.handleSide !== 'right' && (
-                        <Handle
-                          type="target"
-                          position={Position.Left}
-                          id={`${card.id}-${connector.id}`}
-                          className="port-handle"
-                          style={{
-                            top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
-                          }}
-                        />
-                      )}
-                      <input
-                        value={connector.source || ''}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
-                        className="card-field source"
-                        placeholder="Source"
-                      />
-                      <select
-                        value={connector.type}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
-                        className="card-field connector"
-                      >
-                        <option value="DP 1.2">DP 1.2</option>
-                        <option value="HDMI 2.0">HDMI 2.0</option>
-                        <option value="12G SDI">12G SDI</option>
-                      </select>
-                      {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
-                        <select
-                          value={connector.resolution || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                          className="card-field resolution"
-                        >
-                          <option value="">Select Resolution</option>
-                          {VIDEO_RESOLUTIONS.map((res) => (
-                            <option key={res} value={res}>{res}</option>
-                          ))}
-                        </select>
+                      {card.handleSide !== 'right' ? (
+                        <>
+                          <Handle
+                            type="target"
+                            position={Position.Left}
+                            id={`${card.id}-${connector.id}`}
+                            className="port-handle"
+                            style={{
+                              top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
+                            }}
+                          />
+                          <input
+                            value={connector.source || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
+                            className="card-field source"
+                            placeholder="Source"
+                          />
+                          <select
+                            value={connector.type}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                            className="card-field connector"
+                          >
+                            <option value="DP 1.2">DP 1.2</option>
+                            <option value="HDMI 2.0">HDMI 2.0</option>
+                            <option value="12G SDI">12G SDI</option>
+                          </select>
+                          {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                            <select
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                              placeholder="Custom Resolution"
+                            />
+                          )}
+                          <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                        </>
                       ) : (
-                        <input
-                          value={connector.resolution || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                          className="card-field resolution"
-                          placeholder="Custom Resolution"
-                        />
-                      )}
-                      <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
-                      {card.handleSide === 'right' && (
-                        <Handle
-                          type="source"
-                          position={Position.Right}
-                          id={`${card.id}-${connector.id}`}
-                          className="port-handle"
-                          style={{
-                            top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
-                          }}
-                        />
+                        <>
+                          <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                          {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                            <select
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                              placeholder="Custom Resolution"
+                            />
+                          )}
+                          <select
+                            value={connector.type}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                            className="card-field connector"
+                          >
+                            <option value="DP 1.2">DP 1.2</option>
+                            <option value="HDMI 2.0">HDMI 2.0</option>
+                            <option value="12G SDI">12G SDI</option>
+                          </select>
+                          <input
+                            value={connector.source || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
+                            className="card-field source"
+                            placeholder="Source"
+                          />
+                          <Handle
+                            type="source"
+                            position={Position.Right}
+                            id={`${card.id}-${connector.id}`}
+                            className="port-handle"
+                            style={{
+                              top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
+                            }}
+                          />
+                        </>
                       )}
                     </div>
                   ))}
@@ -289,69 +337,117 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
                 <div className="card-header-row">
-                  <span className="card-col-header resolution">RESOLUTION</span>
-                  <span className="card-col-header connector">CONNECTOR</span>
-                  <span className="card-col-header destination">DESTINATION</span>
+                  {card.handleSide === 'left' ? (
+                    <>
+                      <span className="card-col-header destination">DESTINATION</span>
+                      <span className="card-col-header connector">CONNECTOR</span>
+                      <span className="card-col-header resolution">RESOLUTION</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="card-col-header resolution">RESOLUTION</span>
+                      <span className="card-col-header connector">CONNECTOR</span>
+                      <span className="card-col-header destination">DESTINATION</span>
+                    </>
+                  )}
                 </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={connector.id} className="card-row">
-                      {card.handleSide === 'left' && (
-                        <Handle
-                          type="target"
-                          position={Position.Left}
-                          id={`${card.id}-${connector.id}`}
-                          className="port-handle"
-                          style={{
-                            top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
-                          }}
-                        />
-                      )}
-                      {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
-                        <select
-                          value={connector.resolution || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                          className="card-field resolution"
-                        >
-                          <option value="">Select Resolution</option>
-                          {VIDEO_RESOLUTIONS.map((res) => (
-                            <option key={res} value={res}>{res}</option>
-                          ))}
-                        </select>
+                      {card.handleSide === 'left' ? (
+                        <>
+                          <Handle
+                            type="target"
+                            position={Position.Left}
+                            id={`${card.id}-${connector.id}`}
+                            className="port-handle"
+                            style={{
+                              top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
+                            }}
+                          />
+                          <input
+                            value={connector.destination || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                            className="card-field destination"
+                            placeholder="Destination"
+                          />
+                          <select
+                            value={connector.type}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                            className="card-field connector"
+                          >
+                            <option value="DP 1.2">DP 1.2</option>
+                            <option value="HDMI 2.0">HDMI 2.0</option>
+                            <option value="12G SDI">12G SDI</option>
+                          </select>
+                          {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                            <select
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                              placeholder="Custom Resolution"
+                            />
+                          )}
+                          <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                        </>
                       ) : (
-                        <input
-                          value={connector.resolution || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                          className="card-field resolution"
-                          placeholder="Custom Resolution"
-                        />
-                      )}
-                      <select
-                        value={connector.type}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
-                        className="card-field connector"
-                      >
-                        <option value="DP 1.2">DP 1.2</option>
-                        <option value="HDMI 2.0">HDMI 2.0</option>
-                        <option value="12G SDI">12G SDI</option>
-                      </select>
-                      <input
-                        value={connector.destination || ''}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
-                        className="card-field destination"
-                        placeholder="Destination"
-                      />
-                      <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
-                      {card.handleSide !== 'left' && (
-                        <Handle
-                          type="source"
-                          position={Position.Right}
-                          id={`${card.id}-${connector.id}`}
-                          className="port-handle"
-                          style={{
-                            top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
-                          }}
-                        />
+                        <>
+                          <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                          {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                            <select
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                              placeholder="Custom Resolution"
+                            />
+                          )}
+                          <select
+                            value={connector.type}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                            className="card-field connector"
+                          >
+                            <option value="DP 1.2">DP 1.2</option>
+                            <option value="HDMI 2.0">HDMI 2.0</option>
+                            <option value="12G SDI">12G SDI</option>
+                          </select>
+                          <input
+                            value={connector.destination || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                            className="card-field destination"
+                            placeholder="Destination"
+                          />
+                          <Handle
+                            type="source"
+                            position={Position.Right}
+                            id={`${card.id}-${connector.id}`}
+                            className="port-handle"
+                            style={{
+                              top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
+                            }}
+                          />
+                        </>
                       )}
                     </div>
                   ))}
