@@ -189,71 +189,58 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   </button>
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
+                <div className="card-header-row">
+                  <span className="card-col-header source">SOURCE</span>
+                  <span className="card-col-header connector">CONNECTOR</span>
+                  <span className="card-col-header resolution">RESOLUTION</span>
+                </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
-                    <div key={connector.id} className="card-connector-stacked">
+                    <div key={connector.id} className="card-row">
                       <Handle
                         type={card.handleSide === 'right' ? 'source' : 'target'}
                         position={card.handleSide === 'right' ? Position.Right : Position.Left}
                         id={`${card.id}-${connector.id}`}
                         className="port-handle"
                         style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input')}px`
+                          top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
                         }}
                       />
-                      <div className="card-fields-wrapper">
-                        <input
-                          value={connector.source || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
-                          className="card-field-stacked"
-                          placeholder="Source"
-                        />
+                      <input
+                        value={connector.source || ''}
+                        onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
+                        className="card-field source"
+                        placeholder="Source"
+                      />
+                      <select
+                        value={connector.type}
+                        onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                        className="card-field connector"
+                      >
+                        <option value="DP 1.2">DP 1.2</option>
+                        <option value="HDMI 2.0">HDMI 2.0</option>
+                        <option value="12G SDI">12G SDI</option>
+                      </select>
+                      {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
                         <select
-                          value={connector.type}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
-                          className="card-field-stacked"
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                          className="card-field resolution"
                         >
-                          <option value="DP 1.2">DP 1.2</option>
-                          <option value="HDMI 2.0">HDMI 2.0</option>
-                          <option value="12G SDI">12G SDI</option>
+                          <option value="">Select Resolution</option>
+                          {VIDEO_RESOLUTIONS.map((res) => (
+                            <option key={res} value={res}>{res}</option>
+                          ))}
                         </select>
-                        {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
-                          <select
-                            value={connector.resolution || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                            className="card-field-stacked"
-                          >
-                            <option value="">Select Resolution</option>
-                            {VIDEO_RESOLUTIONS.map((res) => (
-                              <option key={res} value={res}>{res}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <>
-                            <select
-                              value="Custom"
-                              onChange={(e) => {
-                                if (e.target.value !== 'Custom') {
-                                  updateConnector(card.id, connector.id, 'resolution', e.target.value);
-                                }
-                              }}
-                              className="card-field-stacked"
-                            >
-                              <option value="">Select Resolution</option>
-                              {VIDEO_RESOLUTIONS.map((res) => (
-                                <option key={res} value={res}>{res}</option>
-                              ))}
-                            </select>
-                            <input
-                              value={connector.resolution || ''}
-                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                              className="card-field-stacked"
-                              placeholder="Custom Resolution"
-                            />
-                          </>
-                        )}
-                      </div>
-                      <button className="remove-btn-stacked" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                      ) : (
+                        <input
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                          className="card-field resolution"
+                          placeholder="Custom Resolution"
+                        />
+                      )}
+                      <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
                     </div>
                   ))}
                 </div>
@@ -288,69 +275,56 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   </button>
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
+                <div className="card-header-row">
+                  <span className="card-col-header resolution">RESOLUTION</span>
+                  <span className="card-col-header connector">CONNECTOR</span>
+                  <span className="card-col-header destination">DESTINATION</span>
+                </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
-                    <div key={connector.id} className="card-connector-stacked">
-                      <div className="card-fields-wrapper">
-                        {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
-                          <select
-                            value={connector.resolution || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                            className="card-field-stacked"
-                          >
-                            <option value="">Select Resolution</option>
-                            {VIDEO_RESOLUTIONS.map((res) => (
-                              <option key={res} value={res}>{res}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <>
-                            <select
-                              value="Custom"
-                              onChange={(e) => {
-                                if (e.target.value !== 'Custom') {
-                                  updateConnector(card.id, connector.id, 'resolution', e.target.value);
-                                }
-                              }}
-                              className="card-field-stacked"
-                            >
-                              <option value="">Select Resolution</option>
-                              {VIDEO_RESOLUTIONS.map((res) => (
-                                <option key={res} value={res}>{res}</option>
-                              ))}
-                            </select>
-                            <input
-                              value={connector.resolution || ''}
-                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                              className="card-field-stacked"
-                              placeholder="Custom Resolution"
-                            />
-                          </>
-                        )}
+                    <div key={connector.id} className="card-row">
+                      {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
                         <select
-                          value={connector.type}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
-                          className="card-field-stacked"
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                          className="card-field resolution"
                         >
-                          <option value="DP 1.2">DP 1.2</option>
-                          <option value="HDMI 2.0">HDMI 2.0</option>
-                          <option value="12G SDI">12G SDI</option>
+                          <option value="">Select Resolution</option>
+                          {VIDEO_RESOLUTIONS.map((res) => (
+                            <option key={res} value={res}>{res}</option>
+                          ))}
                         </select>
+                      ) : (
                         <input
-                          value={connector.destination || ''}
-                          onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
-                          className="card-field-stacked"
-                          placeholder="Destination"
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                          className="card-field resolution"
+                          placeholder="Custom Resolution"
                         />
-                      </div>
-                      <button className="remove-btn-stacked" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                      )}
+                      <select
+                        value={connector.type}
+                        onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                        className="card-field connector"
+                      >
+                        <option value="DP 1.2">DP 1.2</option>
+                        <option value="HDMI 2.0">HDMI 2.0</option>
+                        <option value="12G SDI">12G SDI</option>
+                      </select>
+                      <input
+                        value={connector.destination || ''}
+                        onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                        className="card-field destination"
+                        placeholder="Destination"
+                      />
+                      <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
                       <Handle
                         type={card.handleSide === 'left' ? 'target' : 'source'}
                         position={card.handleSide === 'left' ? Position.Left : Position.Right}
                         id={`${card.id}-${connector.id}`}
                         className="port-handle"
                         style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output')}px`
+                          top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
                         }}
                       />
                     </div>
@@ -371,31 +345,40 @@ function calculateHandlePosition(
   cardId: string,
   connectorIndex: number,
   cards: BarcoCard[],
-  cardType: 'input' | 'output'
+  cardType: 'input' | 'output',
+  allInputCards: BarcoCard[]
 ): number {
   const headerHeight = 50; // Node header
   const sectionHeaderHeight = 40; // Cards section header
   const cardTitleHeight = 32; // Card title bar
-  const connectorStackedHeight = 90; // Each stacked connector block (3 fields + padding)
+  const cardHeaderRowHeight = 20; // Column headers row
+  const connectorRowHeight = 32; // Each horizontal connector row
 
   // Find which card index this is
   const cardIndex = cards.findIndex((c) => c.id === cardId);
 
+  // Calculate total height of previous cards in the same section
+  let previousCardsHeight = 0;
+  for (let i = 0; i < cardIndex; i++) {
+    const previousCard = cards[i];
+    previousCardsHeight += cardTitleHeight + cardHeaderRowHeight + (previousCard.connectors.length * connectorRowHeight) + 40; // 40 for padding and + button
+  }
+
   // Calculate offset based on card type (input cards are at top, output cards at bottom)
-  const baseOffset = cardType === 'input'
-    ? headerHeight + sectionHeaderHeight
-    : headerHeight + sectionHeaderHeight + 300; // Rough estimate for input section
+  let baseOffset = headerHeight + sectionHeaderHeight;
 
-  // Add spacing for previous cards in same section (assuming 2 cards per row)
-  const cardsPerRow = 2;
-  const cardRow = Math.floor(cardIndex / cardsPerRow);
+  if (cardType === 'output') {
+    // Add height of input section
+    const inputSectionHeight = allInputCards.reduce((sum, card) => {
+      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
+    }, 0) + 40; // Extra padding for section
+    baseOffset += inputSectionHeight;
+  }
 
-  const cardSpacing = 240; // Approximate height per card (increased for stacked layout)
+  // Center the handle vertically in the connector row
+  const handleOffsetInRow = connectorRowHeight / 2;
 
-  // Center the handle vertically in the connector block
-  const handleOffsetInConnector = 45; // Half of connectorStackedHeight
-
-  return baseOffset + (cardRow * cardSpacing) + cardTitleHeight + (connectorIndex * connectorStackedHeight) + handleOffsetInConnector + 16;
+  return baseOffset + previousCardsHeight + cardTitleHeight + cardHeaderRowHeight + (connectorIndex * connectorRowHeight) + handleOffsetInRow;
 }
 
 export default memo(BarcoE3Node);
