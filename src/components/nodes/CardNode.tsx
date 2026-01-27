@@ -39,7 +39,7 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
       id: uuidv4(),
       type: 'HDMI 2.0',
       source: data.cardType === 'input' ? '' : undefined,
-      resolution: '',
+      resolution: '3840x2160@60',
       destination: data.cardType === 'output' ? '' : undefined,
     };
     updateNodeData(id, { connectors: [...data.connectors, newConnector] });

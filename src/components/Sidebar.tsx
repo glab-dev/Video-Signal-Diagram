@@ -462,7 +462,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         color: '#4a9eff',
         cardType: 'input',
         connectors: [
-          { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '' },
+          { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '3840x2160@60' },
           { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
           { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
         ],
@@ -481,7 +481,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         color: '#50e3c2',
         cardType: 'output',
         connectors: [
-          { id: uuidv4(), type: 'DP 1.2', resolution: '', destination: '' },
+          { id: uuidv4(), type: 'DP 1.2', resolution: '3840x2160@60', destination: '' },
           { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
           { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
         ],
@@ -504,7 +504,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
             label: 'TRI COMBO - INPUT',
             cardType: 'input',
             connectors: [
-              { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '' },
+              { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '3840x2160@60' },
               { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
               { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
             ],
@@ -514,7 +514,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
             label: 'TRI COMBO - OUTPUT',
             cardType: 'output',
             connectors: [
-              { id: uuidv4(), type: 'DP 1.2', resolution: '', destination: '' },
+              { id: uuidv4(), type: 'DP 1.2', resolution: '3840x2160@60', destination: '' },
               { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
               { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
             ],

@@ -106,7 +106,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
         label: cardType === 'input' ? 'TRI COMBO - INPUT' : 'TRI COMBO - OUTPUT',
         cardType,
         connectors: [
-          { id: uuidv4(), type: 'DP 1.2', source: cardType === 'input' ? '' : undefined, resolution: '', destination: cardType === 'output' ? '' : undefined },
+          { id: uuidv4(), type: 'DP 1.2', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' ? '' : undefined },
           { id: uuidv4(), type: 'HDMI 2.0', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' ? '' : undefined },
           { id: uuidv4(), type: '12G SDI', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' ? '' : undefined },
         ],
