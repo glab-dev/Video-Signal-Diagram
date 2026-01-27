@@ -85,6 +85,18 @@ export interface CardConnector {
   destination?: string;
 }
 
+// Barco E3 node - contains multiple TRI COMBO cards
+export interface BarcoE3NodeData extends BaseNodeData {
+  cards: BarcoCard[];
+}
+
+export interface BarcoCard {
+  id: string;
+  label: string;
+  cardType: 'input' | 'output';
+  connectors: CardConnector[];
+}
+
 // Union type for all node data
 export type NodeData =
   | RouterNodeData
@@ -93,7 +105,8 @@ export type NodeData =
   | NoteNodeData
   | GenericIONodeData
   | ImageNodeData
-  | CardNodeData;
+  | CardNodeData
+  | BarcoE3NodeData;
 
 // Custom node types
 export type CustomNodeType =
@@ -103,7 +116,8 @@ export type CustomNodeType =
   | 'note'
   | 'genericIO'
   | 'image'
-  | 'card';
+  | 'card'
+  | 'barcoE3';
 
 // Project save data
 export interface ProjectData {

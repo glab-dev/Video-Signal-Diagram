@@ -490,6 +490,41 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     onAddNode(node);
   }, [onAddNode]);
 
+  const addBarcoE3 = useCallback(() => {
+    const node: Node = {
+      id: uuidv4(),
+      type: 'barcoE3',
+      position: { x: 100, y: 100 },
+      data: {
+        label: 'BARCO E3',
+        color: '#006400',
+        cards: [
+          {
+            id: uuidv4(),
+            label: 'TRI COMBO - INPUT',
+            cardType: 'input',
+            connectors: [
+              { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '' },
+              { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
+              { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
+            ],
+          },
+          {
+            id: uuidv4(),
+            label: 'TRI COMBO - OUTPUT',
+            cardType: 'output',
+            connectors: [
+              { id: uuidv4(), type: 'DP 1.2', resolution: '', destination: '' },
+              { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
+              { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
+            ],
+          },
+        ],
+      },
+    };
+    onAddNode(node);
+  }, [onAddNode]);
+
   const handleSave = useCallback(async () => {
     await saveProject(projectData);
     alert('Project saved!');
@@ -638,6 +673,10 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
             <button className="node-btn" onClick={addCustomProcessor}>
               <span className="node-icon" style={{ background: '#0088cc' }}></span>
               Processor
+            </button>
+            <button className="node-btn" onClick={addBarcoE3}>
+              <span className="node-icon" style={{ background: '#006400' }}></span>
+              Barco E3
             </button>
             <button className="node-btn" onClick={addInputCard}>
               <span className="node-icon" style={{ background: '#4a9eff' }}></span>

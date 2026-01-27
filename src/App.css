@@ -966,6 +966,180 @@
   right: -6px;
 }
 
+/* Barco E3 Node Styles */
+.node-barco-e3 {
+  background: #1a1a1a;
+  border: 2px solid;
+  border-radius: 8px;
+  min-width: 600px;
+  min-height: 300px;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.node-barco-e3.selected {
+  box-shadow: 0 0 0 2px #00aaff;
+}
+
+.barco-e3-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.barco-cards-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cards-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.add-card-btn {
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #00aaff;
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-card-btn:hover {
+  background: #444;
+  border-color: #00aaff;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.barco-card {
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px;
+  position: relative;
+}
+
+.barco-card.input-card {
+  border-left: 3px solid #4a9eff;
+}
+
+.barco-card.output-card {
+  border-left: 3px solid #50e3c2;
+}
+
+.card-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.card-title-input {
+  flex: 1;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 4px 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-title-input:focus {
+  border-color: #00aaff;
+  background: #333;
+}
+
+.remove-card-btn {
+  width: 20px;
+  height: 20px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #ff4444;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.remove-card-btn:hover {
+  background: #ff4444;
+  color: #fff;
+}
+
+.card-connector-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.add-connector-btn-small {
+  width: 100%;
+  padding: 4px;
+  background: #2a2a2a;
+  border: 1px dashed #444;
+  border-radius: 3px;
+  color: #666;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.add-connector-btn-small:hover {
+  background: #333;
+  border-color: #00aaff;
+  color: #00aaff;
+}
+
+.node-barco-e3 .port-handle {
+  width: 10px;
+  height: 10px;
+  background: #00aaff;
+  border: 2px solid #1a1a1a;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.node-barco-e3 .port-handle[data-handlepos="left"] {
+  left: -6px;
+}
+
+.node-barco-e3 .port-handle[data-handlepos="right"] {
+  right: -6px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {

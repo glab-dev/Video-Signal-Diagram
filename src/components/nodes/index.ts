@@ -6,6 +6,7 @@ import NoteNode from './NoteNode';
 import GenericIONode from './GenericIONode';
 import ImageNode from './ImageNode';
 import CardNode from './CardNode';
+import BarcoE3Node from './BarcoE3Node';
 
 export const nodeTypes = {
   router: RouterNode,
@@ -16,6 +17,7 @@ export const nodeTypes = {
   genericIO: GenericIONode,
   image: ImageNode,
   card: CardNode,
+  barcoE3: BarcoE3Node,
 };
 
 export {
@@ -27,4 +29,5 @@ export {
   GenericIONode,
   ImageNode,
   CardNode,
+  BarcoE3Node,
 };
