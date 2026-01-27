@@ -28,10 +28,10 @@ const EQUIPMENT_PRESETS = {
           { name: 'DP 1.2', connection: 'DisplayPort', resolution: '3840x2160@60' },
         ],
         outputs: [
-          { name: 'Port 1', connection: 'Ethernet', resolution: 'LED Data' },
-          { name: 'Port 2', connection: 'Ethernet', resolution: 'LED Data' },
-          { name: 'Port 3', connection: 'Ethernet', resolution: 'LED Data' },
-          { name: 'Port 4', connection: 'Ethernet', resolution: 'LED Data' },
+          { name: 'A', connection: 'Ethernet', resolution: 'LED Data' },
+          { name: 'B', connection: 'Ethernet', resolution: 'LED Data' },
+          { name: 'C', connection: 'Ethernet', resolution: 'LED Data' },
+          { name: 'D', connection: 'Ethernet', resolution: 'LED Data' },
         ],
       },
       {
