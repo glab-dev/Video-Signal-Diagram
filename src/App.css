@@ -153,6 +153,7 @@
 .node-led-wall,
 .node-generic-io {
   position: relative;
+  overflow: visible;
   background: #1a1a2e;
   border: 2px solid #444;
   border-radius: 6px;
@@ -308,7 +309,6 @@
 
 /* Router Node */
 .node-router {
-  min-width: 240px;
 }
 
 .router-table {
@@ -367,7 +367,6 @@
 
 /* Processor Node */
 .node-processor {
-  min-width: 340px;
 }
 
 .processor-content {
@@ -384,7 +383,6 @@
 
 /* Switcher Node */
 .node-switcher {
-  min-width: 320px;
 }
 
 .switcher-content {
@@ -415,7 +413,6 @@
 
 /* LED Wall Node */
 .node-led-wall {
-  min-width: 180px;
 }
 
 .led-wall-content {
@@ -476,8 +473,7 @@
 /* Note Node */
 .node-note {
   position: relative;
-  min-width: 180px;
-  max-width: 280px;
+  overflow: visible;
   background: #ffeb3b;
   border-radius: 4px;
   color: #000;
@@ -534,7 +530,6 @@
 
 /* Generic I/O Node */
 .node-generic-io {
-  min-width: 180px;
 }
 
 .color-picker-row {
@@ -563,9 +558,7 @@
   background: #1a1a2e;
   border: 2px solid #444;
   border-radius: 6px;
-  overflow: hidden;
-  min-width: 100px;
-  min-height: 100px;
+  overflow: visible;
 }
 
 .image-label {
