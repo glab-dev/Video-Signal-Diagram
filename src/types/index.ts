@@ -33,6 +33,8 @@ export interface ProcessorNodeData extends BaseNodeData {
   inputs: ProcessorPort[];
   outputs: ProcessorPort[];
   layout?: 'stacked' | 'sideBySide';
+  visibleInputFields?: ('name' | 'connection' | 'resolution')[];
+  visibleOutputFields?: ('connection' | 'resolution' | 'destination')[];
 }
 
 export interface ProcessorPort {

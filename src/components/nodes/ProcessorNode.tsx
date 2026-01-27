@@ -79,7 +79,25 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
     updateNodeData(id, { layout: newLayout });
   }, [id, data.layout, updateNodeData]);
 
+  const toggleInputField = useCallback((field: 'name' | 'connection' | 'resolution') => {
+    const currentFields = data.visibleInputFields || ['name'];
+    const newFields = currentFields.includes(field)
+      ? currentFields.filter(f => f !== field)
+      : [...currentFields, field];
+    updateNodeData(id, { visibleInputFields: newFields.length > 0 ? newFields : ['name'] });
+  }, [id, data.visibleInputFields, updateNodeData]);
+
+  const toggleOutputField = useCallback((field: 'connection' | 'resolution' | 'destination') => {
+    const currentFields = data.visibleOutputFields || ['destination'];
+    const newFields = currentFields.includes(field)
+      ? currentFields.filter(f => f !== field)
+      : [...currentFields, field];
+    updateNodeData(id, { visibleOutputFields: newFields.length > 0 ? newFields : ['destination'] });
+  }, [id, data.visibleOutputFields, updateNodeData]);
+
   const layout = data.layout || 'stacked';
+  const visibleInputFields = data.visibleInputFields || ['name'];
+  const visibleOutputFields = data.visibleOutputFields || ['destination'];
 
   return (
     <div
@@ -117,7 +135,34 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
         <div className="processor-section">
           <div className="section-header">
             <span>INPUTS</span>
-            <button className="add-btn" onClick={addInput}>+</button>
+            <div className="field-toggles">
+              {layout === 'sideBySide' && (
+                <>
+                  <button
+                    className={`field-toggle-btn ${visibleInputFields.includes('name') ? 'active' : ''}`}
+                    onClick={() => toggleInputField('name')}
+                    title="Toggle Name field"
+                  >
+                    N
+                  </button>
+                  <button
+                    className={`field-toggle-btn ${visibleInputFields.includes('connection') ? 'active' : ''}`}
+                    onClick={() => toggleInputField('connection')}
+                    title="Toggle Connection field"
+                  >
+                    C
+                  </button>
+                  <button
+                    className={`field-toggle-btn ${visibleInputFields.includes('resolution') ? 'active' : ''}`}
+                    onClick={() => toggleInputField('resolution')}
+                    title="Toggle Resolution field"
+                  >
+                    R
+                  </button>
+                </>
+              )}
+              <button className="add-btn" onClick={addInput}>+</button>
+            </div>
           </div>
           <div className="port-list">
             {data.inputs.map((port) => (
@@ -130,12 +175,30 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
                 />
                 {layout === 'sideBySide' ? (
                   <>
-                    <input
-                      value={port.name}
-                      onChange={(e) => updateInput(port.id, 'name', e.target.value)}
-                      className="port-field name"
-                      placeholder="Source"
-                    />
+                    {visibleInputFields.includes('name') && (
+                      <input
+                        value={port.name}
+                        onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+                        className="port-field name"
+                        placeholder="Source"
+                      />
+                    )}
+                    {visibleInputFields.includes('connection') && (
+                      <input
+                        value={port.connection}
+                        onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+                        className="port-field connection"
+                        placeholder="Connection"
+                      />
+                    )}
+                    {visibleInputFields.includes('resolution') && (
+                      <input
+                        value={port.resolution}
+                        onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+                        className="port-field resolution"
+                        placeholder="Resolution"
+                      />
+                    )}
                     <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
                   </>
                 ) : (
@@ -169,19 +232,64 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
         <div className="processor-section">
           <div className="section-header">
             <span>OUTPUTS</span>
-            <button className="add-btn" onClick={addOutput}>+</button>
+            <div className="field-toggles">
+              {layout === 'sideBySide' && (
+                <>
+                  <button
+                    className={`field-toggle-btn ${visibleOutputFields.includes('connection') ? 'active' : ''}`}
+                    onClick={() => toggleOutputField('connection')}
+                    title="Toggle Connection field"
+                  >
+                    C
+                  </button>
+                  <button
+                    className={`field-toggle-btn ${visibleOutputFields.includes('resolution') ? 'active' : ''}`}
+                    onClick={() => toggleOutputField('resolution')}
+                    title="Toggle Resolution field"
+                  >
+                    R
+                  </button>
+                  <button
+                    className={`field-toggle-btn ${visibleOutputFields.includes('destination') ? 'active' : ''}`}
+                    onClick={() => toggleOutputField('destination')}
+                    title="Toggle Destination field"
+                  >
+                    D
+                  </button>
+                </>
+              )}
+              <button className="add-btn" onClick={addOutput}>+</button>
+            </div>
           </div>
           <div className="port-list">
             {data.outputs.map((port) => (
               <div key={port.id} className="port-row">
                 {layout === 'sideBySide' ? (
                   <>
-                    <input
-                      value={port.destination || ''}
-                      onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
-                      className="port-field destination"
-                      placeholder="Destination"
-                    />
+                    {visibleOutputFields.includes('connection') && (
+                      <input
+                        value={port.connection}
+                        onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
+                        className="port-field connection"
+                        placeholder="Connection"
+                      />
+                    )}
+                    {visibleOutputFields.includes('resolution') && (
+                      <input
+                        value={port.resolution}
+                        onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+                        className="port-field resolution"
+                        placeholder="Resolution"
+                      />
+                    )}
+                    {visibleOutputFields.includes('destination') && (
+                      <input
+                        value={port.destination || ''}
+                        onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                        className="port-field destination"
+                        placeholder="Destination"
+                      />
+                    )}
                     <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                   </>
                 ) : (
