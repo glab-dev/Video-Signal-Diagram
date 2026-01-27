@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { nodeTypes } from './components/nodes';
 import Sidebar from './components/Sidebar';
+import UpdateNotification from './components/UpdateNotification';
 import type { ProjectData } from './types';
 import './App.css';
 
@@ -212,6 +213,7 @@ function App() {
   return (
     <ReactFlowProvider>
       <Flow />
+      <UpdateNotification />
     </ReactFlowProvider>
   );
 }
