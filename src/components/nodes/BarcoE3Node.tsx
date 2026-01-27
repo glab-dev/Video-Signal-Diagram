@@ -150,14 +150,9 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   />
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
-                <div className="card-header-row">
-                  <span className="card-col-header">SOURCE</span>
-                  <span className="card-col-header">CONNECTOR</span>
-                  <span className="card-col-header">RESOLUTION</span>
-                </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
-                    <div key={connector.id} className="card-connector-row">
+                    <div key={connector.id} className="card-connector-stacked">
                       <Handle
                         type="target"
                         position={Position.Left}
@@ -167,28 +162,30 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                           top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input')}px`
                         }}
                       />
-                      <input
-                        value={connector.source || ''}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
-                        className="card-field"
-                        placeholder="Source"
-                      />
-                      <select
-                        value={connector.type}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
-                        className="card-field"
-                      >
-                        <option value="DP 1.2">DP 1.2</option>
-                        <option value="HDMI 2.0">HDMI 2.0</option>
-                        <option value="12G SDI">12G SDI</option>
-                      </select>
-                      <input
-                        value={connector.resolution || ''}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                        className="card-field"
-                        placeholder="Resolution"
-                      />
-                      <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                      <div className="card-fields-wrapper">
+                        <input
+                          value={connector.source || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
+                          className="card-field-stacked"
+                          placeholder="Source"
+                        />
+                        <select
+                          value={connector.type}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                          className="card-field-stacked"
+                        >
+                          <option value="DP 1.2">DP 1.2</option>
+                          <option value="HDMI 2.0">HDMI 2.0</option>
+                          <option value="12G SDI">12G SDI</option>
+                        </select>
+                        <input
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                          className="card-field-stacked"
+                          placeholder="Resolution"
+                        />
+                      </div>
+                      <button className="remove-btn-stacked" onClick={() => removeConnector(card.id, connector.id)}>×</button>
                     </div>
                   ))}
                 </div>
@@ -216,36 +213,33 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   />
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
-                <div className="card-header-row">
-                  <span className="card-col-header">RESOLUTION</span>
-                  <span className="card-col-header">CONNECTOR</span>
-                  <span className="card-col-header">DESTINATION</span>
-                </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
-                    <div key={connector.id} className="card-connector-row">
-                      <input
-                        value={connector.resolution || ''}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
-                        className="card-field"
-                        placeholder="Resolution"
-                      />
-                      <select
-                        value={connector.type}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
-                        className="card-field"
-                      >
-                        <option value="DP 1.2">DP 1.2</option>
-                        <option value="HDMI 2.0">HDMI 2.0</option>
-                        <option value="12G SDI">12G SDI</option>
-                      </select>
-                      <input
-                        value={connector.destination || ''}
-                        onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
-                        className="card-field"
-                        placeholder="Destination"
-                      />
-                      <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                    <div key={connector.id} className="card-connector-stacked">
+                      <div className="card-fields-wrapper">
+                        <input
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                          className="card-field-stacked"
+                          placeholder="Resolution"
+                        />
+                        <select
+                          value={connector.type}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                          className="card-field-stacked"
+                        >
+                          <option value="DP 1.2">DP 1.2</option>
+                          <option value="HDMI 2.0">HDMI 2.0</option>
+                          <option value="12G SDI">12G SDI</option>
+                        </select>
+                        <input
+                          value={connector.destination || ''}
+                          onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                          className="card-field-stacked"
+                          placeholder="Destination"
+                        />
+                      </div>
+                      <button className="remove-btn-stacked" onClick={() => removeConnector(card.id, connector.id)}>×</button>
                       <Handle
                         type="source"
                         position={Position.Right}
@@ -278,8 +272,7 @@ function calculateHandlePosition(
   const headerHeight = 50; // Node header
   const sectionHeaderHeight = 40; // Cards section header
   const cardTitleHeight = 32; // Card title bar
-  const cardHeaderHeight = 24; // Column headers
-  const connectorRowHeight = 32; // Each connector row
+  const connectorStackedHeight = 90; // Each stacked connector block (3 fields + padding)
 
   // Find which card index this is
   const cardIndex = cards.findIndex((c) => c.id === cardId);
@@ -287,15 +280,18 @@ function calculateHandlePosition(
   // Calculate offset based on card type (input cards are at top, output cards at bottom)
   const baseOffset = cardType === 'input'
     ? headerHeight + sectionHeaderHeight
-    : headerHeight + sectionHeaderHeight + 200; // Rough estimate for input section
+    : headerHeight + sectionHeaderHeight + 300; // Rough estimate for input section
 
   // Add spacing for previous cards in same section (assuming 2 cards per row)
   const cardsPerRow = 2;
   const cardRow = Math.floor(cardIndex / cardsPerRow);
 
-  const cardSpacing = 180; // Approximate height per card
+  const cardSpacing = 240; // Approximate height per card (increased for stacked layout)
 
-  return baseOffset + (cardRow * cardSpacing) + cardTitleHeight + cardHeaderHeight + (connectorIndex * connectorRowHeight) + 16;
+  // Center the handle vertically in the connector block
+  const handleOffsetInConnector = 45; // Half of connectorStackedHeight
+
+  return baseOffset + (cardRow * cardSpacing) + cardTitleHeight + (connectorIndex * connectorStackedHeight) + handleOffsetInConnector + 16;
 }
 
 export default memo(BarcoE3Node);
