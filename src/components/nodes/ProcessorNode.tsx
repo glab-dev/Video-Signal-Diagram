@@ -8,7 +8,7 @@ type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
 };
 
-function ProcessorNode({ id, data, selected }: ProcessorNodeProps) {
+function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
   const { updateNodeData } = useReactFlow();
 
   const updateInput = useCallback(
@@ -76,7 +76,11 @@ function ProcessorNode({ id, data, selected }: ProcessorNodeProps) {
   return (
     <div
       className={`node-processor ${selected ? 'selected' : ''}`}
-      style={{ borderColor: data.color || '#0088cc' }}
+      style={{
+        borderColor: data.color || '#0088cc',
+        width: measured?.width,
+        height: measured?.height,
+      }}
     >
       <NodeResizer
         minWidth={300}

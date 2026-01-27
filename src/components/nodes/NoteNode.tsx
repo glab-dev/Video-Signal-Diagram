@@ -16,7 +16,7 @@ const NOTE_COLORS = [
   '#9c27b0', // Purple
 ];
 
-function NoteNode({ id, data, selected }: NoteNodeProps) {
+function NoteNode({ id, data, selected, measured }: NoteNodeProps) {
   const { updateNodeData } = useReactFlow();
 
   const updateLabel = useCallback(
@@ -45,7 +45,11 @@ function NoteNode({ id, data, selected }: NoteNodeProps) {
   return (
     <div
       className={`node-note ${selected ? 'selected' : ''}`}
-      style={{ backgroundColor: bgColor }}
+      style={{
+        backgroundColor: bgColor,
+        width: measured?.width,
+        height: measured?.height,
+      }}
     >
       <NodeResizer
         minWidth={160}

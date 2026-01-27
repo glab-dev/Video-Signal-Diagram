@@ -7,7 +7,7 @@ type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
 };
 
-function LEDWallNode({ id, data, selected }: LEDWallNodeProps) {
+function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
   const { updateNodeData } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,7 +40,11 @@ function LEDWallNode({ id, data, selected }: LEDWallNodeProps) {
   return (
     <div
       className={`node-led-wall ${selected ? 'selected' : ''}`}
-      style={{ borderColor: data.color || '#ff6600' }}
+      style={{
+        borderColor: data.color || '#ff6600',
+        width: measured?.width,
+        height: measured?.height,
+      }}
     >
       <NodeResizer
         minWidth={160}

@@ -8,7 +8,7 @@ type SwitcherNodeProps = NodeProps & {
   data: ProcessorNodeData;
 };
 
-function SwitcherNode({ id, data, selected }: SwitcherNodeProps) {
+function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
 
   const updateInput = useCallback(
@@ -76,7 +76,11 @@ function SwitcherNode({ id, data, selected }: SwitcherNodeProps) {
   return (
     <div
       className={`node-switcher ${selected ? 'selected' : ''}`}
-      style={{ borderColor: data.color || '#4a148c' }}
+      style={{
+        borderColor: data.color || '#4a148c',
+        width: measured?.width,
+        height: measured?.height,
+      }}
     >
       <NodeResizer
         minWidth={280}

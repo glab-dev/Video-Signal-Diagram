@@ -8,7 +8,7 @@ type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
 };
 
-function RouterNode({ id, data, selected }: RouterNodeProps) {
+function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
   const { updateNodeData } = useReactFlow();
 
   const updateRow = useCallback(
@@ -50,7 +50,11 @@ function RouterNode({ id, data, selected }: RouterNodeProps) {
   return (
     <div
       className={`node-router ${selected ? 'selected' : ''}`}
-      style={{ borderColor: data.color || '#444' }}
+      style={{
+        borderColor: data.color || '#444',
+        width: measured?.width,
+        height: measured?.height,
+      }}
     >
       <NodeResizer
         minWidth={220}

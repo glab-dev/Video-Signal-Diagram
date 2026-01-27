@@ -19,7 +19,7 @@ const NODE_COLORS = [
   '#8800ff', // Purple
 ];
 
-function GenericIONode({ id, data, selected }: GenericIONodeProps) {
+function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
   const { updateNodeData } = useReactFlow();
 
   const updateLabel = useCallback(
@@ -93,7 +93,11 @@ function GenericIONode({ id, data, selected }: GenericIONodeProps) {
   return (
     <div
       className={`node-generic-io ${selected ? 'selected' : ''}`}
-      style={{ borderColor: nodeColor }}
+      style={{
+        borderColor: nodeColor,
+        width: measured?.width,
+        height: measured?.height,
+      }}
     >
       <NodeResizer
         minWidth={160}
