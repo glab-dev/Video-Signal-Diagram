@@ -123,6 +123,18 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     [id, data.cards, updateNodeData]
   );
 
+  const toggleCardSide = useCallback(
+    (cardId: string) => {
+      const newCards = data.cards.map((card) =>
+        card.id === cardId
+          ? { ...card, handleSide: card.handleSide === 'right' ? 'left' : 'right' }
+          : card
+      );
+      updateNodeData(id, { cards: newCards });
+    },
+    [id, data.cards, updateNodeData]
+  );
+
   const inputCards = data.cards.filter((card) => card.cardType === 'input');
   const outputCards = data.cards.filter((card) => card.cardType === 'output');
 
@@ -168,14 +180,21 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                     onChange={(e) => updateCardLabel(card.id, e.target.value)}
                     placeholder="Card Name"
                   />
+                  <button
+                    className="toggle-side-btn"
+                    onClick={() => toggleCardSide(card.id)}
+                    title={`Switch handles to ${card.handleSide === 'right' ? 'left' : 'right'}`}
+                  >
+                    {card.handleSide === 'right' ? '←' : '→'}
+                  </button>
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={connector.id} className="card-connector-stacked">
                       <Handle
-                        type="target"
-                        position={Position.Left}
+                        type={card.handleSide === 'right' ? 'source' : 'target'}
+                        position={card.handleSide === 'right' ? Position.Right : Position.Left}
                         id={`${card.id}-${connector.id}`}
                         className="port-handle"
                         style={{
@@ -260,6 +279,13 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                     onChange={(e) => updateCardLabel(card.id, e.target.value)}
                     placeholder="Card Name"
                   />
+                  <button
+                    className="toggle-side-btn"
+                    onClick={() => toggleCardSide(card.id)}
+                    title={`Switch handles to ${card.handleSide === 'right' ? 'left' : 'right'}`}
+                  >
+                    {card.handleSide === 'right' ? '←' : '→'}
+                  </button>
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
                 <div className="card-connectors">
@@ -319,8 +345,8 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                       </div>
                       <button className="remove-btn-stacked" onClick={() => removeConnector(card.id, connector.id)}>×</button>
                       <Handle
-                        type="source"
-                        position={Position.Right}
+                        type={card.handleSide === 'left' ? 'target' : 'source'}
+                        position={card.handleSide === 'left' ? Position.Left : Position.Right}
                         id={`${card.id}-${connector.id}`}
                         className="port-handle"
                         style={{

@@ -1096,6 +1096,29 @@
   color: #fff;
 }
 
+.toggle-side-btn {
+  width: 20px;
+  height: 20px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #00aaff;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.toggle-side-btn:hover {
+  background: #00aaff;
+  color: #fff;
+  border-color: #00aaff;
+}
+
 .card-connector-stacked {
   display: flex;
   align-items: flex-start;

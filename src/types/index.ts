@@ -95,6 +95,7 @@ export interface BarcoCard {
   label: string;
   cardType: 'input' | 'output';
   connectors: CardConnector[];
+  handleSide?: 'left' | 'right';
 }
 
 // Union type for all node data
