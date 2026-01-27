@@ -197,15 +197,17 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={connector.id} className="card-row">
-                      <Handle
-                        type={card.handleSide === 'right' ? 'source' : 'target'}
-                        position={card.handleSide === 'right' ? Position.Right : Position.Left}
-                        id={`${card.id}-${connector.id}`}
-                        className="port-handle"
-                        style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
-                        }}
-                      />
+                      {card.handleSide !== 'right' && (
+                        <Handle
+                          type="target"
+                          position={Position.Left}
+                          id={`${card.id}-${connector.id}`}
+                          className="port-handle"
+                          style={{
+                            top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
+                          }}
+                        />
+                      )}
                       <input
                         value={connector.source || ''}
                         onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
@@ -241,6 +243,17 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                         />
                       )}
                       <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                      {card.handleSide === 'right' && (
+                        <Handle
+                          type="source"
+                          position={Position.Right}
+                          id={`${card.id}-${connector.id}`}
+                          className="port-handle"
+                          style={{
+                            top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
+                          }}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -283,6 +296,17 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={connector.id} className="card-row">
+                      {card.handleSide === 'left' && (
+                        <Handle
+                          type="target"
+                          position={Position.Left}
+                          id={`${card.id}-${connector.id}`}
+                          className="port-handle"
+                          style={{
+                            top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
+                          }}
+                        />
+                      )}
                       {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
                         <select
                           value={connector.resolution || ''}
@@ -318,15 +342,17 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                         placeholder="Destination"
                       />
                       <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
-                      <Handle
-                        type={card.handleSide === 'left' ? 'target' : 'source'}
-                        position={card.handleSide === 'left' ? Position.Left : Position.Right}
-                        id={`${card.id}-${connector.id}`}
-                        className="port-handle"
-                        style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
-                        }}
-                      />
+                      {card.handleSide !== 'left' && (
+                        <Handle
+                          type="source"
+                          position={Position.Right}
+                          id={`${card.id}-${connector.id}`}
+                          className="port-handle"
+                          style={{
+                            top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
+                          }}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
