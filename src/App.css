@@ -290,7 +290,7 @@
   color: #888;
 }
 
-/* Port Handles - positioned relative to row */
+/* Port Handles - positioned OUTSIDE the node box */
 .port-handle {
   position: absolute !important;
   top: 50% !important;
@@ -298,11 +298,11 @@
 }
 
 .port-handle.left {
-  left: -6px !important;
+  left: -18px !important;
 }
 
 .port-handle.right {
-  right: -6px !important;
+  right: -18px !important;
 }
 
 /* Router Node */
@@ -665,6 +665,28 @@
   background: #1a1a2e;
   border: 1px solid #444;
   border-radius: 4px;
+}
+
+/* Node Resizer */
+.node-resizer {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  cursor: se-resize;
+}
+
+.react-flow__resize-control.handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #00aaff !important;
+  border: none !important;
+  border-radius: 2px !important;
+}
+
+.react-flow__resize-control.line {
+  border-color: #00aaff !important;
 }
 
 /* Responsive */

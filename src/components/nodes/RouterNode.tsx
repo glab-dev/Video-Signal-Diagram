@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { RouterNodeData, RouterRow } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -52,6 +52,13 @@ function RouterNode({ id, data, selected }: RouterNodeProps) {
       className={`node-router ${selected ? 'selected' : ''}`}
       style={{ borderColor: data.color || '#444' }}
     >
+      <NodeResizer
+        minWidth={220}
+        minHeight={120}
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header">

@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -95,6 +95,13 @@ function GenericIONode({ id, data, selected }: GenericIONodeProps) {
       className={`node-generic-io ${selected ? 'selected' : ''}`}
       style={{ borderColor: nodeColor }}
     >
+      <NodeResizer
+        minWidth={160}
+        minHeight={100}
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
       <div className="node-header" style={{ backgroundColor: nodeColor }}>
         <input
           className="node-title-input light"

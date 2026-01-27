@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { ProcessorNodeData, ProcessorPort } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -78,6 +78,13 @@ function SwitcherNode({ id, data, selected }: SwitcherNodeProps) {
       className={`node-switcher ${selected ? 'selected' : ''}`}
       style={{ borderColor: data.color || '#4a148c' }}
     >
+      <NodeResizer
+        minWidth={280}
+        minHeight={120}
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
       <div className="node-header" style={{ backgroundColor: data.color || '#4a148c' }}>
         <input
           className="node-title-input light"

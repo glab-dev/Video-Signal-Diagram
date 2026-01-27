@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { LEDWallNodeData } from '../../types';
 
@@ -42,6 +42,13 @@ function LEDWallNode({ id, data, selected }: LEDWallNodeProps) {
       className={`node-led-wall ${selected ? 'selected' : ''}`}
       style={{ borderColor: data.color || '#ff6600' }}
     >
+      <NodeResizer
+        minWidth={160}
+        minHeight={120}
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header" style={{ backgroundColor: data.color || '#ff6600' }}>

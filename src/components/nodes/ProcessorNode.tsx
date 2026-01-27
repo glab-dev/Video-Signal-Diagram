@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { ProcessorNodeData, ProcessorPort } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -78,6 +78,13 @@ function ProcessorNode({ id, data, selected }: ProcessorNodeProps) {
       className={`node-processor ${selected ? 'selected' : ''}`}
       style={{ borderColor: data.color || '#0088cc' }}
     >
+      <NodeResizer
+        minWidth={300}
+        minHeight={150}
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
       <div className="node-header" style={{ backgroundColor: data.color || '#0088cc' }}>
         <input
           className="node-title-input light"

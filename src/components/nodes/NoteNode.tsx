@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { useReactFlow } from '@xyflow/react';
+import { useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NoteNodeData } from '../../types';
 
@@ -47,6 +47,13 @@ function NoteNode({ id, data, selected }: NoteNodeProps) {
       className={`node-note ${selected ? 'selected' : ''}`}
       style={{ backgroundColor: bgColor }}
     >
+      <NodeResizer
+        minWidth={160}
+        minHeight={80}
+        isVisible={selected}
+        lineStyle={{ borderColor: '#333' }}
+        handleStyle={{ backgroundColor: '#333', width: 8, height: 8 }}
+      />
       <div className="note-header">
         <input
           className="note-title-input"
