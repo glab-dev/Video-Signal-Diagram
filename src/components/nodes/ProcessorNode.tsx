@@ -74,9 +74,16 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
     [id, updateNodeData]
   );
 
+  const toggleLayout = useCallback(() => {
+    const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
+    updateNodeData(id, { layout: newLayout });
+  }, [id, data.layout, updateNodeData]);
+
+  const layout = data.layout || 'stacked';
+
   return (
     <div
-      className={`node-processor ${selected ? 'selected' : ''}`}
+      className={`node-processor ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: data.color || '#0088cc',
         width: measured?.width,
@@ -97,6 +104,13 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Processor Name"
         />
+        <button
+          className="layout-toggle-btn"
+          onClick={toggleLayout}
+          title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
+        >
+          {layout === 'stacked' ? '⇄' : '⇅'}
+        </button>
       </div>
 
       <div className="processor-content">
@@ -114,25 +128,39 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
                   id={`input-${port.id}`}
                   className="port-handle left"
                 />
-                <input
-                  value={port.name}
-                  onChange={(e) => updateInput(port.id, 'name', e.target.value)}
-                  className="port-field name"
-                  placeholder="Source"
-                />
-                <input
-                  value={port.connection}
-                  onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
-                  className="port-field connection"
-                  placeholder="Connection"
-                />
-                <input
-                  value={port.resolution}
-                  onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
-                  className="port-field resolution"
-                  placeholder="Resolution"
-                />
-                <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+                {layout === 'sideBySide' ? (
+                  <>
+                    <input
+                      value={port.name}
+                      onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+                      className="port-field name"
+                      placeholder="Source"
+                    />
+                    <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      value={port.name}
+                      onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+                      className="port-field name"
+                      placeholder="Source"
+                    />
+                    <input
+                      value={port.connection}
+                      onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+                      className="port-field connection"
+                      placeholder="Connection"
+                    />
+                    <input
+                      value={port.resolution}
+                      onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+                      className="port-field resolution"
+                      placeholder="Resolution"
+                    />
+                    <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -146,25 +174,39 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
           <div className="port-list">
             {data.outputs.map((port) => (
               <div key={port.id} className="port-row">
-                <input
-                  value={port.connection}
-                  onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
-                  className="port-field connection"
-                  placeholder="Connection"
-                />
-                <input
-                  value={port.resolution}
-                  onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
-                  className="port-field resolution"
-                  placeholder="Resolution"
-                />
-                <input
-                  value={port.destination || ''}
-                  onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
-                  className="port-field destination"
-                  placeholder="Destination"
-                />
-                <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                {layout === 'sideBySide' ? (
+                  <>
+                    <input
+                      value={port.destination || ''}
+                      onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                      className="port-field destination"
+                      placeholder="Destination"
+                    />
+                    <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      value={port.connection}
+                      onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
+                      className="port-field connection"
+                      placeholder="Connection"
+                    />
+                    <input
+                      value={port.resolution}
+                      onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+                      className="port-field resolution"
+                      placeholder="Resolution"
+                    />
+                    <input
+                      value={port.destination || ''}
+                      onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                      className="port-field destination"
+                      placeholder="Destination"
+                    />
+                    <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                  </>
+                )}
                 <Handle
                   type="source"
                   position={Position.Right}

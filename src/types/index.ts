@@ -32,6 +32,7 @@ export interface RouterRow {
 export interface ProcessorNodeData extends BaseNodeData {
   inputs: ProcessorPort[];
   outputs: ProcessorPort[];
+  layout?: 'stacked' | 'sideBySide';
 }
 
 export interface ProcessorPort {
