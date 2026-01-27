@@ -452,6 +452,44 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     onAddNode(node);
   }, [onAddNode]);
 
+  const addInputCard = useCallback(() => {
+    const node: Node = {
+      id: uuidv4(),
+      type: 'card',
+      position: { x: 100, y: 100 },
+      data: {
+        label: 'TRI COMBO - INPUT',
+        color: '#4a9eff',
+        cardType: 'input',
+        connectors: [
+          { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '' },
+          { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
+          { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
+        ],
+      },
+    };
+    onAddNode(node);
+  }, [onAddNode]);
+
+  const addOutputCard = useCallback(() => {
+    const node: Node = {
+      id: uuidv4(),
+      type: 'card',
+      position: { x: 100, y: 100 },
+      data: {
+        label: 'TRI COMBO - OUTPUT',
+        color: '#50e3c2',
+        cardType: 'output',
+        connectors: [
+          { id: uuidv4(), type: 'DP 1.2', resolution: '', destination: '' },
+          { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
+          { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
+        ],
+      },
+    };
+    onAddNode(node);
+  }, [onAddNode]);
+
   const handleSave = useCallback(async () => {
     await saveProject(projectData);
     alert('Project saved!');
@@ -600,6 +638,14 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
             <button className="node-btn" onClick={addCustomProcessor}>
               <span className="node-icon" style={{ background: '#0088cc' }}></span>
               Processor
+            </button>
+            <button className="node-btn" onClick={addInputCard}>
+              <span className="node-icon" style={{ background: '#4a9eff' }}></span>
+              Input Card
+            </button>
+            <button className="node-btn" onClick={addOutputCard}>
+              <span className="node-icon" style={{ background: '#50e3c2' }}></span>
+              Output Card
             </button>
             <button className="node-btn" onClick={addNoteNode}>
               <span className="node-icon" style={{ background: '#ffeb3b' }}></span>

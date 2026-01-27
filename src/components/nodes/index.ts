@@ -5,6 +5,7 @@ import LEDWallNode from './LEDWallNode';
 import NoteNode from './NoteNode';
 import GenericIONode from './GenericIONode';
 import ImageNode from './ImageNode';
+import CardNode from './CardNode';
 
 export const nodeTypes = {
   router: RouterNode,
@@ -14,6 +15,7 @@ export const nodeTypes = {
   note: NoteNode,
   genericIO: GenericIONode,
   image: ImageNode,
+  card: CardNode,
 };
 
 export {
@@ -24,4 +26,5 @@ export {
   NoteNode,
   GenericIONode,
   ImageNode,
+  CardNode,
 };

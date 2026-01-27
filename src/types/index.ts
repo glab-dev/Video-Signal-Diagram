@@ -71,6 +71,20 @@ export interface ImageNodeData extends BaseNodeData {
   height?: number;
 }
 
+// Card node - for Barco TRI COMBO cards
+export interface CardNodeData extends BaseNodeData {
+  cardType: 'input' | 'output';
+  connectors: CardConnector[];
+}
+
+export interface CardConnector {
+  id: string;
+  type: 'DP 1.2' | 'HDMI 2.0' | '12G SDI';
+  source?: string;
+  resolution?: string;
+  destination?: string;
+}
+
 // Union type for all node data
 export type NodeData =
   | RouterNodeData
@@ -78,7 +92,8 @@ export type NodeData =
   | LEDWallNodeData
   | NoteNodeData
   | GenericIONodeData
-  | ImageNodeData;
+  | ImageNodeData
+  | CardNodeData;
 
 // Custom node types
 export type CustomNodeType =
@@ -87,7 +102,8 @@ export type CustomNodeType =
   | 'ledWall'
   | 'note'
   | 'genericIO'
-  | 'image';
+  | 'image'
+  | 'card';
 
 // Project save data
 export interface ProjectData {
