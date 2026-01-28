@@ -286,7 +286,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   padding: 8px 10px;
   background: #252538;
   border-radius: 3px;
@@ -313,22 +313,26 @@
 }
 
 .port-field.name {
-  width: 80px;
+  flex: 0.8;
+  min-width: 70px;
   font-weight: 500;
 }
 
 .port-field.connection {
-  width: 80px;
+  flex: 1;
+  min-width: 80px;
   color: #aaa;
 }
 
 .port-field.resolution {
-  width: 100px;
+  flex: 1.2;
+  min-width: 100px;
   color: #888;
 }
 
 .port-field.destination {
-  width: 80px;
+  flex: 1;
+  min-width: 80px;
   color: #888;
 }
 
