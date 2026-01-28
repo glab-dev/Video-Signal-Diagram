@@ -463,6 +463,36 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     onAddNode(node);
   }, [onAddNode]);
 
+  const addBlackmagic20x20 = useCallback(() => {
+    const inputs = Array.from({ length: 20 }, (_, i) => ({
+      id: uuidv4(),
+      name: `IN ${i + 1}`,
+      connection: 'HDMI',
+      resolution: '1920x1080@60',
+    }));
+
+    const outputs = Array.from({ length: 20 }, (_, i) => ({
+      id: uuidv4(),
+      name: `OUT ${i + 1}`,
+      connection: 'HDMI',
+      resolution: '1920x1080@60',
+      destination: '',
+    }));
+
+    const node: Node = {
+      id: uuidv4(),
+      type: 'switcher',
+      position: { x: 100, y: 100 },
+      data: {
+        label: 'BLACKMAGIC 12G 20X20',
+        color: '#4a148c',
+        inputs,
+        outputs,
+      },
+    };
+    onAddNode(node);
+  }, [onAddNode]);
+
   const addCustomProcessor = useCallback(() => {
     const node: Node = {
       id: uuidv4(),
@@ -703,6 +733,10 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
             <button className="node-btn" onClick={addBlackmagic40x40}>
               <span className="node-icon" style={{ background: '#1a0033' }}></span>
               Blackmagic 12G 40x40
+            </button>
+            <button className="node-btn" onClick={addBlackmagic20x20}>
+              <span className="node-icon" style={{ background: '#1a0033' }}></span>
+              Blackmagic 12G 20x20
             </button>
             <button className="node-btn" onClick={addCustomProcessor}>
               <span className="node-icon" style={{ background: '#0088cc' }}></span>
