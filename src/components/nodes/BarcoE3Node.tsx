@@ -125,11 +125,17 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
 
   const toggleCardSide = useCallback(
     (cardId: string) => {
-      const newCards = data.cards.map((card) =>
-        card.id === cardId
-          ? { ...card, handleSide: card.handleSide === 'right' ? 'left' : 'right' }
-          : card
-      );
+      const newCards = data.cards.map((card) => {
+        if (card.id !== cardId) return card;
+
+        if (card.cardType === 'input') {
+          // Input cards: default left (undefined), toggle to right
+          return { ...card, handleSide: card.handleSide === 'right' ? undefined : 'right' };
+        } else {
+          // Output cards: default right (undefined), toggle to left
+          return { ...card, handleSide: card.handleSide === 'left' ? undefined : 'left' };
+        }
+      });
       updateNodeData(id, { cards: newCards });
     },
     [id, data.cards, updateNodeData]
