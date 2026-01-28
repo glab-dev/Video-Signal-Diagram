@@ -35,7 +35,12 @@ export interface ProcessorNodeData extends BaseNodeData {
   layout?: 'stacked' | 'sideBySide';
   visibleInputFields?: ('name' | 'connection' | 'resolution')[];
   visibleOutputFields?: ('connection' | 'resolution' | 'destination')[];
+  inputColumnOrder?: ('connection' | 'name' | 'resolution')[];
+  outputColumnOrder?: ('destination' | 'name' | 'resolution')[];
 }
+
+export type InputFieldType = 'connection' | 'name' | 'resolution';
+export type OutputFieldType = 'destination' | 'name' | 'resolution';
 
 export interface ProcessorPort {
   id: string;

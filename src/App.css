@@ -523,6 +523,33 @@
   min-width: 100px;
 }
 
+/* Draggable header styles */
+.field-header.draggable {
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.2s, opacity 0.2s;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.field-header.draggable:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.field-header.draggable:active {
+  cursor: grabbing;
+}
+
+.field-header.dragging {
+  opacity: 0.4;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.field-header.drag-over {
+  background: rgba(0, 170, 255, 0.2);
+  border-left: 2px solid #00aaff;
+}
+
 /* Switcher-specific port row styling */
 .switcher-column .port-row {
   padding-right: 30px;

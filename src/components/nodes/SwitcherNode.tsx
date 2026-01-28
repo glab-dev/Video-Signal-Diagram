@@ -1,7 +1,7 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { ProcessorNodeData, ProcessorPort } from '../../types';
+import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Top 15 video resolutions plus Custom option
@@ -23,6 +23,20 @@ const VIDEO_RESOLUTIONS = [
   '1600x1200@60',
   'Custom',
 ] as const;
+
+// Column configuration for inputs
+const INPUT_FIELD_CONFIG: Record<InputFieldType, { label: string; className: string; flex: number; minWidth: number }> = {
+  connection: { label: 'SOURCE', className: 'source connection', flex: 1, minWidth: 80 },
+  name: { label: 'INPUT #', className: 'input-num name', flex: 0.8, minWidth: 70 },
+  resolution: { label: 'RESOLUTION', className: 'resolution', flex: 1.2, minWidth: 100 }
+};
+
+// Column configuration for outputs
+const OUTPUT_FIELD_CONFIG: Record<OutputFieldType, { label: string; className: string; flex: number; minWidth: number }> = {
+  destination: { label: 'SOURCE', className: 'source destination', flex: 1, minWidth: 80 },
+  name: { label: 'OUTPUT #', className: 'output-num name', flex: 0.8, minWidth: 70 },
+  resolution: { label: 'RESOLUTION', className: 'resolution', flex: 1.2, minWidth: 100 }
+};
 
 type SwitcherNodeProps = NodeProps & {
   data: ProcessorNodeData;
@@ -94,6 +108,164 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     [id, updateNodeData]
   );
 
+  // Column ordering
+  const inputColumnOrder = data.inputColumnOrder || ['connection', 'name', 'resolution'];
+  const outputColumnOrder = data.outputColumnOrder || ['destination', 'name', 'resolution'];
+
+  const [draggedColumn, setDraggedColumn] = useState<{type: 'input' | 'output', index: number} | null>(null);
+
+  const reorderInputColumns = useCallback((dragIndex: number, dropIndex: number) => {
+    const newOrder = [...inputColumnOrder];
+    const [draggedItem] = newOrder.splice(dragIndex, 1);
+    newOrder.splice(dropIndex, 0, draggedItem);
+    updateNodeData(id, { inputColumnOrder: newOrder });
+  }, [inputColumnOrder, id, updateNodeData]);
+
+  const reorderOutputColumns = useCallback((dragIndex: number, dropIndex: number) => {
+    const newOrder = [...outputColumnOrder];
+    const [draggedItem] = newOrder.splice(dragIndex, 1);
+    newOrder.splice(dropIndex, 0, draggedItem);
+    updateNodeData(id, { outputColumnOrder: newOrder });
+  }, [outputColumnOrder, id, updateNodeData]);
+
+  const handleDragStart = useCallback((e: React.DragEvent, index: number, columnType: 'input' | 'output') => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `${columnType}-${index}`);
+    setDraggedColumn({type: columnType, index});
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedColumn(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number, columnType: 'input' | 'output') => {
+    e.preventDefault();
+    const dragData = e.dataTransfer.getData('text/plain');
+    const [type, dragIndexStr] = dragData.split('-');
+    if (type === columnType) {
+      const dragIndex = parseInt(dragIndexStr);
+      if (columnType === 'input') {
+        reorderInputColumns(dragIndex, dropIndex);
+      } else {
+        reorderOutputColumns(dragIndex, dropIndex);
+      }
+    }
+    setDraggedColumn(null);
+  }, [reorderInputColumns, reorderOutputColumns]);
+
+  const renderInputField = useCallback((port: ProcessorPort, fieldName: InputFieldType) => {
+    const config = INPUT_FIELD_CONFIG[fieldName];
+    const style = { flex: config.flex, minWidth: `${config.minWidth}px` };
+
+    switch (fieldName) {
+      case 'connection':
+        return (
+          <input
+            key={fieldName}
+            value={port.connection}
+            onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+            placeholder="Source"
+          />
+        );
+      case 'name':
+        return (
+          <input
+            key={fieldName}
+            value={port.name}
+            onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+            placeholder="Input #"
+          />
+        );
+      case 'resolution':
+        return VIDEO_RESOLUTIONS.includes(port.resolution as any) && port.resolution !== 'Custom' ? (
+          <select
+            key={fieldName}
+            value={port.resolution || ''}
+            onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+          >
+            <option value="">Select Resolution</option>
+            {VIDEO_RESOLUTIONS.map((res) => (
+              <option key={res} value={res}>{res}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            key={fieldName}
+            value={port.resolution || ''}
+            onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+            placeholder="Custom Resolution"
+          />
+        );
+    }
+  }, [updateInput]);
+
+  const renderOutputField = useCallback((port: ProcessorPort, fieldName: OutputFieldType) => {
+    const config = OUTPUT_FIELD_CONFIG[fieldName];
+    const style = { flex: config.flex, minWidth: `${config.minWidth}px` };
+
+    switch (fieldName) {
+      case 'destination':
+        return (
+          <input
+            key={fieldName}
+            value={port.destination || ''}
+            onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+            placeholder="Source"
+          />
+        );
+      case 'name':
+        return (
+          <input
+            key={fieldName}
+            value={port.name}
+            onChange={(e) => updateOutput(port.id, 'name', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+            placeholder="Output #"
+          />
+        );
+      case 'resolution':
+        return VIDEO_RESOLUTIONS.includes(port.resolution as any) && port.resolution !== 'Custom' ? (
+          <select
+            key={fieldName}
+            value={port.resolution || ''}
+            onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+          >
+            <option value="">Select Resolution</option>
+            {VIDEO_RESOLUTIONS.map((res) => (
+              <option key={res} value={res}>{res}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            key={fieldName}
+            value={port.resolution || ''}
+            onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+            className={`port-field ${config.className}`}
+            style={style}
+            placeholder="Custom Resolution"
+          />
+        );
+    }
+  }, [updateOutput]);
+
   return (
     <div
       className={`node-switcher ${selected ? 'selected' : ''}`}
@@ -127,9 +299,29 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             <button className="add-btn" onClick={addInput}>+</button>
           </div>
           <div className="switcher-field-headers">
-            <span className="field-header source">SOURCE</span>
-            <span className="field-header input-num">INPUT #</span>
-            <span className="field-header resolution">RESOLUTION</span>
+            {inputColumnOrder.map((fieldName, index) => {
+              const config = INPUT_FIELD_CONFIG[fieldName];
+              const isDragging = draggedColumn?.type === 'input' && draggedColumn?.index === index;
+              return (
+                <span
+                  key={fieldName}
+                  className={`field-header ${config.className} draggable ${isDragging ? 'dragging' : ''}`}
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, index, 'input')}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index, 'input')}
+                  style={{
+                    flex: config.flex,
+                    minWidth: `${config.minWidth}px`
+                  }}
+                  role="button"
+                  aria-label={`Drag to reorder ${config.label} column`}
+                >
+                  {config.label}
+                </span>
+              );
+            })}
           </div>
           <div className="port-list">
             {data.inputs.map((port) => (
@@ -140,37 +332,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
                   id={`input-${port.id}`}
                   className="port-handle left"
                 />
-                <input
-                  value={port.connection}
-                  onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
-                  className="port-field connection"
-                  placeholder="Source"
-                />
-                <input
-                  value={port.name}
-                  onChange={(e) => updateInput(port.id, 'name', e.target.value)}
-                  className="port-field name"
-                  placeholder="Input #"
-                />
-                {VIDEO_RESOLUTIONS.includes(port.resolution as any) && port.resolution !== 'Custom' ? (
-                  <select
-                    value={port.resolution || ''}
-                    onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
-                    className="port-field resolution"
-                  >
-                    <option value="">Select Resolution</option>
-                    {VIDEO_RESOLUTIONS.map((res) => (
-                      <option key={res} value={res}>{res}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    value={port.resolution || ''}
-                    onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
-                    className="port-field resolution"
-                    placeholder="Custom Resolution"
-                  />
-                )}
+                {inputColumnOrder.map((fieldName) => renderInputField(port, fieldName))}
                 <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
               </div>
             ))}
@@ -184,44 +346,34 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             <button className="add-btn" onClick={addOutput}>+</button>
           </div>
           <div className="switcher-field-headers">
-            <span className="field-header source">SOURCE</span>
-            <span className="field-header output-num">OUTPUT #</span>
-            <span className="field-header resolution">RESOLUTION</span>
+            {outputColumnOrder.map((fieldName, index) => {
+              const config = OUTPUT_FIELD_CONFIG[fieldName];
+              const isDragging = draggedColumn?.type === 'output' && draggedColumn?.index === index;
+              return (
+                <span
+                  key={fieldName}
+                  className={`field-header ${config.className} draggable ${isDragging ? 'dragging' : ''}`}
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, index, 'output')}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index, 'output')}
+                  style={{
+                    flex: config.flex,
+                    minWidth: `${config.minWidth}px`
+                  }}
+                  role="button"
+                  aria-label={`Drag to reorder ${config.label} column`}
+                >
+                  {config.label}
+                </span>
+              );
+            })}
           </div>
           <div className="port-list">
             {data.outputs.map((port) => (
               <div key={port.id} className="port-row output">
-                <input
-                  value={port.destination || ''}
-                  onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
-                  className="port-field destination"
-                  placeholder="Source"
-                />
-                <input
-                  value={port.name}
-                  onChange={(e) => updateOutput(port.id, 'name', e.target.value)}
-                  className="port-field name"
-                  placeholder="Output #"
-                />
-                {VIDEO_RESOLUTIONS.includes(port.resolution as any) && port.resolution !== 'Custom' ? (
-                  <select
-                    value={port.resolution || ''}
-                    onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
-                    className="port-field resolution"
-                  >
-                    <option value="">Select Resolution</option>
-                    {VIDEO_RESOLUTIONS.map((res) => (
-                      <option key={res} value={res}>{res}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    value={port.resolution || ''}
-                    onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
-                    className="port-field resolution"
-                    placeholder="Custom Resolution"
-                  />
-                )}
+                {outputColumnOrder.map((fieldName) => renderOutputField(port, fieldName))}
                 <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                 <Handle
                   type="source"
