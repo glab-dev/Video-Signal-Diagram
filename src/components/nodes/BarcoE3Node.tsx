@@ -218,7 +218,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                           <Handle
                             type="target"
                             position={Position.Left}
-                            id={`${card.id}-${connector.id}`}
+                            id={`${card.id}-${connector.id}-left`}
                             className="port-handle"
                             style={{
                               top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
@@ -300,7 +300,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                           <Handle
                             type="target"
                             position={Position.Right}
-                            id={`${card.id}-${connector.id}`}
+                            id={`${card.id}-${connector.id}-right`}
                             className="port-handle"
                             style={{
                               top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
@@ -365,7 +365,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                           <Handle
                             type="source"
                             position={Position.Left}
-                            id={`${card.id}-${connector.id}`}
+                            id={`${card.id}-${connector.id}-left`}
                             className="port-handle"
                             style={{
                               top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
@@ -447,7 +447,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                           <Handle
                             type="source"
                             position={Position.Right}
-                            id={`${card.id}-${connector.id}`}
+                            id={`${card.id}-${connector.id}-right`}
                             className="port-handle"
                             style={{
                               top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
