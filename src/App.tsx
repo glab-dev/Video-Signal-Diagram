@@ -85,7 +85,7 @@ function Flow() {
         }
         return prevHistory;
       });
-    }, 300); // 300ms debounce - groups changes within this window
+    }, 100); // 100ms debounce - captures distinct actions while grouping rapid updates
 
     return () => {
       if (historyTimer.current) {
