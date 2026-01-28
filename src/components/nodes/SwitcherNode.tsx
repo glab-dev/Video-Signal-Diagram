@@ -129,22 +129,26 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   }, [outputColumnOrder, id, updateNodeData]);
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number, columnType: 'input' | 'output') => {
+    e.stopPropagation();
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', `${columnType}-${index}`);
     setDraggedColumn({type: columnType, index});
   }, []);
 
-  const handleDragEnd = useCallback(() => {
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    e.stopPropagation();
     setDraggedColumn(null);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, dropIndex: number, columnType: 'input' | 'output') => {
     e.preventDefault();
+    e.stopPropagation();
     const dragData = e.dataTransfer.getData('text/plain');
     const [type, dragIndexStr] = dragData.split('-');
     if (type === columnType) {
