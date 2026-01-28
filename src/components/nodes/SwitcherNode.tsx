@@ -46,6 +46,9 @@ type SwitcherNodeProps = NodeProps & {
 function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
 
+  // Lock at 40 inputs/outputs for Blackmagic 40x40
+  const isLocked = data.inputs.length === 40 && data.outputs.length === 40;
+
   const updateInput = useCallback(
     (portId: string, field: keyof ProcessorPort, value: string) => {
       const newInputs = data.inputs.map((port) =>
@@ -300,7 +303,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
         <div className="switcher-column inputs">
           <div className="column-header">
             <span>INPUTS</span>
-            <button className="add-btn" onClick={addInput}>+</button>
+            {!isLocked && <button className="add-btn" onClick={addInput}>+</button>}
           </div>
           <div className="switcher-field-headers">
             {inputColumnOrder.map((fieldName, index) => {
@@ -329,7 +332,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           </div>
           <div className="port-list">
             {data.inputs.map((port) => (
-              <div key={port.id} className="port-row">
+              <div key={port.id} className="port-row" style={isLocked ? { paddingRight: '10px' } : undefined}>
                 <Handle
                   type="target"
                   position={Position.Left}
@@ -337,7 +340,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
                   className="port-handle left"
                 />
                 {inputColumnOrder.map((fieldName) => renderInputField(port, fieldName))}
-                <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+                {!isLocked && <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>}
               </div>
             ))}
           </div>
@@ -347,7 +350,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
         <div className="switcher-column outputs">
           <div className="column-header">
             <span>OUTPUTS</span>
-            <button className="add-btn" onClick={addOutput}>+</button>
+            {!isLocked && <button className="add-btn" onClick={addOutput}>+</button>}
           </div>
           <div className="switcher-field-headers">
             {outputColumnOrder.map((fieldName, index) => {
@@ -376,9 +379,9 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           </div>
           <div className="port-list">
             {data.outputs.map((port) => (
-              <div key={port.id} className="port-row output">
+              <div key={port.id} className="port-row output" style={isLocked ? { paddingRight: '10px' } : undefined}>
                 {outputColumnOrder.map((fieldName) => renderOutputField(port, fieldName))}
-                <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                {!isLocked && <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>}
                 <Handle
                   type="source"
                   position={Position.Right}
