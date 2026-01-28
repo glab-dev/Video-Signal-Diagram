@@ -305,6 +305,7 @@
   font-size: 11px;
   outline: none;
   padding: 4px 6px;
+  text-align: center;
 }
 
 .port-field:focus {
