@@ -309,7 +309,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
               return (
                 <span
                   key={fieldName}
-                  className={`field-header ${config.className} draggable ${isDragging ? 'dragging' : ''}`}
+                  className={`field-header ${config.className} draggable nodrag ${isDragging ? 'dragging' : ''}`}
                   draggable="true"
                   onDragStart={(e) => handleDragStart(e, index, 'input')}
                   onDragEnd={handleDragEnd}
@@ -356,7 +356,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
               return (
                 <span
                   key={fieldName}
-                  className={`field-header ${config.className} draggable ${isDragging ? 'dragging' : ''}`}
+                  className={`field-header ${config.className} draggable nodrag ${isDragging ? 'dragging' : ''}`}
                   draggable="true"
                   onDragStart={(e) => handleDragStart(e, index, 'output')}
                   onDragEnd={handleDragEnd}
