@@ -1,8 +1,39 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '@xyflow/react';
 import type { ProjectData } from '../types';
-import { exportProject, importProject, saveProject, getAllProjects, loadProject, deleteProject } from '../store/db';
+import { exportProject, importProject, saveProject, deleteProject, getAllProjects } from '../store/db';
+
+// Recent files stored in localStorage
+interface RecentFile {
+  name: string;
+  path: string;
+  timestamp: number;
+}
+
+const RECENTS_KEY = 'vsf-recent-files';
+const MAX_RECENTS = 5;
+
+const getRecentFiles = (): RecentFile[] => {
+  try {
+    const stored = localStorage.getItem(RECENTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+const addToRecentFiles = (name: string, path: string) => {
+  const recents = getRecentFiles();
+  // Remove if already exists
+  const filtered = recents.filter(r => r.path !== path);
+  // Add to front
+  filtered.unshift({ name, path, timestamp: Date.now() });
+  // Keep only MAX_RECENTS
+  const trimmed = filtered.slice(0, MAX_RECENTS);
+  localStorage.setItem(RECENTS_KEY, JSON.stringify(trimmed));
+  return trimmed;
+};
 
 interface SidebarProps {
   onAddNode: (node: Node) => void;
@@ -319,6 +350,13 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     destinations: true,
     basic: true,
   });
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+  const [showRecents, setShowRecents] = useState(false);
+
+  // Load recent files on mount
+  useEffect(() => {
+    setRecentFiles(getRecentFiles());
+  }, []);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }));
@@ -572,27 +610,8 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
 
   const handleSave = useCallback(async () => {
     await saveProject(projectData);
-    alert('Project saved!');
+    alert('Project saved to browser!');
   }, [projectData]);
-
-  const handleLoad = useCallback(async () => {
-    const projects = await getAllProjects();
-    if (projects.length === 0) {
-      alert('No saved projects found');
-      return;
-    }
-    const projectList = projects.map((p, i) => `${i + 1}. ${p.name} (${new Date(p.updatedAt).toLocaleDateString()})`).join('\n');
-    const choice = prompt(`Select project number:\n${projectList}`);
-    if (choice) {
-      const index = parseInt(choice) - 1;
-      if (index >= 0 && index < projects.length) {
-        const project = await loadProject(projects[index].id);
-        if (project) {
-          onLoadProject(project);
-        }
-      }
-    }
-  }, [onLoadProject]);
 
   // Save to file using File System Access API (works with any location including Google Drive)
   const handleSaveToFile = useCallback(async () => {
@@ -654,6 +673,9 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         try {
           const project = importProject(content);
           onLoadProject(project);
+          // Add to recents
+          const updated = addToRecentFiles(project.name || file.name, file.name);
+          setRecentFiles(updated);
         } catch {
           alert('Invalid project file');
         }
@@ -680,6 +702,9 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
           try {
             const project = importProject(e.target?.result as string);
             onLoadProject(project);
+            // Add to recents
+            const updated = addToRecentFiles(project.name || file.name, file.name);
+            setRecentFiles(updated);
           } catch {
             alert('Invalid project file');
           }
@@ -756,8 +781,40 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         </div>
         <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
           <button onClick={handleSave} title="Quick save to browser">Quick Save</button>
-          <button onClick={handleLoad} title="Load from browser">Quick Load</button>
+          <button
+            onClick={() => setShowRecents(!showRecents)}
+            title="Recently opened files"
+            style={{ position: 'relative' }}
+          >
+            Recents {recentFiles.length > 0 ? `(${recentFiles.length})` : ''}
+          </button>
         </div>
+        {showRecents && (
+          <div className="recents-dropdown">
+            {recentFiles.length === 0 ? (
+              <div className="recents-empty">No recent files</div>
+            ) : (
+              recentFiles.map((file, index) => (
+                <button
+                  key={index}
+                  className="recents-item"
+                  onClick={() => {
+                    // Re-open the file picker - can't reopen same file due to browser security
+                    // But show the name for reference
+                    alert(`To reopen "${file.name}", use the Open button and select the file:\n\n${file.path}`);
+                    setShowRecents(false);
+                  }}
+                  title={file.path}
+                >
+                  <span className="recents-name">{file.name}</span>
+                  <span className="recents-date">
+                    {new Date(file.timestamp).toLocaleDateString()}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
         <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
           <button onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">Undo</button>
           <button onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">Redo</button>
