@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, useCallback, useMemo } from 'react';
+import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import type { RouterNodeData, RouterRow, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -12,6 +12,27 @@ type RouterNodeProps = NodeProps & {
 
 function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
   const { updateNodeData } = useReactFlow();
+  const allNodes = useNodes();
+
+  // Get all source node names (nodes that have outputs - they can be sources)
+  const sourceNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have outputs (they can be sources)
+      const nodeData = node.data as { label?: string; outputs?: unknown[]; rows?: unknown[] };
+      const hasOutputs = nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0;
+      const hasRows = nodeData?.rows && Array.isArray(nodeData.rows) && nodeData.rows.length > 0;
+      if (hasOutputs || hasRows) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
 
   const updateRow = useCallback(
     (rowId: string, field: keyof RouterRow, value: string) => {
@@ -101,11 +122,28 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
           {data.rows.map((row) => (
             <tr key={row.id}>
               <td>
-                <input
-                  value={row.source}
-                  onChange={(e) => updateRow(row.id, 'source', e.target.value)}
-                  placeholder="Source"
-                />
+                <select
+                  value={sourceNames.includes(row.source) ? row.source : (row.source ? row.source : '')}
+                  onChange={(e) => {
+                    if (e.target.value === '__custom__') {
+                      const customName = prompt('Enter custom source name:');
+                      if (customName) {
+                        updateRow(row.id, 'source', customName);
+                      }
+                    } else {
+                      updateRow(row.id, 'source', e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">Select Source</option>
+                  {row.source && !sourceNames.includes(row.source) && (
+                    <option value={row.source}>{row.source}</option>
+                  )}
+                  {sourceNames.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                  <option value="__custom__">Custom...</option>
+                </select>
               </td>
               <td>
                 <input

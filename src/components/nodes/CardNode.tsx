@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, useCallback, useMemo } from 'react';
+import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import type { CardNodeData, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -12,6 +12,29 @@ type CardNodeProps = NodeProps & {
 
 function CardNode({ id, data, selected, measured }: CardNodeProps) {
   const { updateNodeData } = useReactFlow();
+  const allNodes = useNodes();
+
+  // Get all source node names (nodes that have outputs - they can be sources)
+  const sourceNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have outputs (they can be sources)
+      const nodeData = node.data as { label?: string; outputs?: unknown[]; connectors?: Array<{ destination?: string }> };
+      // Check for outputs array or output connectors
+      const hasOutputs = nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0;
+      const hasOutputConnectors = nodeData?.connectors && Array.isArray(nodeData.connectors) &&
+        nodeData.connectors.some(c => c.destination !== undefined);
+      if (hasOutputs || hasOutputConnectors) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -135,12 +158,29 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
               />
               {data.cardType === 'input' ? (
                 <>
-                  <input
-                    value={connector.source || ''}
-                    onChange={(e) => updateConnector(connector.id, 'source', e.target.value)}
+                  <select
+                    value={sourceNames.includes(connector.source || '') ? connector.source : (connector.source ? connector.source : '')}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        const customName = prompt('Enter custom source name:');
+                        if (customName) {
+                          updateConnector(connector.id, 'source', customName);
+                        }
+                      } else {
+                        updateConnector(connector.id, 'source', e.target.value);
+                      }
+                    }}
                     className="card-field source"
-                    placeholder="Source"
-                  />
+                  >
+                    <option value="">Select Source</option>
+                    {connector.source && !sourceNames.includes(connector.source) && (
+                      <option value={connector.source}>{connector.source}</option>
+                    )}
+                    {sourceNames.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                    <option value="__custom__">Custom...</option>
+                  </select>
                   <select
                     value={connector.type}
                     onChange={(e) => updateConnector(connector.id, 'type', e.target.value as any)}

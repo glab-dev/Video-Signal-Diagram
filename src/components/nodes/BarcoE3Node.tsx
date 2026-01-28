@@ -1,6 +1,6 @@
-import { memo, useCallback, useState, useRef } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, useCallback, useState, useRef, useMemo } from 'react';
+import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals, useNodes } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import type { BarcoE3NodeData, BarcoCard, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -33,9 +33,31 @@ type BarcoE3NodeProps = NodeProps & {
 function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
+  const allNodes = useNodes();
   const [_draggedCard, setDraggedCard] = useState<string | null>(null);
   const dragStartY = useRef<number>(0);
   const dragStartSpacing = useRef<number>(0);
+
+  // Get all source node names (nodes that have outputs - they can be sources)
+  const sourceNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have outputs (they can be sources)
+      const nodeData = node.data as { label?: string; outputs?: unknown[]; cards?: Array<{ cardType?: string }> };
+      const hasOutputs = nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0;
+      const hasOutputCards = nodeData?.cards && Array.isArray(nodeData.cards) &&
+        nodeData.cards.some(c => c.cardType === 'output' || c.cardType === 'system');
+      if (hasOutputs || hasOutputCards) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -305,12 +327,29 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                               top: `${calculateHandlePosition(card.id, connectorIndex, inputCards, 'input', inputCards)}px`
                             }}
                           />
-                          <input
-                            value={connector.source || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
+                          <select
+                            value={sourceNames.includes(connector.source || '') ? connector.source : (connector.source ? connector.source : '')}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                const customName = prompt('Enter custom source name:');
+                                if (customName) {
+                                  updateConnector(card.id, connector.id, 'source', customName);
+                                }
+                              } else {
+                                updateConnector(card.id, connector.id, 'source', e.target.value);
+                              }
+                            }}
                             className="card-field source"
-                            placeholder="Source"
-                          />
+                          >
+                            <option value="">Select Source</option>
+                            {connector.source && !sourceNames.includes(connector.source) && (
+                              <option value={connector.source}>{connector.source}</option>
+                            )}
+                            {sourceNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                            <option value="__custom__">Custom...</option>
+                          </select>
                           <select
                             value={connector.type}
                             onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
@@ -372,12 +411,29 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                             <option value="HDMI 2.0">HDMI 2.0</option>
                             <option value="12G SDI">12G SDI</option>
                           </select>
-                          <input
-                            value={connector.source || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'source', e.target.value)}
+                          <select
+                            value={sourceNames.includes(connector.source || '') ? connector.source : (connector.source ? connector.source : '')}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                const customName = prompt('Enter custom source name:');
+                                if (customName) {
+                                  updateConnector(card.id, connector.id, 'source', customName);
+                                }
+                              } else {
+                                updateConnector(card.id, connector.id, 'source', e.target.value);
+                              }
+                            }}
                             className="card-field source"
-                            placeholder="Source"
-                          />
+                          >
+                            <option value="">Select Source</option>
+                            {connector.source && !sourceNames.includes(connector.source) && (
+                              <option value={connector.source}>{connector.source}</option>
+                            )}
+                            {sourceNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                            <option value="__custom__">Custom...</option>
+                          </select>
                           <Handle
                             key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                             type="target"
