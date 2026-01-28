@@ -594,20 +594,82 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     }
   }, [onLoadProject]);
 
-  const handleExport = useCallback(() => {
+  // Save to file using File System Access API (works with any location including Google Drive)
+  const handleSaveToFile = useCallback(async () => {
     const json = exportProject(projectData);
-    const blob = new Blob([json], { type: 'application/json' });
+    const fileName = `${projectData.name.replace(/\s+/g, '_')}.vsf`;
+
+    // Try to use the File System Access API (modern browsers)
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await (window as Window & { showSaveFilePicker: (options: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{
+            description: 'Video Signal Flow Project',
+            accept: { 'application/vsf': ['.vsf'] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        alert('Project saved successfully!');
+      } catch (err) {
+        // User cancelled or error
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Save failed:', err);
+          // Fallback to download
+          fallbackDownload(json, fileName);
+        }
+      }
+    } else {
+      // Fallback for browsers without File System Access API
+      fallbackDownload(json, fileName);
+    }
+  }, [projectData]);
+
+  const fallbackDownload = (content: string, fileName: string) => {
+    const blob = new Blob([content], { type: 'application/vsf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${projectData.name.replace(/\s+/g, '_')}.json`;
+    a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
-  }, [projectData]);
+  };
 
-  const handleImport = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+  // Open file using File System Access API
+  const handleOpenFile = useCallback(async () => {
+    // Try to use the File System Access API (modern browsers)
+    if ('showOpenFilePicker' in window) {
+      try {
+        const [handle] = await (window as Window & { showOpenFilePicker: (options: { types: { description: string; accept: Record<string, string[]> }[]; multiple: boolean }) => Promise<FileSystemFileHandle[]> }).showOpenFilePicker({
+          types: [{
+            description: 'Video Signal Flow Project',
+            accept: { 'application/vsf': ['.vsf'], 'application/json': ['.json'] },
+          }],
+          multiple: false,
+        });
+        const file = await handle.getFile();
+        const content = await file.text();
+        try {
+          const project = importProject(content);
+          onLoadProject(project);
+        } catch {
+          alert('Invalid project file');
+        }
+      } catch (err) {
+        // User cancelled
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Open failed:', err);
+          // Fallback to file input
+          fileInputRef.current?.click();
+        }
+      }
+    } else {
+      // Fallback for browsers without File System Access API
+      fileInputRef.current?.click();
+    }
+  }, [onLoadProject]);
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -688,13 +750,15 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         <div className="section-title">Project</div>
         <div className="sidebar-buttons">
           <button onClick={onNewProject} title="New Project">New</button>
-          <button onClick={handleSave} title="Save Project">Save</button>
-          <button onClick={handleLoad} title="Load Project">Load</button>
-          <button onClick={handleExport} title="Export JSON">Export</button>
-          <button onClick={handleImport} title="Import JSON">Import</button>
-          <button onClick={handleDeleteProject} title="Delete">Delete</button>
+          <button onClick={handleOpenFile} title="Open .vsf file">Open</button>
+          <button onClick={handleSaveToFile} title="Save as .vsf file">Save As</button>
+          <button onClick={handleDeleteProject} title="Delete from browser">Delete</button>
         </div>
-        <div className="sidebar-buttons" style={{ marginTop: '8px' }}>
+        <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
+          <button onClick={handleSave} title="Quick save to browser">Quick Save</button>
+          <button onClick={handleLoad} title="Load from browser">Quick Load</button>
+        </div>
+        <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
           <button onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">Undo</button>
           <button onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">Redo</button>
         </div>
@@ -773,7 +837,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json"
+        accept=".vsf,.json"
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
