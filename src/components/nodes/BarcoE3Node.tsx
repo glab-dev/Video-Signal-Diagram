@@ -33,7 +33,7 @@ type BarcoE3NodeProps = NodeProps & {
 function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
-  const [draggedCard, setDraggedCard] = useState<string | null>(null);
+  const [_draggedCard, setDraggedCard] = useState<string | null>(null);
   const dragStartY = useRef<number>(0);
   const dragStartSpacing = useRef<number>(0);
 
@@ -55,16 +55,6 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     },
     [id, updateNodeData]
   );
-
-  const handleReset = useCallback(() => {
-    // Reset all card spacing and handle sides to default
-    const resetCards = data.cards.map((card) => ({
-      ...card,
-      spacing: 0,
-      handleSide: undefined
-    }));
-    updateNodeData(id, { cards: resetCards });
-  }, [id, data.cards, updateNodeData]);
 
   const updateCardLabel = useCallback(
     (cardId: string, value: string) => {

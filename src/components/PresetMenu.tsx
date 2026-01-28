@@ -13,8 +13,8 @@ interface PresetMenuProps {
 export default function PresetMenu({ nodeType, currentData, onLoadPreset, onReset }: PresetMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<NodePreset[]>([]);
-  const [showPresetList, setShowPresetList] = useState(false);
-  const [showDeleteList, setShowDeleteList] = useState(false);
+  const [_showPresetList, setShowPresetList] = useState(false);
+  const [_showDeleteList, setShowDeleteList] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleReset = useCallback(() => {

@@ -51,7 +51,7 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
 
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
-      updateNodeData(id, presetData);
+      updateNodeData(id, presetData as Partial<RouterNodeData>);
     },
     [id, updateNodeData]
   );

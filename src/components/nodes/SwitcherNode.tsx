@@ -115,7 +115,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
 
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
-      updateNodeData(id, presetData);
+      updateNodeData(id, presetData as Partial<ProcessorNodeData>);
     },
     [id, updateNodeData]
   );
@@ -139,7 +139,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const [draggedColumn, setDraggedColumn] = useState<{type: 'input' | 'output', index: number} | null>(null);
 
   // Vertical Space Tab feature - for spacing between rows
-  const [draggedPort, setDraggedPort] = useState<string | null>(null);
+  const [_draggedPort, setDraggedPort] = useState<string | null>(null);
   const dragStartY = useRef<number>(0);
   const dragStartSpacing = useRef<number>(0);
 
@@ -385,7 +385,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           placeholder="Switcher Name"
         />
         <PresetMenu
-          nodeType="switcher"
+          nodeType="processor"
           currentData={data}
           onLoadPreset={handleLoadPreset}
           onReset={handleReset}
