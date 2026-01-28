@@ -9,6 +9,10 @@ interface SidebarProps {
   projectData: ProjectData;
   onLoadProject: (project: ProjectData) => void;
   onNewProject: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 // Equipment presets with their specific I/O configurations
@@ -207,6 +211,17 @@ const EQUIPMENT_PRESETS = {
     label: 'Sources',
     items: [
       {
+        name: 'Mac',
+        type: 'genericIO',
+        color: '#4a4a4a',
+        inputs: [],
+        outputs: [
+          { name: 'HDMI', type: 'HDMI' },
+          { name: 'USB-C', type: 'USB-C' },
+          { name: 'Thunderbolt', type: 'USB-C' },
+        ],
+      },
+      {
         name: 'Laptop',
         type: 'genericIO',
         color: '#4a4a4a',
@@ -293,7 +308,7 @@ const EQUIPMENT_PRESETS = {
   },
 };
 
-export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject }: SidebarProps) {
+export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -678,6 +693,10 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
           <button onClick={handleExport} title="Export JSON">Export</button>
           <button onClick={handleImport} title="Import JSON">Import</button>
           <button onClick={handleDeleteProject} title="Delete">Delete</button>
+        </div>
+        <div className="sidebar-buttons" style={{ marginTop: '8px' }}>
+          <button onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">Undo</button>
+          <button onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">Redo</button>
         </div>
       </div>
 

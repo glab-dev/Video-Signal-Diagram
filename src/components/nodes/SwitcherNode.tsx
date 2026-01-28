@@ -46,8 +46,9 @@ type SwitcherNodeProps = NodeProps & {
 function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
 
-  // Lock at 40 inputs/outputs for Blackmagic 40x40
-  const isLocked = data.inputs.length === 40 && data.outputs.length === 40;
+  // Lock at 20x20 or 40x40 for Blackmagic switchers
+  const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
+                   (data.inputs.length === 40 && data.outputs.length === 40);
 
   const updateInput = useCallback(
     (portId: string, field: keyof ProcessorPort, value: string) => {

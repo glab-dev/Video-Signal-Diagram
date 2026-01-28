@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -22,6 +22,11 @@ import UpdateNotification from './components/UpdateNotification';
 import type { ProjectData } from './types';
 import './App.css';
 
+interface HistoryState {
+  nodes: Node[];
+  edges: Edge[];
+}
+
 const defaultProject: ProjectData = {
   id: uuidv4(),
   name: 'Untitled Project',
@@ -38,6 +43,74 @@ function Flow() {
   const [projectId, setProjectId] = useState(defaultProject.id);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
+
+  // History tracking for undo/redo
+  const [history, setHistory] = useState<HistoryState[]>([{ nodes: [], edges: [] }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const isUndoRedo = useRef(false);
+
+  // Track changes to nodes and edges for history
+  useEffect(() => {
+    if (isUndoRedo.current) {
+      isUndoRedo.current = false;
+      return;
+    }
+
+    const newState = { nodes, edges };
+    const currentState = history[historyIndex];
+
+    // Only add to history if something actually changed
+    if (JSON.stringify(currentState) !== JSON.stringify(newState)) {
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(newState);
+      // Limit history to last 50 states
+      if (newHistory.length > 50) {
+        newHistory.shift();
+      } else {
+        setHistoryIndex(historyIndex + 1);
+      }
+      setHistory(newHistory);
+    }
+  }, [nodes, edges]);
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      isUndoRedo.current = true;
+      const prevState = history[historyIndex - 1];
+      setNodes(prevState.nodes);
+      setEdges(prevState.edges);
+      setHistoryIndex(historyIndex - 1);
+    }
+  }, [historyIndex, history, setNodes, setEdges]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      isUndoRedo.current = true;
+      const nextState = history[historyIndex + 1];
+      setNodes(nextState.nodes);
+      setEdges(nextState.edges);
+      setHistoryIndex(historyIndex + 1);
+    }
+  }, [historyIndex, history, setNodes, setEdges]);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        handleUndo();
+      } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+        event.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -161,6 +234,10 @@ function Flow() {
         projectData={projectData}
         onLoadProject={onLoadProject}
         onNewProject={onNewProject}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>
