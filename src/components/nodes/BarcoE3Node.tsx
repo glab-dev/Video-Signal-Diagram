@@ -216,6 +216,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                       {card.handleSide !== 'right' ? (
                         <>
                           <Handle
+                            key={`${card.id}-${connector.id}-left-${card.handleSide || 'default'}`}
                             type="target"
                             position={Position.Left}
                             id={`${card.id}-${connector.id}-left`}
@@ -298,6 +299,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                             placeholder="Source"
                           />
                           <Handle
+                            key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                             type="target"
                             position={Position.Right}
                             id={`${card.id}-${connector.id}-right`}
@@ -363,6 +365,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                       {card.handleSide === 'left' ? (
                         <>
                           <Handle
+                            key={`${card.id}-${connector.id}-left-${card.handleSide || 'default'}`}
                             type="source"
                             position={Position.Left}
                             id={`${card.id}-${connector.id}-left`}
@@ -445,6 +448,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                             placeholder="Destination"
                           />
                           <Handle
+                            key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                             type="source"
                             position={Position.Right}
                             id={`${card.id}-${connector.id}-right`}
