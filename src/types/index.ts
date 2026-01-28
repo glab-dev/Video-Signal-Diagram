@@ -93,7 +93,7 @@ export interface BarcoE3NodeData extends BaseNodeData {
 export interface BarcoCard {
   id: string;
   label: string;
-  cardType: 'input' | 'output';
+  cardType: 'input' | 'output' | 'system';
   connectors: CardConnector[];
   handleSide?: 'left' | 'right';
 }

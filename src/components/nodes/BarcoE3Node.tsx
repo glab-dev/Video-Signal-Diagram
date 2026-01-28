@@ -101,15 +101,21 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
   );
 
   const addCard = useCallback(
-    (cardType: 'input' | 'output') => {
+    (cardType: 'input' | 'output' | 'system') => {
+      const labels = {
+        input: 'TRI COMBO - INPUT',
+        output: 'TRI COMBO - OUTPUT',
+        system: 'SYSTEM CARD'
+      };
+
       const newCard: BarcoCard = {
         id: uuidv4(),
-        label: cardType === 'input' ? 'TRI COMBO - INPUT' : 'TRI COMBO - OUTPUT',
+        label: labels[cardType],
         cardType,
         connectors: [
-          { id: uuidv4(), type: 'DP 1.2', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' ? '' : undefined },
-          { id: uuidv4(), type: 'HDMI 2.0', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' ? '' : undefined },
-          { id: uuidv4(), type: '12G SDI', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' ? '' : undefined },
+          { id: uuidv4(), type: 'DP 1.2', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' || cardType === 'system' ? '' : undefined },
+          { id: uuidv4(), type: 'HDMI 2.0', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' || cardType === 'system' ? '' : undefined },
+          { id: uuidv4(), type: '12G SDI', source: cardType === 'input' ? '' : undefined, resolution: '3840x2160@60', destination: cardType === 'output' || cardType === 'system' ? '' : undefined },
         ],
       };
       updateNodeData(id, { cards: [...data.cards, newCard] });
@@ -133,7 +139,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           // Input cards: default left (undefined), toggle to right
           return { ...card, handleSide: card.handleSide === 'right' ? undefined : 'right' };
         } else {
-          // Output cards: default right (undefined), toggle to left
+          // Output and System cards: default right (undefined), toggle to left
           return { ...card, handleSide: card.handleSide === 'left' ? undefined : 'left' };
         }
       });
@@ -146,6 +152,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
 
   const inputCards = data.cards.filter((card) => card.cardType === 'input');
   const outputCards = data.cards.filter((card) => card.cardType === 'output');
+  const systemCards = data.cards.filter((card) => card.cardType === 'system');
 
   return (
     <div
@@ -470,6 +477,155 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
             ))}
           </div>
         </div>
+
+        {/* System Cards Section */}
+        <div className="barco-cards-section">
+          <div className="cards-section-header">
+            <span>SYSTEM</span>
+            <button className="add-card-btn" onClick={() => addCard('system')}>+ Card</button>
+          </div>
+          <div className="cards-grid">
+            {systemCards.map((card) => (
+              <div key={card.id} className="barco-card output-card">
+                <div className="card-title-bar">
+                  <input
+                    className="card-title-input"
+                    value={card.label}
+                    onChange={(e) => updateCardLabel(card.id, e.target.value)}
+                    placeholder="Card Name"
+                  />
+                  <button
+                    className="toggle-side-btn"
+                    onClick={() => toggleCardSide(card.id)}
+                    title={`Switch handles to ${card.handleSide === 'left' ? 'right' : 'left'}`}
+                  >
+                    {card.handleSide === 'left' ? '→' : '←'}
+                  </button>
+                  <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
+                </div>
+                <div className="card-header-row">
+                  {card.handleSide === 'left' ? (
+                    <>
+                      <span className="card-col-header destination">DESTINATION</span>
+                      <span className="card-col-header connector">CONNECTOR</span>
+                      <span className="card-col-header resolution">RESOLUTION</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="card-col-header resolution">RESOLUTION</span>
+                      <span className="card-col-header connector">CONNECTOR</span>
+                      <span className="card-col-header destination">DESTINATION</span>
+                    </>
+                  )}
+                </div>
+                <div className="card-connectors">
+                  {card.connectors.map((connector, connectorIndex) => (
+                    <div key={`${connector.id}-${card.handleSide || 'default'}`} className="card-row">
+                      {card.handleSide === 'left' ? (
+                        <>
+                          <Handle
+                            key={`${card.id}-${connector.id}-left-${card.handleSide || 'default'}`}
+                            type="source"
+                            position={Position.Left}
+                            id={`${card.id}-${connector.id}-left`}
+                            className="port-handle"
+                            style={{
+                              top: `${calculateHandlePosition(card.id, connectorIndex, systemCards, 'system', inputCards, outputCards)}px`
+                            }}
+                          />
+                          <input
+                            value={connector.destination || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                            className="card-field destination"
+                            placeholder="Destination"
+                          />
+                          <select
+                            value={connector.type}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                            className="card-field connector"
+                          >
+                            <option value="DP 1.2">DP 1.2</option>
+                            <option value="HDMI 2.0">HDMI 2.0</option>
+                            <option value="12G SDI">12G SDI</option>
+                          </select>
+                          {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                            <select
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                              placeholder="Custom Resolution"
+                            />
+                          )}
+                          <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="remove-btn" onClick={() => removeConnector(card.id, connector.id)}>×</button>
+                          {VIDEO_RESOLUTIONS.includes(connector.resolution as any) && connector.resolution !== 'Custom' ? (
+                            <select
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                            >
+                              <option value="">Select Resolution</option>
+                              {VIDEO_RESOLUTIONS.map((res) => (
+                                <option key={res} value={res}>{res}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={connector.resolution || ''}
+                              onChange={(e) => updateConnector(card.id, connector.id, 'resolution', e.target.value)}
+                              className="card-field resolution"
+                              placeholder="Custom Resolution"
+                            />
+                          )}
+                          <select
+                            value={connector.type}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
+                            className="card-field connector"
+                          >
+                            <option value="DP 1.2">DP 1.2</option>
+                            <option value="HDMI 2.0">HDMI 2.0</option>
+                            <option value="12G SDI">12G SDI</option>
+                          </select>
+                          <input
+                            value={connector.destination || ''}
+                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                            className="card-field destination"
+                            placeholder="Destination"
+                          />
+                          <Handle
+                            key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
+                            type="source"
+                            position={Position.Right}
+                            id={`${card.id}-${connector.id}-right`}
+                            className="port-handle"
+                            style={{
+                              top: `${calculateHandlePosition(card.id, connectorIndex, systemCards, 'system', inputCards, outputCards)}px`
+                            }}
+                          />
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button className="add-connector-btn-small" onClick={() => addConnector(card.id)}>+</button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -480,8 +636,9 @@ function calculateHandlePosition(
   cardId: string,
   connectorIndex: number,
   cards: BarcoCard[],
-  cardType: 'input' | 'output',
-  allInputCards: BarcoCard[]
+  cardType: 'input' | 'output' | 'system',
+  allInputCards: BarcoCard[],
+  allOutputCards: BarcoCard[] = []
 ): number {
   const headerHeight = 50; // Node header
   const sectionHeaderHeight = 40; // Cards section header
@@ -499,7 +656,7 @@ function calculateHandlePosition(
     previousCardsHeight += cardTitleHeight + cardHeaderRowHeight + (previousCard.connectors.length * connectorRowHeight) + 40; // 40 for padding and + button
   }
 
-  // Calculate offset based on card type (input cards are at top, output cards at bottom)
+  // Calculate offset based on card type
   let baseOffset = headerHeight + sectionHeaderHeight;
 
   if (cardType === 'output') {
@@ -508,6 +665,18 @@ function calculateHandlePosition(
       return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
     }, 0) + 40; // Extra padding for section
     baseOffset += inputSectionHeight;
+  } else if (cardType === 'system') {
+    // Add height of input section
+    const inputSectionHeight = allInputCards.reduce((sum, card) => {
+      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
+    }, 0) + 40; // Extra padding for section
+
+    // Add height of output section
+    const outputSectionHeight = allOutputCards.reduce((sum, card) => {
+      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
+    }, 0) + 40; // Extra padding for section
+
+    baseOffset += inputSectionHeight + outputSectionHeight;
   }
 
   // Center the handle vertically in the connector row
