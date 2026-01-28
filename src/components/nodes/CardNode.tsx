@@ -1,8 +1,9 @@
 import { memo, useCallback } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { CardNodeData, CardConnector } from '../../types';
+import type { CardNodeData, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PresetMenu from '../PresetMenu';
 
 type CardNodeProps = NodeProps & {
   data: CardNodeData;
@@ -23,6 +24,19 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
     const newType = data.cardType === 'input' ? 'output' : 'input';
     updateNodeData(id, { cardType: newType });
   }, [id, data.cardType, updateNodeData]);
+
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      const cardData = presetData as CardNodeData;
+      updateNodeData(id, {
+        label: cardData.label,
+        color: cardData.color,
+        cardType: cardData.cardType,
+        connectors: cardData.connectors
+      });
+    },
+    [id, updateNodeData]
+  );
 
   const updateConnector = useCallback(
     (connectorId: string, field: keyof CardConnector, value: string) => {
@@ -78,6 +92,11 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
           value={data.label}
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Card Name"
+        />
+        <PresetMenu
+          nodeType="card"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
         />
         <button
           className="layout-toggle-btn"

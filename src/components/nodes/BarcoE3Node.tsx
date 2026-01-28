@@ -1,8 +1,9 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState, useRef } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { BarcoE3NodeData, BarcoCard, CardConnector } from '../../types';
+import type { BarcoE3NodeData, BarcoCard, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PresetMenu from '../PresetMenu';
 
 // Top 15 video resolutions plus Custom option
 const VIDEO_RESOLUTIONS = [
@@ -32,6 +33,9 @@ type BarcoE3NodeProps = NodeProps & {
 function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
+  const [draggedCard, setDraggedCard] = useState<string | null>(null);
+  const dragStartY = useRef<number>(0);
+  const dragStartSpacing = useRef<number>(0);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -39,6 +43,28 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     },
     [id, updateNodeData]
   );
+
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      const barcoData = presetData as BarcoE3NodeData;
+      updateNodeData(id, {
+        label: barcoData.label,
+        color: barcoData.color,
+        cards: barcoData.cards
+      });
+    },
+    [id, updateNodeData]
+  );
+
+  const handleReset = useCallback(() => {
+    // Reset all card spacing and handle sides to default
+    const resetCards = data.cards.map((card) => ({
+      ...card,
+      spacing: 0,
+      handleSide: undefined
+    }));
+    updateNodeData(id, { cards: resetCards });
+  }, [id, data.cards, updateNodeData]);
 
   const updateCardLabel = useCallback(
     (cardId: string, value: string) => {
@@ -150,6 +176,36 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     [id, data.cards, updateNodeData, updateNodeInternals]
   );
 
+  const handleSpacingMouseDown = useCallback(
+    (e: React.MouseEvent, cardId: string, currentSpacing: number) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDraggedCard(cardId);
+      dragStartY.current = e.clientY;
+      dragStartSpacing.current = currentSpacing || 0;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = moveEvent.clientY - dragStartY.current;
+        const newSpacing = Math.max(0, dragStartSpacing.current + deltaY);
+
+        const newCards = data.cards.map((card) =>
+          card.id === cardId ? { ...card, spacing: newSpacing } : card
+        );
+        updateNodeData(id, { cards: newCards });
+      };
+
+      const handleMouseUp = () => {
+        setDraggedCard(null);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [id, data.cards, updateNodeData]
+  );
+
   const inputCards = data.cards.filter((card) => card.cardType === 'input');
   const outputCards = data.cards.filter((card) => card.cardType === 'output');
   const systemCards = data.cards.filter((card) => card.cardType === 'system');
@@ -177,6 +233,11 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Barco E3"
         />
+        <PresetMenu
+          nodeType="barcoE3"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
+        />
       </div>
 
       <div className="barco-e3-content">
@@ -188,23 +249,31 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           </div>
           <div className="cards-grid">
             {inputCards.map((card) => (
-              <div key={card.id} className="barco-card input-card">
-                <div className="card-title-bar">
-                  <input
-                    className="card-title-input"
-                    value={card.label}
-                    onChange={(e) => updateCardLabel(card.id, e.target.value)}
-                    placeholder="Card Name"
-                  />
-                  <button
-                    className="toggle-side-btn"
-                    onClick={() => toggleCardSide(card.id)}
-                    title={`Switch handles to ${card.handleSide === 'right' ? 'left' : 'right'}`}
-                  >
-                    {card.handleSide === 'right' ? '←' : '→'}
-                  </button>
-                  <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
-                </div>
+              <div key={card.id} style={{ marginTop: `${card.spacing || 0}px` }}>
+                <div className="barco-card input-card">
+                  <div className="card-title-bar">
+                    <input
+                      className="card-title-input"
+                      value={card.label}
+                      onChange={(e) => updateCardLabel(card.id, e.target.value)}
+                      placeholder="Card Name"
+                    />
+                    <div
+                      className="spacing-drag-handle nodrag"
+                      onMouseDown={(e) => handleSpacingMouseDown(e, card.id, card.spacing || 0)}
+                      title="Drag down to move card and create space above"
+                    >
+                      ⋮
+                    </div>
+                    <button
+                      className="toggle-side-btn"
+                      onClick={() => toggleCardSide(card.id)}
+                      title={`Switch handles to ${card.handleSide === 'right' ? 'left' : 'right'}`}
+                    >
+                      {card.handleSide === 'right' ? '←' : '→'}
+                    </button>
+                    <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
+                  </div>
                 <div className="card-header-row">
                   {card.handleSide !== 'right' ? (
                     <>
@@ -324,6 +393,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   ))}
                 </div>
                 <button className="add-connector-btn-small" onClick={() => addConnector(card.id)}>+</button>
+                </div>
               </div>
             ))}
           </div>
@@ -337,23 +407,31 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           </div>
           <div className="cards-grid">
             {outputCards.map((card) => (
-              <div key={card.id} className="barco-card output-card">
-                <div className="card-title-bar">
-                  <input
-                    className="card-title-input"
-                    value={card.label}
-                    onChange={(e) => updateCardLabel(card.id, e.target.value)}
-                    placeholder="Card Name"
-                  />
-                  <button
-                    className="toggle-side-btn"
-                    onClick={() => toggleCardSide(card.id)}
-                    title={`Switch handles to ${card.handleSide === 'left' ? 'right' : 'left'}`}
-                  >
-                    {card.handleSide === 'left' ? '→' : '←'}
-                  </button>
-                  <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
-                </div>
+              <div key={card.id} style={{ marginTop: `${card.spacing || 0}px` }}>
+                <div className="barco-card output-card">
+                  <div className="card-title-bar">
+                    <input
+                      className="card-title-input"
+                      value={card.label}
+                      onChange={(e) => updateCardLabel(card.id, e.target.value)}
+                      placeholder="Card Name"
+                    />
+                    <div
+                      className="spacing-drag-handle nodrag"
+                      onMouseDown={(e) => handleSpacingMouseDown(e, card.id, card.spacing || 0)}
+                      title="Drag down to move card and create space above"
+                    >
+                      ⋮
+                    </div>
+                    <button
+                      className="toggle-side-btn"
+                      onClick={() => toggleCardSide(card.id)}
+                      title={`Switch handles to ${card.handleSide === 'left' ? 'right' : 'left'}`}
+                    >
+                      {card.handleSide === 'left' ? '→' : '←'}
+                    </button>
+                    <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
+                  </div>
                 <div className="card-header-row">
                   {card.handleSide === 'left' ? (
                     <>
@@ -473,6 +551,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   ))}
                 </div>
                 <button className="add-connector-btn-small" onClick={() => addConnector(card.id)}>+</button>
+                </div>
               </div>
             ))}
           </div>
@@ -486,17 +565,25 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           </div>
           <div className="cards-grid">
             {systemCards.map((card) => (
-              <div key={card.id} className="barco-card output-card">
-                <div className="card-title-bar">
-                  <button
-                    className="toggle-side-btn"
-                    onClick={() => toggleCardSide(card.id)}
-                    title={`Switch handles to ${card.handleSide === 'left' ? 'right' : 'left'}`}
-                  >
-                    {card.handleSide === 'left' ? '→' : '←'}
-                  </button>
-                  <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
-                </div>
+              <div key={card.id} style={{ marginTop: `${card.spacing || 0}px` }}>
+                <div className="barco-card output-card">
+                  <div className="card-title-bar">
+                    <div
+                      className="spacing-drag-handle nodrag"
+                      onMouseDown={(e) => handleSpacingMouseDown(e, card.id, card.spacing || 0)}
+                      title="Drag down to move card and create space above"
+                    >
+                      ⋮
+                    </div>
+                    <button
+                      className="toggle-side-btn"
+                      onClick={() => toggleCardSide(card.id)}
+                      title={`Switch handles to ${card.handleSide === 'left' ? 'right' : 'left'}`}
+                    >
+                      {card.handleSide === 'left' ? '→' : '←'}
+                    </button>
+                    <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
+                  </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
                     <div key={`${connector.id}-${card.handleSide || 'default'}`} className="card-row">
@@ -601,6 +688,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   ))}
                 </div>
                 <button className="add-connector-btn-small" onClick={() => addConnector(card.id)}>+</button>
+                </div>
               </div>
             ))}
           </div>
@@ -633,6 +721,7 @@ function calculateHandlePosition(
   for (let i = 0; i < cardIndex; i++) {
     const previousCard = cards[i];
     previousCardsHeight += cardTitleHeight + cardHeaderRowHeight + (previousCard.connectors.length * connectorRowHeight) + 40; // 40 for padding and + button
+    previousCardsHeight += previousCard.spacing || 0; // Add spacing for this card
   }
 
   // Calculate offset based on card type
@@ -641,18 +730,18 @@ function calculateHandlePosition(
   if (cardType === 'output') {
     // Add height of input section
     const inputSectionHeight = allInputCards.reduce((sum, card) => {
-      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
+      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
     }, 0) + 40; // Extra padding for section
     baseOffset += inputSectionHeight;
   } else if (cardType === 'system') {
     // Add height of input section
     const inputSectionHeight = allInputCards.reduce((sum, card) => {
-      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
+      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
     }, 0) + 40; // Extra padding for section
 
     // Add height of output section
     const outputSectionHeight = allOutputCards.reduce((sum, card) => {
-      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40;
+      return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
     }, 0) + 40; // Extra padding for section
 
     baseOffset += inputSectionHeight + outputSectionHeight;

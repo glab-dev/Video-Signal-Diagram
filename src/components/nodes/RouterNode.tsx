@@ -1,8 +1,9 @@
 import { memo, useCallback } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { RouterNodeData, RouterRow } from '../../types';
+import type { RouterNodeData, RouterRow, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PresetMenu from '../PresetMenu';
 
 type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
@@ -48,6 +49,13 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
     [id, updateNodeData]
   );
 
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      updateNodeData(id, presetData);
+    },
+    [id, updateNodeData]
+  );
+
   return (
     <div
       className={`node-router ${selected ? 'selected' : ''}`}
@@ -72,6 +80,11 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
           value={data.label}
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Router Name"
+        />
+        <PresetMenu
+          nodeType="router"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
         />
       </div>
 

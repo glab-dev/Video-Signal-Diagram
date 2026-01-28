@@ -1,8 +1,9 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useState, useRef } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType } from '../../types';
+import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PresetMenu from '../PresetMenu';
 
 // Top 15 video resolutions plus Custom option
 const VIDEO_RESOLUTIONS = [
@@ -112,11 +113,35 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     [id, updateNodeData]
   );
 
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      updateNodeData(id, presetData);
+    },
+    [id, updateNodeData]
+  );
+
+  const handleReset = useCallback(() => {
+    // Reset to default configuration
+    const resetInputs = data.inputs.map((port) => ({ ...port, spacing: 0 }));
+    const resetOutputs = data.outputs.map((port) => ({ ...port, spacing: 0 }));
+    updateNodeData(id, {
+      inputColumnOrder: ['connection', 'name', 'resolution'],
+      outputColumnOrder: ['destination', 'name', 'resolution'],
+      inputs: resetInputs,
+      outputs: resetOutputs
+    });
+  }, [id, data.inputs, data.outputs, updateNodeData]);
+
   // Column ordering
   const inputColumnOrder = data.inputColumnOrder || ['connection', 'name', 'resolution'];
   const outputColumnOrder = data.outputColumnOrder || ['destination', 'name', 'resolution'];
 
   const [draggedColumn, setDraggedColumn] = useState<{type: 'input' | 'output', index: number} | null>(null);
+
+  // Vertical Space Tab feature - for spacing between rows
+  const [draggedPort, setDraggedPort] = useState<string | null>(null);
+  const dragStartY = useRef<number>(0);
+  const dragStartSpacing = useRef<number>(0);
 
   const reorderInputColumns = useCallback((dragIndex: number, dropIndex: number) => {
     const newOrder = [...inputColumnOrder];
@@ -165,6 +190,68 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     }
     setDraggedColumn(null);
   }, [reorderInputColumns, reorderOutputColumns]);
+
+  // Vertical Space Tab handlers for inputs
+  const handleInputSpacingMouseDown = useCallback(
+    (e: React.MouseEvent, portId: string, currentSpacing: number) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDraggedPort(portId);
+      dragStartY.current = e.clientY;
+      dragStartSpacing.current = currentSpacing || 0;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = moveEvent.clientY - dragStartY.current;
+        const newSpacing = Math.max(0, dragStartSpacing.current + deltaY);
+
+        const newInputs = data.inputs.map((port) =>
+          port.id === portId ? { ...port, spacing: newSpacing } : port
+        );
+        updateNodeData(id, { inputs: newInputs });
+      };
+
+      const handleMouseUp = () => {
+        setDraggedPort(null);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [id, data.inputs, updateNodeData]
+  );
+
+  // Vertical Space Tab handlers for outputs
+  const handleOutputSpacingMouseDown = useCallback(
+    (e: React.MouseEvent, portId: string, currentSpacing: number) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDraggedPort(portId);
+      dragStartY.current = e.clientY;
+      dragStartSpacing.current = currentSpacing || 0;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = moveEvent.clientY - dragStartY.current;
+        const newSpacing = Math.max(0, dragStartSpacing.current + deltaY);
+
+        const newOutputs = data.outputs.map((port) =>
+          port.id === portId ? { ...port, spacing: newSpacing } : port
+        );
+        updateNodeData(id, { outputs: newOutputs });
+      };
+
+      const handleMouseUp = () => {
+        setDraggedPort(null);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [id, data.outputs, updateNodeData]
+  );
 
   const renderInputField = useCallback((port: ProcessorPort, fieldName: InputFieldType) => {
     const config = INPUT_FIELD_CONFIG[fieldName];
@@ -297,6 +384,12 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Switcher Name"
         />
+        <PresetMenu
+          nodeType="switcher"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
+          onReset={handleReset}
+        />
       </div>
 
       <div className="switcher-content">
@@ -333,15 +426,24 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           </div>
           <div className="port-list">
             {data.inputs.map((port) => (
-              <div key={port.id} className="port-row" style={isLocked ? { paddingRight: '10px' } : undefined}>
-                <Handle
-                  type="target"
-                  position={Position.Left}
-                  id={`input-${port.id}`}
-                  className="port-handle left"
-                />
-                {inputColumnOrder.map((fieldName) => renderInputField(port, fieldName))}
-                {!isLocked && <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>}
+              <div key={port.id} style={{ marginTop: `${port.spacing || 0}px` }}>
+                <div className="port-row" style={isLocked ? { paddingRight: '10px' } : undefined}>
+                  <div
+                    className="spacing-drag-handle nodrag"
+                    onMouseDown={(e) => handleInputSpacingMouseDown(e, port.id, port.spacing || 0)}
+                    title="Drag down to move row and create space above"
+                  >
+                    ⋮
+                  </div>
+                  <Handle
+                    type="target"
+                    position={Position.Left}
+                    id={`input-${port.id}`}
+                    className="port-handle left"
+                  />
+                  {inputColumnOrder.map((fieldName) => renderInputField(port, fieldName))}
+                  {!isLocked && <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>}
+                </div>
               </div>
             ))}
           </div>
@@ -380,15 +482,24 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           </div>
           <div className="port-list">
             {data.outputs.map((port) => (
-              <div key={port.id} className="port-row output" style={isLocked ? { paddingRight: '10px' } : undefined}>
-                {outputColumnOrder.map((fieldName) => renderOutputField(port, fieldName))}
-                {!isLocked && <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>}
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={`output-${port.id}`}
-                  className="port-handle right"
-                />
+              <div key={port.id} style={{ marginTop: `${port.spacing || 0}px` }}>
+                <div className="port-row output" style={isLocked ? { paddingRight: '10px' } : undefined}>
+                  <div
+                    className="spacing-drag-handle nodrag"
+                    onMouseDown={(e) => handleOutputSpacingMouseDown(e, port.id, port.spacing || 0)}
+                    title="Drag down to move row and create space above"
+                  >
+                    ⋮
+                  </div>
+                  {outputColumnOrder.map((fieldName) => renderOutputField(port, fieldName))}
+                  {!isLocked && <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>}
+                  <Handle
+                    type="source"
+                    position={Position.Right}
+                    id={`output-${port.id}`}
+                    className="port-handle right"
+                  />
+                </div>
               </div>
             ))}
           </div>

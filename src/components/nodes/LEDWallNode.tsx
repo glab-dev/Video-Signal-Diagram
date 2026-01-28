@@ -1,7 +1,8 @@
 import { memo, useCallback, useRef } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { LEDWallNodeData } from '../../types';
+import type { LEDWallNodeData, NodeData } from '../../types';
+import PresetMenu from '../PresetMenu';
 
 type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
@@ -15,6 +16,20 @@ function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
+    },
+    [id, updateNodeData]
+  );
+
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      const ledWallData = presetData as LEDWallNodeData;
+      updateNodeData(id, {
+        label: ledWallData.label,
+        color: ledWallData.color,
+        imageUrl: ledWallData.imageUrl,
+        width: ledWallData.width,
+        height: ledWallData.height
+      });
     },
     [id, updateNodeData]
   );
@@ -62,6 +77,11 @@ function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
           value={data.label}
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="LED Wall Name"
+        />
+        <PresetMenu
+          nodeType="ledWall"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
         />
       </div>
 

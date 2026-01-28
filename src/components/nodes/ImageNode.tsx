@@ -1,7 +1,8 @@
 import { memo, useCallback, useRef } from 'react';
 import { useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { ImageNodeData } from '../../types';
+import type { ImageNodeData, NodeData } from '../../types';
+import PresetMenu from '../PresetMenu';
 
 type ImageNodeProps = NodeProps & {
   data: ImageNodeData;
@@ -14,6 +15,19 @@ function ImageNode({ id, data, selected }: ImageNodeProps) {
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
+    },
+    [id, updateNodeData]
+  );
+
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      const imageData = presetData as ImageNodeData;
+      updateNodeData(id, {
+        label: imageData.label,
+        imageUrl: imageData.imageUrl,
+        width: imageData.width,
+        height: imageData.height
+      });
     },
     [id, updateNodeData]
   );
@@ -45,16 +59,19 @@ function ImageNode({ id, data, selected }: ImageNodeProps) {
         minHeight={100}
       />
       <div className={`node-image ${selected ? 'selected' : ''}`}>
-        {data.label && (
-          <div className="image-label">
-            <input
-              className="image-label-input"
-              value={data.label}
-              onChange={(e) => updateLabel(e.target.value)}
-              placeholder="Image Label"
-            />
-          </div>
-        )}
+        <div className="image-label">
+          <input
+            className="image-label-input"
+            value={data.label}
+            onChange={(e) => updateLabel(e.target.value)}
+            placeholder="Image Label"
+          />
+          <PresetMenu
+            nodeType="image"
+            currentData={data}
+            onLoadPreset={handleLoadPreset}
+          />
+        </div>
         {data.imageUrl ? (
           <div className="image-container" onDoubleClick={triggerFileInput}>
             <img src={data.imageUrl} alt={data.label} className="node-image-content" />

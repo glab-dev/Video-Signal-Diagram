@@ -1,8 +1,9 @@
 import { memo, useCallback } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { GenericIONodeData, Port } from '../../types';
+import type { GenericIONodeData, Port, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PresetMenu from '../PresetMenu';
 
 type GenericIONodeProps = NodeProps & {
   data: GenericIONodeData;
@@ -33,6 +34,19 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
   const updateColor = useCallback(
     (color: string) => {
       updateNodeData(id, { color });
+    },
+    [id, updateNodeData]
+  );
+
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      const genericData = presetData as GenericIONodeData;
+      updateNodeData(id, {
+        label: genericData.label,
+        color: genericData.color,
+        inputs: genericData.inputs,
+        outputs: genericData.outputs
+      });
     },
     [id, updateNodeData]
   );
@@ -113,6 +127,11 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
           value={data.label}
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Device Name"
+        />
+        <PresetMenu
+          nodeType="genericIO"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
         />
       </div>
 

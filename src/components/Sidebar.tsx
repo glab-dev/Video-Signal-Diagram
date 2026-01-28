@@ -570,9 +570,18 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     onAddNode(node);
   }, [onAddNode]);
 
-  const handleSave = useCallback(async () => {
-    await saveProject(projectData);
-    alert('Project saved!');
+  const handleSave = useCallback(() => {
+    const filename = prompt('Save As:', projectData.name);
+    if (filename) {
+      const json = exportProject(projectData);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename.replace(/\s+/g, '_')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   }, [projectData]);
 
   const handleLoad = useCallback(async () => {

@@ -1,20 +1,29 @@
 import { openDB } from 'idb';
 import type { IDBPDatabase } from 'idb';
-import type { ProjectData } from '../types';
+import type { ProjectData, NodePreset } from '../types';
 
 const DB_NAME = 'video-signal-flow';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'projects';
+const PRESETS_STORE_NAME = 'presets';
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function getDB() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
+        // Create projects store if it doesn't exist
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
           store.createIndex('updatedAt', 'updatedAt');
+        }
+
+        // Create presets store if upgrading to v2+
+        if (oldVersion < 2 && !db.objectStoreNames.contains(PRESETS_STORE_NAME)) {
+          const presetsStore = db.createObjectStore(PRESETS_STORE_NAME, { keyPath: 'id' });
+          presetsStore.createIndex('nodeType', 'nodeType');
+          presetsStore.createIndex('createdAt', 'createdAt');
         }
       },
     });
@@ -59,4 +68,25 @@ export function importProject(jsonString: string): ProjectData {
     ...data,
     updatedAt: Date.now(),
   };
+}
+
+// Preset Management Functions
+export async function savePreset(preset: NodePreset): Promise<void> {
+  const db = await getDB();
+  await db.put(PRESETS_STORE_NAME, preset);
+}
+
+export async function getPresetsByType(nodeType: string): Promise<NodePreset[]> {
+  const db = await getDB();
+  return db.getAllFromIndex(PRESETS_STORE_NAME, 'nodeType', nodeType);
+}
+
+export async function getAllPresets(): Promise<NodePreset[]> {
+  const db = await getDB();
+  return db.getAll(PRESETS_STORE_NAME);
+}
+
+export async function deletePreset(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete(PRESETS_STORE_NAME, id);
 }

@@ -1,8 +1,9 @@
 import { memo, useCallback } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { ProcessorNodeData, ProcessorPort } from '../../types';
+import type { ProcessorNodeData, ProcessorPort, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PresetMenu from '../PresetMenu';
 
 type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
@@ -74,6 +75,13 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
     [id, updateNodeData]
   );
 
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      updateNodeData(id, presetData);
+    },
+    [id, updateNodeData]
+  );
+
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
@@ -121,6 +129,11 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
           value={data.label}
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Processor Name"
+        />
+        <PresetMenu
+          nodeType="processor"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
         />
         <button
           className="layout-toggle-btn"

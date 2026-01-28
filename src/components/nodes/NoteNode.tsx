@@ -1,7 +1,8 @@
 import { memo, useCallback } from 'react';
 import { useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { NoteNodeData } from '../../types';
+import type { NoteNodeData, NodeData } from '../../types';
+import PresetMenu from '../PresetMenu';
 
 type NoteNodeProps = NodeProps & {
   data: NoteNodeData;
@@ -42,6 +43,18 @@ function NoteNode({ id, data, selected, measured }: NoteNodeProps) {
     [id, updateNodeData]
   );
 
+  const handleLoadPreset = useCallback(
+    (presetData: NodeData) => {
+      const noteData = presetData as NoteNodeData;
+      updateNodeData(id, {
+        label: noteData.label,
+        content: noteData.content,
+        backgroundColor: noteData.backgroundColor
+      });
+    },
+    [id, updateNodeData]
+  );
+
   const bgColor = data.backgroundColor || '#ffeb3b';
 
   return (
@@ -66,6 +79,11 @@ function NoteNode({ id, data, selected, measured }: NoteNodeProps) {
           value={data.label}
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Note Title"
+        />
+        <PresetMenu
+          nodeType="note"
+          currentData={data}
+          onLoadPreset={handleLoadPreset}
         />
         <div className="note-color-picker">
           {NOTE_COLORS.map((color) => (

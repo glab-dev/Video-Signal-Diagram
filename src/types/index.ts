@@ -48,6 +48,7 @@ export interface ProcessorPort {
   connection: string;
   resolution: string;
   destination?: string;
+  spacing?: number;
 }
 
 // LED Wall node - for displaying raster images
@@ -101,6 +102,7 @@ export interface BarcoCard {
   cardType: 'input' | 'output' | 'system';
   connectors: CardConnector[];
   handleSide?: 'left' | 'right';
+  spacing?: number;
 }
 
 // Union type for all node data
@@ -140,4 +142,13 @@ export interface LabeledEdge extends Edge {
   data?: {
     label?: string;
   };
+}
+
+// Preset configuration
+export interface NodePreset {
+  id: string;
+  name: string;
+  nodeType: CustomNodeType;
+  data: NodeData;
+  createdAt: number;
 }
