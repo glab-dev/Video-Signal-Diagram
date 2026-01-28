@@ -340,6 +340,31 @@ function Flow() {
     (event: React.DragEvent) => {
       event.preventDefault();
 
+      // Check for saved preset data first
+      const presetData = event.dataTransfer.getData('application/reactflow');
+      if (presetData) {
+        try {
+          const parsed = JSON.parse(presetData);
+          if (parsed.type === 'savedPreset' && parsed.preset) {
+            const position = screenToFlowPosition({
+              x: event.clientX,
+              y: event.clientY,
+            });
+            const node: Node = {
+              id: uuidv4(),
+              type: parsed.preset.nodeType,
+              position,
+              data: { ...parsed.preset.data },
+            };
+            setNodes((nds) => [...nds, node]);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to parse preset data:', error);
+        }
+      }
+
+      // Handle image file drops
       const files = event.dataTransfer.files;
       if (files.length > 0 && files[0].type.startsWith('image/')) {
         const file = files[0];

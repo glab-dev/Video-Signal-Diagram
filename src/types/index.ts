@@ -150,5 +150,6 @@ export interface NodePreset {
   name: string;
   nodeType: CustomNodeType;
   data: NodeData;
+  category?: string; // Optional category for organizing in sidebar
   createdAt: number;
 }

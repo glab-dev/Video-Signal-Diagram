@@ -185,6 +185,58 @@
   flex-shrink: 0;
 }
 
+/* Saved Presets in Sidebar */
+.saved-presets-divider {
+  padding: 8px 8px 4px;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #888;
+  font-weight: 600;
+  border-top: 1px solid #2a2a3a;
+  margin-top: 8px;
+}
+
+.saved-preset-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: grab;
+}
+
+.saved-preset-item:active {
+  cursor: grabbing;
+}
+
+.saved-preset-item .node-btn {
+  flex: 1;
+}
+
+.delete-preset-btn {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  padding: 0;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 3px;
+  color: #ff6666;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.delete-preset-btn:hover {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: rgba(255, 0, 0, 0.5);
+  color: #ff8888;
+}
+
 /* Project Panel */
 .project-panel {
   background: rgba(0, 0, 0, 0.6);

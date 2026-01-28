@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '@xyflow/react';
-import type { ProjectData } from '../types';
-import { exportProject, importProject, deleteProject, getAllProjects } from '../store/db';
+import type { ProjectData, NodePreset } from '../types';
+import { exportProject, importProject, deleteProject, getAllProjects, getAllPresets, deletePreset } from '../store/db';
 
 // Recent files stored in localStorage
 interface RecentFile {
@@ -353,15 +353,48 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
   });
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
   const [showRecents, setShowRecents] = useState(false);
+  const [savedPresets, setSavedPresets] = useState<NodePreset[]>([]);
 
-  // Load recent files on mount
+  // Load recent files and saved presets on mount
   useEffect(() => {
     setRecentFiles(getRecentFiles());
+    loadSavedPresets();
+  }, []);
+
+  const loadSavedPresets = useCallback(async () => {
+    const presets = await getAllPresets();
+    setSavedPresets(presets);
   }, []);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }));
   };
+
+  const addSavedPresetNode = useCallback((preset: NodePreset) => {
+    // Create a new node from saved preset data
+    const node: Node = {
+      id: uuidv4(),
+      type: preset.nodeType,
+      position: { x: 100, y: 100 },
+      data: { ...preset.data },
+    };
+    onAddNode(node);
+  }, [onAddNode]);
+
+  const handleDeleteSavedPreset = useCallback(async (presetId: string) => {
+    if (confirm('Delete this saved node configuration?')) {
+      await deletePreset(presetId);
+      await loadSavedPresets();
+    }
+  }, [loadSavedPresets]);
+
+  const handleDragStart = useCallback((e: React.DragEvent, preset: NodePreset) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('application/reactflow', JSON.stringify({
+      type: 'savedPreset',
+      preset: preset,
+    }));
+  }, []);
 
   const addPresetNode = useCallback((preset: typeof EQUIPMENT_PRESETS.brompton.items[0]) => {
     let node: Node;
@@ -882,27 +915,61 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       </div>
 
       {/* Equipment Categories */}
-      {Object.entries(EQUIPMENT_PRESETS).map(([key, category]) => (
-        <div className="sidebar-section" key={key}>
-          <div className="category-header" onClick={() => toggleCategory(key)}>
-            <span>{expandedCategories[key] ? '▼' : '▶'} {category.label}</span>
-          </div>
-          {expandedCategories[key] && (
-            <div className="category-items">
-              {category.items.map((item, index) => (
-                <button
-                  key={index}
-                  className="node-btn"
-                  onClick={() => addPresetNode(item as typeof EQUIPMENT_PRESETS.brompton.items[0])}
-                >
-                  <span className="node-icon" style={{ background: item.color }}></span>
-                  {item.name}
-                </button>
-              ))}
+      {Object.entries(EQUIPMENT_PRESETS).map(([key, category]) => {
+        const categorySavedPresets = savedPresets.filter(p => p.category === key);
+        return (
+          <div className="sidebar-section" key={key}>
+            <div className="category-header" onClick={() => toggleCategory(key)}>
+              <span>{expandedCategories[key] ? '▼' : '▶'} {category.label}</span>
             </div>
-          )}
-        </div>
-      ))}
+            {expandedCategories[key] && (
+              <div className="category-items">
+                {category.items.map((item, index) => (
+                  <button
+                    key={index}
+                    className="node-btn"
+                    onClick={() => addPresetNode(item as typeof EQUIPMENT_PRESETS.brompton.items[0])}
+                  >
+                    <span className="node-icon" style={{ background: item.color }}></span>
+                    {item.name}
+                  </button>
+                ))}
+                {categorySavedPresets.length > 0 && (
+                  <>
+                    <div className="saved-presets-divider">Saved Configs</div>
+                    {categorySavedPresets.map((preset) => (
+                      <div
+                        key={preset.id}
+                        className="saved-preset-item"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, preset)}
+                      >
+                        <button
+                          className="node-btn"
+                          onClick={() => addSavedPresetNode(preset)}
+                        >
+                          <span className="node-icon" style={{ background: (preset.data as { color?: string }).color || '#666' }}></span>
+                          {preset.name}
+                        </button>
+                        <button
+                          className="delete-preset-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSavedPreset(preset.id);
+                          }}
+                          title="Delete saved config"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       <input
         ref={fileInputRef}

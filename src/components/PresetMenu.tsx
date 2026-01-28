@@ -54,18 +54,40 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
     const name = prompt('Enter preset name:');
     if (!name) return;
 
+    // Ask for category
+    const categoryOptions = ['brompton', 'barco', 'blackmagic', 'sources', 'destinations', 'basic'];
+    const categoryChoice = prompt(
+      `Choose category (or leave empty for node-only access):\n\n` +
+      categoryOptions.map((c, i) => `${i + 1}. ${c}`).join('\n') +
+      '\n\nEnter number or category name:'
+    );
+
+    let category: string | undefined = undefined;
+    if (categoryChoice) {
+      const choiceNum = parseInt(categoryChoice);
+      if (choiceNum >= 1 && choiceNum <= categoryOptions.length) {
+        category = categoryOptions[choiceNum - 1];
+      } else if (categoryOptions.includes(categoryChoice.toLowerCase())) {
+        category = categoryChoice.toLowerCase();
+      }
+    }
+
     const preset: NodePreset = {
       id: uuidv4(),
       name,
       nodeType,
       data: currentData,
+      category,
       createdAt: Date.now(),
     };
 
     await savePreset(preset);
     await loadPresets();
     setIsOpen(false);
-    alert(`Preset "${name}" saved successfully!`);
+    const msg = category
+      ? `Preset "${name}" saved to ${category} category!`
+      : `Preset "${name}" saved (node menu only)!`;
+    alert(msg);
   }, [nodeType, currentData, loadPresets]);
 
   const handleLoadPreset = useCallback(
