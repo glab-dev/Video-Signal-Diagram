@@ -36,6 +36,28 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
     return names.sort();
   }, [allNodes, id]);
 
+  // Get all destination node names (nodes that have inputs - they can be destinations)
+  const destinationNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have inputs (they can be destinations)
+      const nodeData = node.data as { label?: string; inputs?: unknown[]; connectors?: Array<{ source?: string }> };
+      // Check for inputs array or input connectors
+      const hasInputs = nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0;
+      const hasInputConnectors = nodeData?.connectors && Array.isArray(nodeData.connectors) &&
+        nodeData.connectors.some(c => c.source !== undefined);
+      if (hasInputs || hasInputConnectors) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
+
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
@@ -214,12 +236,29 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
                     <option value="HDMI 2.0">HDMI 2.0</option>
                     <option value="12G SDI">12G SDI</option>
                   </select>
-                  <input
-                    value={connector.destination || ''}
-                    onChange={(e) => updateConnector(connector.id, 'destination', e.target.value)}
+                  <select
+                    value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        const customName = prompt('Enter custom destination name:');
+                        if (customName) {
+                          updateConnector(connector.id, 'destination', customName);
+                        }
+                      } else {
+                        updateConnector(connector.id, 'destination', e.target.value);
+                      }
+                    }}
                     className="card-field destination"
-                    placeholder="Destination"
-                  />
+                  >
+                    <option value="">Select Destination</option>
+                    {connector.destination && !destinationNames.includes(connector.destination) && (
+                      <option value={connector.destination}>{connector.destination}</option>
+                    )}
+                    {destinationNames.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                    <option value="__custom__">Custom...</option>
+                  </select>
                 </>
               )}
               <button className="remove-btn" onClick={() => removeConnector(connector.id)}>×</button>

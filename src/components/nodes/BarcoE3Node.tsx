@@ -59,6 +59,27 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     return names.sort();
   }, [allNodes, id]);
 
+  // Get all destination node names (nodes that have inputs - they can be destinations)
+  const destinationNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have inputs (they can be destinations)
+      const nodeData = node.data as { label?: string; inputs?: unknown[]; cards?: Array<{ cardType?: string }> };
+      const hasInputs = nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0;
+      const hasInputCards = nodeData?.cards && Array.isArray(nodeData.cards) &&
+        nodeData.cards.some(c => c.cardType === 'input');
+      if (hasInputs || hasInputCards) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
+
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
@@ -519,12 +540,29 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                               top: `${calculateHandlePosition(card.id, connectorIndex, outputCards, 'output', inputCards)}px`
                             }}
                           />
-                          <input
-                            value={connector.destination || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                          <select
+                            value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                const customName = prompt('Enter custom destination name:');
+                                if (customName) {
+                                  updateConnector(card.id, connector.id, 'destination', customName);
+                                }
+                              } else {
+                                updateConnector(card.id, connector.id, 'destination', e.target.value);
+                              }
+                            }}
                             className="card-field destination"
-                            placeholder="Destination"
-                          />
+                          >
+                            <option value="">Select Destination</option>
+                            {connector.destination && !destinationNames.includes(connector.destination) && (
+                              <option value={connector.destination}>{connector.destination}</option>
+                            )}
+                            {destinationNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                            <option value="__custom__">Custom...</option>
+                          </select>
                           <select
                             value={connector.type}
                             onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
@@ -586,12 +624,29 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                             <option value="HDMI 2.0">HDMI 2.0</option>
                             <option value="12G SDI">12G SDI</option>
                           </select>
-                          <input
-                            value={connector.destination || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                          <select
+                            value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                const customName = prompt('Enter custom destination name:');
+                                if (customName) {
+                                  updateConnector(card.id, connector.id, 'destination', customName);
+                                }
+                              } else {
+                                updateConnector(card.id, connector.id, 'destination', e.target.value);
+                              }
+                            }}
                             className="card-field destination"
-                            placeholder="Destination"
-                          />
+                          >
+                            <option value="">Select Destination</option>
+                            {connector.destination && !destinationNames.includes(connector.destination) && (
+                              <option value={connector.destination}>{connector.destination}</option>
+                            )}
+                            {destinationNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                            <option value="__custom__">Custom...</option>
+                          </select>
                           <Handle
                             key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                             type="source"
@@ -656,12 +711,29 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                               top: `${calculateHandlePosition(card.id, connectorIndex, systemCards, 'system', inputCards, outputCards)}px`
                             }}
                           />
-                          <input
-                            value={connector.destination || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                          <select
+                            value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                const customName = prompt('Enter custom destination name:');
+                                if (customName) {
+                                  updateConnector(card.id, connector.id, 'destination', customName);
+                                }
+                              } else {
+                                updateConnector(card.id, connector.id, 'destination', e.target.value);
+                              }
+                            }}
                             className="card-field destination"
-                            placeholder="Destination"
-                          />
+                          >
+                            <option value="">Select Destination</option>
+                            {connector.destination && !destinationNames.includes(connector.destination) && (
+                              <option value={connector.destination}>{connector.destination}</option>
+                            )}
+                            {destinationNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                            <option value="__custom__">Custom...</option>
+                          </select>
                           <select
                             value={connector.type}
                             onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
@@ -723,12 +795,29 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                             <option value="HDMI 2.0">HDMI 2.0</option>
                             <option value="12G SDI">12G SDI</option>
                           </select>
-                          <input
-                            value={connector.destination || ''}
-                            onChange={(e) => updateConnector(card.id, connector.id, 'destination', e.target.value)}
+                          <select
+                            value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                const customName = prompt('Enter custom destination name:');
+                                if (customName) {
+                                  updateConnector(card.id, connector.id, 'destination', customName);
+                                }
+                              } else {
+                                updateConnector(card.id, connector.id, 'destination', e.target.value);
+                              }
+                            }}
                             className="card-field destination"
-                            placeholder="Destination"
-                          />
+                          >
+                            <option value="">Select Destination</option>
+                            {connector.destination && !destinationNames.includes(connector.destination) && (
+                              <option value={connector.destination}>{connector.destination}</option>
+                            )}
+                            {destinationNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                            <option value="__custom__">Custom...</option>
+                          </select>
                           <Handle
                             key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                             type="source"

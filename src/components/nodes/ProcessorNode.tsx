@@ -32,6 +32,24 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
     return names.sort();
   }, [allNodes, id]);
 
+  // Get all destination node names (nodes that have inputs - they can be destinations)
+  const destinationNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have inputs (they can be destinations)
+      const nodeData = node.data as { label?: string; inputs?: unknown[] };
+      if (nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
+
   const updateInput = useCallback(
     (portId: string, field: keyof ProcessorPort, value: string) => {
       const newInputs = data.inputs.map((port) =>
@@ -350,12 +368,29 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
                       />
                     )}
                     {visibleOutputFields.includes('destination') && (
-                      <input
-                        value={port.destination || ''}
-                        onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                      <select
+                        value={destinationNames.includes(port.destination || '') ? port.destination : (port.destination ? port.destination : '')}
+                        onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            const customName = prompt('Enter custom destination name:');
+                            if (customName) {
+                              updateOutput(port.id, 'destination', customName);
+                            }
+                          } else {
+                            updateOutput(port.id, 'destination', e.target.value);
+                          }
+                        }}
                         className="port-field destination"
-                        placeholder="Destination"
-                      />
+                      >
+                        <option value="">Select Destination</option>
+                        {port.destination && !destinationNames.includes(port.destination) && (
+                          <option value={port.destination}>{port.destination}</option>
+                        )}
+                        {destinationNames.map((name) => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                        <option value="__custom__">Custom...</option>
+                      </select>
                     )}
                     <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                   </>
@@ -373,12 +408,29 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
                       className="port-field resolution"
                       placeholder="Resolution"
                     />
-                    <input
-                      value={port.destination || ''}
-                      onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                    <select
+                      value={destinationNames.includes(port.destination || '') ? port.destination : (port.destination ? port.destination : '')}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          const customName = prompt('Enter custom destination name:');
+                          if (customName) {
+                            updateOutput(port.id, 'destination', customName);
+                          }
+                        } else {
+                          updateOutput(port.id, 'destination', e.target.value);
+                        }
+                      }}
                       className="port-field destination"
-                      placeholder="Destination"
-                    />
+                    >
+                      <option value="">Select Destination</option>
+                      {port.destination && !destinationNames.includes(port.destination) && (
+                        <option value={port.destination}>{port.destination}</option>
+                      )}
+                      {destinationNames.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                      <option value="__custom__">Custom...</option>
+                    </select>
                     <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                   </>
                 )}

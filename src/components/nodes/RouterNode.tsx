@@ -34,6 +34,26 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
     return names.sort();
   }, [allNodes, id]);
 
+  // Get all destination node names (nodes that have inputs - they can be destinations)
+  const destinationNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have inputs (they can be destinations)
+      const nodeData = node.data as { label?: string; inputs?: unknown[]; rows?: unknown[] };
+      const hasInputs = nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0;
+      const hasRows = nodeData?.rows && Array.isArray(nodeData.rows) && nodeData.rows.length > 0;
+      if (hasInputs || hasRows) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
+
   const updateRow = useCallback(
     (rowId: string, field: keyof RouterRow, value: string) => {
       const newRows = data.rows.map((row) =>
@@ -154,11 +174,28 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
                 />
               </td>
               <td>
-                <input
-                  value={row.destination}
-                  onChange={(e) => updateRow(row.id, 'destination', e.target.value)}
-                  placeholder="Destination"
-                />
+                <select
+                  value={destinationNames.includes(row.destination) ? row.destination : (row.destination ? row.destination : '')}
+                  onChange={(e) => {
+                    if (e.target.value === '__custom__') {
+                      const customName = prompt('Enter custom destination name:');
+                      if (customName) {
+                        updateRow(row.id, 'destination', customName);
+                      }
+                    } else {
+                      updateRow(row.id, 'destination', e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">Select Destination</option>
+                  {row.destination && !destinationNames.includes(row.destination) && (
+                    <option value={row.destination}>{row.destination}</option>
+                  )}
+                  {destinationNames.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                  <option value="__custom__">Custom...</option>
+                </select>
               </td>
               <td>
                 <button
