@@ -48,53 +48,101 @@ function Flow() {
   const [history, setHistory] = useState<HistoryState[]>([{ nodes: [], edges: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const isUndoRedo = useRef(false);
+  const historyTimer = useRef<number | null>(null);
 
-  // Track changes to nodes and edges for history
+  // Track changes to nodes and edges for history with debouncing
   useEffect(() => {
     if (isUndoRedo.current) {
       isUndoRedo.current = false;
       return;
     }
 
-    const newState = { nodes, edges };
-    const currentState = history[historyIndex];
-
-    // Only add to history if something actually changed
-    if (JSON.stringify(currentState) !== JSON.stringify(newState)) {
-      const newHistory = history.slice(0, historyIndex + 1);
-      newHistory.push(newState);
-      // Limit history to last 50 states
-      if (newHistory.length > 50) {
-        newHistory.shift();
-      } else {
-        setHistoryIndex(historyIndex + 1);
-      }
-      setHistory(newHistory);
+    // Clear existing timer
+    if (historyTimer.current) {
+      clearTimeout(historyTimer.current);
     }
-  }, [nodes, edges]);
+
+    // Debounce history updates to group rapid changes together
+    historyTimer.current = setTimeout(() => {
+      const newState = { nodes, edges };
+
+      setHistory((prevHistory) => {
+        const currentState = prevHistory[historyIndex];
+
+        // Only add to history if something actually changed
+        if (JSON.stringify(currentState) !== JSON.stringify(newState)) {
+          const newHistory = prevHistory.slice(0, historyIndex + 1);
+          newHistory.push(newState);
+
+          // Limit history to last 50 states
+          if (newHistory.length > 51) {
+            newHistory.shift();
+            return newHistory;
+          } else {
+            setHistoryIndex(historyIndex + 1);
+            return newHistory;
+          }
+        }
+        return prevHistory;
+      });
+    }, 300); // 300ms debounce - groups changes within this window
+
+    return () => {
+      if (historyTimer.current) {
+        clearTimeout(historyTimer.current);
+      }
+    };
+  }, [nodes, edges, historyIndex]);
 
   const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      isUndoRedo.current = true;
-      const prevState = history[historyIndex - 1];
-      setNodes(prevState.nodes);
-      setEdges(prevState.edges);
-      setHistoryIndex(historyIndex - 1);
+    if (historyTimer.current) {
+      clearTimeout(historyTimer.current);
+      historyTimer.current = null;
     }
-  }, [historyIndex, history, setNodes, setEdges]);
+
+    setHistoryIndex((currentIndex) => {
+      if (currentIndex > 0) {
+        isUndoRedo.current = true;
+        const newIndex = currentIndex - 1;
+        const prevState = history[newIndex];
+        setNodes(prevState.nodes);
+        setEdges(prevState.edges);
+        return newIndex;
+      }
+      return currentIndex;
+    });
+  }, [history, setNodes, setEdges]);
 
   const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      isUndoRedo.current = true;
-      const nextState = history[historyIndex + 1];
-      setNodes(nextState.nodes);
-      setEdges(nextState.edges);
-      setHistoryIndex(historyIndex + 1);
+    if (historyTimer.current) {
+      clearTimeout(historyTimer.current);
+      historyTimer.current = null;
     }
-  }, [historyIndex, history, setNodes, setEdges]);
+
+    setHistoryIndex((currentIndex) => {
+      if (currentIndex < history.length - 1) {
+        isUndoRedo.current = true;
+        const newIndex = currentIndex + 1;
+        const nextState = history[newIndex];
+        setNodes(nextState.nodes);
+        setEdges(nextState.edges);
+        return newIndex;
+      }
+      return currentIndex;
+    });
+  }, [history, setNodes, setEdges]);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (historyTimer.current) {
+        clearTimeout(historyTimer.current);
+      }
+    };
+  }, []);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -148,10 +196,18 @@ function Flow() {
 
   const onLoadProject = useCallback(
     (project: ProjectData) => {
+      if (historyTimer.current) {
+        clearTimeout(historyTimer.current);
+        historyTimer.current = null;
+      }
+      isUndoRedo.current = true;
       setNodes(project.nodes);
       setEdges(project.edges);
       setProjectName(project.name);
       setProjectId(project.id);
+      // Reset history when loading a project
+      setHistory([{ nodes: project.nodes, edges: project.edges }]);
+      setHistoryIndex(0);
     },
     [setNodes, setEdges]
   );
@@ -160,10 +216,18 @@ function Flow() {
     if (nodes.length > 0 && !confirm('Create new project? Unsaved changes will be lost.')) {
       return;
     }
+    if (historyTimer.current) {
+      clearTimeout(historyTimer.current);
+      historyTimer.current = null;
+    }
+    isUndoRedo.current = true;
     setNodes([]);
     setEdges([]);
     setProjectName('Untitled Project');
     setProjectId(uuidv4());
+    // Reset history when creating a new project
+    setHistory([{ nodes: [], edges: [] }]);
+    setHistoryIndex(0);
   }, [nodes.length, setNodes, setEdges]);
 
   const onEdgeDoubleClick = useCallback(
