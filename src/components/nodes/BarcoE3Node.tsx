@@ -212,7 +212,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                 </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
-                    <div key={connector.id} className="card-row">
+                    <div key={`${connector.id}-${card.handleSide || 'default'}`} className="card-row">
                       {card.handleSide !== 'right' ? (
                         <>
                           <Handle
@@ -359,7 +359,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                 </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
-                    <div key={connector.id} className="card-row">
+                    <div key={`${connector.id}-${card.handleSide || 'default'}`} className="card-row">
                       {card.handleSide === 'left' ? (
                         <>
                           <Handle
