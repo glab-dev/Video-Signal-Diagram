@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { BarcoE3NodeData, BarcoCard, CardConnector } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -31,6 +31,7 @@ type BarcoE3NodeProps = NodeProps & {
 
 function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
   const { updateNodeData } = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -137,8 +138,10 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
         }
       });
       updateNodeData(id, { cards: newCards });
+      // Force React Flow to update handle positions
+      setTimeout(() => updateNodeInternals(id), 0);
     },
-    [id, data.cards, updateNodeData]
+    [id, data.cards, updateNodeData, updateNodeInternals]
   );
 
   const inputCards = data.cards.filter((card) => card.cardType === 'input');
