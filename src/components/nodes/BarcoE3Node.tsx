@@ -488,12 +488,6 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
             {systemCards.map((card) => (
               <div key={card.id} className="barco-card output-card">
                 <div className="card-title-bar">
-                  <input
-                    className="card-title-input"
-                    value={card.label}
-                    onChange={(e) => updateCardLabel(card.id, e.target.value)}
-                    placeholder="Card Name"
-                  />
                   <button
                     className="toggle-side-btn"
                     onClick={() => toggleCardSide(card.id)}
@@ -502,21 +496,6 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                     {card.handleSide === 'left' ? '→' : '←'}
                   </button>
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
-                </div>
-                <div className="card-header-row">
-                  {card.handleSide === 'left' ? (
-                    <>
-                      <span className="card-col-header destination">DESTINATION</span>
-                      <span className="card-col-header connector">CONNECTOR</span>
-                      <span className="card-col-header resolution">RESOLUTION</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="card-col-header resolution">RESOLUTION</span>
-                      <span className="card-col-header connector">CONNECTOR</span>
-                      <span className="card-col-header destination">DESTINATION</span>
-                    </>
-                  )}
                 </div>
                 <div className="card-connectors">
                   {card.connectors.map((connector, connectorIndex) => (
