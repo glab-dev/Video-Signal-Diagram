@@ -184,13 +184,19 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             <button className="add-btn" onClick={addOutput}>+</button>
           </div>
           <div className="switcher-field-headers">
+            <span className="field-header source">SOURCE</span>
             <span className="field-header output-num">OUTPUT #</span>
             <span className="field-header resolution">RESOLUTION</span>
-            <span className="field-header destination">DESTINATION</span>
           </div>
           <div className="port-list">
             {data.outputs.map((port) => (
               <div key={port.id} className="port-row output">
+                <input
+                  value={port.destination || ''}
+                  onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
+                  className="port-field destination"
+                  placeholder="Source"
+                />
                 <input
                   value={port.name}
                   onChange={(e) => updateOutput(port.id, 'name', e.target.value)}
@@ -216,12 +222,6 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
                     placeholder="Custom Resolution"
                   />
                 )}
-                <input
-                  value={port.destination || ''}
-                  onChange={(e) => updateOutput(port.id, 'destination', e.target.value)}
-                  className="port-field destination"
-                  placeholder="Destination"
-                />
                 <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                 <Handle
                   type="source"
