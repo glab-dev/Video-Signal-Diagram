@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, useCallback, useMemo } from 'react';
+import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import type { ProcessorNodeData, ProcessorPort, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -12,6 +12,25 @@ type ProcessorNodeProps = NodeProps & {
 
 function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
   const { updateNodeData } = useReactFlow();
+  const allNodes = useNodes();
+
+  // Get all source node names (nodes that have outputs - they can be sources)
+  const sourceNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have outputs (they can be sources)
+      const nodeData = node.data as { label?: string; outputs?: unknown[] };
+      if (nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
 
   const updateInput = useCallback(
     (portId: string, field: keyof ProcessorPort, value: string) => {
@@ -197,12 +216,30 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
                       />
                     )}
                     {visibleInputFields.includes('connection') && (
-                      <input
-                        value={port.connection}
-                        onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+                      <select
+                        value={sourceNames.includes(port.connection) ? port.connection : (port.connection ? port.connection : '')}
+                        onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            const customName = prompt('Enter custom source name:');
+                            if (customName) {
+                              updateInput(port.id, 'connection', customName);
+                            }
+                          } else {
+                            updateInput(port.id, 'connection', e.target.value);
+                          }
+                        }}
                         className="port-field connection"
-                        placeholder="Connection"
-                      />
+                      >
+                        <option value="">Select Source</option>
+                        {/* Show current custom value if it exists */}
+                        {port.connection && !sourceNames.includes(port.connection) && (
+                          <option value={port.connection}>{port.connection}</option>
+                        )}
+                        {sourceNames.map((name) => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                        <option value="__custom__">Custom...</option>
+                      </select>
                     )}
                     {visibleInputFields.includes('resolution') && (
                       <input
@@ -222,12 +259,29 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
                       className="port-field name"
                       placeholder="Source"
                     />
-                    <input
-                      value={port.connection}
-                      onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+                    <select
+                      value={sourceNames.includes(port.connection) ? port.connection : (port.connection ? port.connection : '')}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          const customName = prompt('Enter custom source name:');
+                          if (customName) {
+                            updateInput(port.id, 'connection', customName);
+                          }
+                        } else {
+                          updateInput(port.id, 'connection', e.target.value);
+                        }
+                      }}
                       className="port-field connection"
-                      placeholder="Connection"
-                    />
+                    >
+                      <option value="">Select Source</option>
+                      {port.connection && !sourceNames.includes(port.connection) && (
+                        <option value={port.connection}>{port.connection}</option>
+                      )}
+                      {sourceNames.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                      <option value="__custom__">Custom...</option>
+                    </select>
                     <input
                       value={port.resolution}
                       onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}

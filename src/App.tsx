@@ -231,19 +231,20 @@ function Flow() {
               return { ...node, data: { ...node.data, outputs: updatedOutputs } };
             }
 
-            // Update target node's input source field (for genericIO and similar nodes)
+            // Update target node's input source field
             if (node.id === params.target && node.data?.inputs && Array.isArray(node.data.inputs)) {
-              const sourceText = sourceOutputName
-                ? `${sourceLabel} - ${sourceOutputName}`
-                : sourceLabel;
-
               const updatedInputs = (node.data.inputs as Array<{ id?: string; source?: string; connection?: string }>).map(
                 (inp) => {
                   if (inp.id === targetHandleId || `input-${inp.id}` === targetHandleId) {
-                    // For processor/switcher nodes, update 'connection' or add 'source'
-                    if ('source' in inp || !('connection' in inp)) {
-                      return { ...inp, source: sourceText };
+                    // For switcher/processor nodes, update 'connection' field (displays as SOURCE)
+                    if ('connection' in inp) {
+                      return { ...inp, connection: sourceLabel };
                     }
+                    // For genericIO and similar nodes, update 'source' field
+                    const sourceText = sourceOutputName
+                      ? `${sourceLabel} - ${sourceOutputName}`
+                      : sourceLabel;
+                    return { ...inp, source: sourceText };
                   }
                   return inp;
                 }

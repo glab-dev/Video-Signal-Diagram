@@ -1,6 +1,6 @@
-import { memo, useCallback, useState, useRef } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, useCallback, useState, useRef, useMemo } from 'react';
+import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -46,6 +46,25 @@ type SwitcherNodeProps = NodeProps & {
 
 function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
+  const allNodes = useNodes();
+
+  // Get all source node names (nodes that have outputs - they can be sources)
+  const sourceNames = useMemo(() => {
+    const names: string[] = [];
+    allNodes.forEach((node: Node) => {
+      // Skip this node itself
+      if (node.id === id) return;
+      // Include nodes that have outputs (they can be sources)
+      const nodeData = node.data as { label?: string; outputs?: unknown[] };
+      if (nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0) {
+        const label = nodeData.label;
+        if (label && typeof label === 'string' && !names.includes(label)) {
+          names.push(label);
+        }
+      }
+    });
+    return names.sort();
+  }, [allNodes, id]);
 
   // Lock at 20x20 or 40x40 for Blackmagic switchers
   const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
@@ -259,15 +278,35 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
 
     switch (fieldName) {
       case 'connection':
+        // Check if current value is a custom value (not in sourceNames and not empty)
+        const isCustomSource = port.connection && !sourceNames.includes(port.connection);
+        // Build options list - include current custom value if it exists
+        const sourceOptions = isCustomSource
+          ? [port.connection, ...sourceNames.filter(n => n !== port.connection)]
+          : sourceNames;
         return (
-          <input
+          <select
             key={fieldName}
-            value={port.connection}
-            onChange={(e) => updateInput(port.id, 'connection', e.target.value)}
+            value={port.connection || ''}
+            onChange={(e) => {
+              if (e.target.value === '__custom__') {
+                const customName = prompt('Enter custom source name:');
+                if (customName) {
+                  updateInput(port.id, 'connection', customName);
+                }
+              } else {
+                updateInput(port.id, 'connection', e.target.value);
+              }
+            }}
             className={`port-field ${config.className}`}
             style={style}
-            placeholder="Source"
-          />
+          >
+            <option value="">Select Source</option>
+            {sourceOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+            <option value="__custom__">Custom...</option>
+          </select>
         );
       case 'name':
         return (
@@ -305,7 +344,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           />
         );
     }
-  }, [updateInput]);
+  }, [updateInput, sourceNames]);
 
   const renderOutputField = useCallback((port: ProcessorPort, fieldName: OutputFieldType) => {
     const config = OUTPUT_FIELD_CONFIG[fieldName];
