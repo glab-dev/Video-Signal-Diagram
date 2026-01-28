@@ -56,6 +56,16 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     [id, updateNodeData]
   );
 
+  const handleReset = useCallback(() => {
+    // Reset all card spacing and handle sides to default
+    const resetCards = data.cards.map((card) => ({
+      ...card,
+      spacing: 0,
+      handleSide: undefined
+    }));
+    updateNodeData(id, { cards: resetCards });
+  }, [id, data.cards, updateNodeData]);
+
   const updateCardLabel = useCallback(
     (cardId: string, value: string) => {
       const newCards = data.cards.map((card) =>
@@ -227,6 +237,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           nodeType="barcoE3"
           currentData={data}
           onLoadPreset={handleLoadPreset}
+          onReset={handleReset}
         />
       </div>
 
