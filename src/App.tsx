@@ -11,10 +11,13 @@ import {
   Panel,
   useReactFlow,
   ReactFlowProvider,
+  getNodesBounds,
+  getViewportForBounds,
 } from '@xyflow/react';
 import type { Connection, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
+import { toPng } from 'html-to-image';
 
 import { nodeTypes } from './components/nodes';
 import Sidebar from './components/Sidebar';
@@ -42,7 +45,7 @@ function Flow() {
   const [projectName, setProjectName] = useState(defaultProject.name);
   const [projectId, setProjectId] = useState(defaultProject.id);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getNodes } = useReactFlow();
 
   // History tracking for undo/redo
   const [history, setHistory] = useState<HistoryState[]>([{ nodes: [], edges: [] }]);
@@ -373,6 +376,48 @@ function Flow() {
     [setEdges]
   );
 
+  const handleExportPNG = useCallback(() => {
+    const nodesList = getNodes();
+
+    if (nodesList.length === 0) {
+      alert('No nodes to export. Add some nodes first.');
+      return;
+    }
+
+    // Get bounds of all nodes
+    const nodesBounds = getNodesBounds(nodesList);
+
+    // Calculate viewport to fit all nodes with padding
+    const viewport = getViewportForBounds(
+      nodesBounds,
+      1920, // width
+      1080, // height
+      0.5,  // minZoom
+      2,    // maxZoom
+      0.1   // padding
+    );
+
+    // Export to PNG with high quality
+    toPng(document.querySelector('.react-flow') as HTMLElement, {
+      backgroundColor: '#1a1a2e',
+      width: 1920,
+      height: 1080,
+      style: {
+        width: '1920px',
+        height: '1080px',
+        transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+      },
+    }).then((dataUrl: string) => {
+      const a = document.createElement('a');
+      a.setAttribute('download', `${projectName.replace(/\s+/g, '_')}.png`);
+      a.setAttribute('href', dataUrl);
+      a.click();
+    }).catch((error: Error) => {
+      console.error('Export failed:', error);
+      alert('Failed to export PNG. Please try again.');
+    });
+  }, [getNodes, projectName]);
+
   return (
     <div className="app">
       <Sidebar
@@ -384,6 +429,7 @@ function Flow() {
         onRedo={handleRedo}
         canUndo={canUndo}
         canRedo={canRedo}
+        onExportPNG={handleExportPNG}
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>

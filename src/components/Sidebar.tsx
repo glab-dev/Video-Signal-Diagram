@@ -44,6 +44,7 @@ interface SidebarProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  onExportPNG: () => void;
 }
 
 // Equipment presets with their specific I/O configurations
@@ -339,7 +340,7 @@ const EQUIPMENT_PRESETS = {
   },
 };
 
-export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: SidebarProps) {
+export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -827,6 +828,9 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
           <button onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">Undo</button>
           <button onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl+Y)">Redo</button>
+        </div>
+        <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
+          <button onClick={onExportPNG} title="Export diagram as PNG image">Export PNG</button>
         </div>
       </div>
 
