@@ -336,9 +336,9 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                   <button
                     className="toggle-side-btn"
                     onClick={() => toggleCardSide(card.id)}
-                    title={`Switch handles to ${card.handleSide === 'right' ? 'left' : 'right'}`}
+                    title={`Switch handles to ${card.handleSide === 'left' ? 'right' : 'left'}`}
                   >
-                    {card.handleSide === 'right' ? '←' : '→'}
+                    {card.handleSide === 'left' ? '→' : '←'}
                   </button>
                   <button className="remove-card-btn" onClick={() => removeCard(card.id)}>×</button>
                 </div>
