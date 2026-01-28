@@ -355,16 +355,31 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
   const [showRecents, setShowRecents] = useState(false);
   const [savedPresets, setSavedPresets] = useState<NodePreset[]>([]);
 
-  // Load recent files and saved presets on mount
-  useEffect(() => {
-    setRecentFiles(getRecentFiles());
-    loadSavedPresets();
-  }, []);
-
   const loadSavedPresets = useCallback(async () => {
     const presets = await getAllPresets();
     setSavedPresets(presets);
   }, []);
+
+  // Load recent files and saved presets on mount
+  useEffect(() => {
+    setRecentFiles(getRecentFiles());
+    loadSavedPresets();
+  }, [loadSavedPresets]);
+
+  // Listen for preset save/delete events
+  useEffect(() => {
+    const handlePresetChange = () => {
+      loadSavedPresets();
+    };
+
+    window.addEventListener('presetSaved', handlePresetChange);
+    window.addEventListener('presetDeleted', handlePresetChange);
+
+    return () => {
+      window.removeEventListener('presetSaved', handlePresetChange);
+      window.removeEventListener('presetDeleted', handlePresetChange);
+    };
+  }, [loadSavedPresets]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }));

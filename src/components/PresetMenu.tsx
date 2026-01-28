@@ -84,6 +84,10 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
     await savePreset(preset);
     await loadPresets();
     setIsOpen(false);
+
+    // Notify sidebar to refresh
+    window.dispatchEvent(new CustomEvent('presetSaved'));
+
     const msg = category
       ? `Preset "${name}" saved to ${category} category!`
       : `Preset "${name}" saved (node menu only)!`;
@@ -104,6 +108,8 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
       if (confirm(`Delete preset "${preset.name}"?`)) {
         await deletePreset(preset.id);
         await loadPresets();
+        // Notify sidebar to refresh
+        window.dispatchEvent(new CustomEvent('presetDeleted'));
       }
     },
     [loadPresets]
