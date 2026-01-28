@@ -292,7 +292,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                             placeholder="Source"
                           />
                           <Handle
-                            type="source"
+                            type="target"
                             position={Position.Right}
                             id={`${card.id}-${connector.id}`}
                             className="port-handle"
@@ -357,7 +357,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
                       {card.handleSide === 'left' ? (
                         <>
                           <Handle
-                            type="target"
+                            type="source"
                             position={Position.Left}
                             id={`${card.id}-${connector.id}`}
                             className="port-handle"
