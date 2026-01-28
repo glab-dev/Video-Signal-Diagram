@@ -523,6 +523,18 @@
   min-width: 100px;
 }
 
+/* Switcher-specific port row styling */
+.switcher-column .port-row {
+  padding-right: 30px;
+}
+
+.switcher-column .remove-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* LED Wall Node */
 .node-led-wall {
 }
