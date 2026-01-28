@@ -174,8 +174,89 @@ function Flow() {
         labelBgPadding: [4, 8] as [number, number],
       } as Edge;
       setEdges((eds) => addEdge(edge, eds));
+
+      // Auto-fill connection names on source and target nodes
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+
+      if (sourceNode && targetNode) {
+        const sourceHandleId = params.sourceHandle;
+        const targetHandleId = params.targetHandle;
+
+        // Get target node's label and input name for source's destination field
+        const targetLabel = targetNode.data?.label || '';
+        let targetInputName = '';
+
+        // Find target input name based on node type
+        if (targetNode.data?.inputs && Array.isArray(targetNode.data.inputs)) {
+          const targetInput = targetNode.data.inputs.find(
+            (inp: { id?: string; name?: string }) => inp.id === targetHandleId || `input-${inp.id}` === targetHandleId
+          );
+          if (targetInput) {
+            targetInputName = targetInput.name || '';
+          }
+        }
+
+        // Get source node's label and output name for target's source field
+        const sourceLabel = sourceNode.data?.label || '';
+        let sourceOutputName = '';
+
+        // Find source output name based on node type
+        if (sourceNode.data?.outputs && Array.isArray(sourceNode.data.outputs)) {
+          const sourceOutput = sourceNode.data.outputs.find(
+            (out: { id?: string; name?: string }) => out.id === sourceHandleId || `output-${out.id}` === sourceHandleId
+          );
+          if (sourceOutput) {
+            sourceOutputName = sourceOutput.name || '';
+          }
+        }
+
+        // Update nodes with connection info
+        setNodes((nds) =>
+          nds.map((node) => {
+            // Update source node's output destination field
+            if (node.id === params.source && node.data?.outputs && Array.isArray(node.data.outputs)) {
+              const destinationText = targetInputName
+                ? `${targetLabel} - ${targetInputName}`
+                : targetLabel;
+
+              const updatedOutputs = (node.data.outputs as Array<{ id?: string; destination?: string }>).map(
+                (out) => {
+                  if (out.id === sourceHandleId || `output-${out.id}` === sourceHandleId) {
+                    return { ...out, destination: destinationText };
+                  }
+                  return out;
+                }
+              );
+              return { ...node, data: { ...node.data, outputs: updatedOutputs } };
+            }
+
+            // Update target node's input source field (for genericIO and similar nodes)
+            if (node.id === params.target && node.data?.inputs && Array.isArray(node.data.inputs)) {
+              const sourceText = sourceOutputName
+                ? `${sourceLabel} - ${sourceOutputName}`
+                : sourceLabel;
+
+              const updatedInputs = (node.data.inputs as Array<{ id?: string; source?: string; connection?: string }>).map(
+                (inp) => {
+                  if (inp.id === targetHandleId || `input-${inp.id}` === targetHandleId) {
+                    // For processor/switcher nodes, update 'connection' or add 'source'
+                    if ('source' in inp || !('connection' in inp)) {
+                      return { ...inp, source: sourceText };
+                    }
+                  }
+                  return inp;
+                }
+              );
+              return { ...node, data: { ...node.data, inputs: updatedInputs } };
+            }
+
+            return node;
+          })
+        );
+      }
     },
-    [setEdges]
+    [setEdges, nodes, setNodes]
   );
 
   const onAddNode = useCallback(
