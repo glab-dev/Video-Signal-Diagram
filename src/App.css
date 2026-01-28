@@ -484,6 +484,40 @@
   font-weight: 600;
 }
 
+.switcher-field-headers {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.field-header {
+  font-size: 9px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px;
+  text-align: center;
+}
+
+.field-header.source,
+.field-header.destination {
+  flex: 1;
+  min-width: 80px;
+}
+
+.field-header.input-num,
+.field-header.output-num {
+  flex: 0.8;
+  min-width: 70px;
+}
+
+.field-header.resolution {
+  flex: 1.2;
+  min-width: 100px;
+}
+
 /* LED Wall Node */
 .node-led-wall {
 }
