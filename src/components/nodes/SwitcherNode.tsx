@@ -66,24 +66,6 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     return names.sort();
   }, [allNodes, id]);
 
-  // Get all destination node names (nodes that have inputs - they can be destinations)
-  const destinationNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have inputs (they can be destinations)
-      const nodeData = node.data as { label?: string; inputs?: unknown[] };
-      if (nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
-
   // Lock at 20x20 or 40x40 for Blackmagic switchers
   const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
                    (data.inputs.length === 40 && data.outputs.length === 40);
@@ -370,19 +352,19 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
 
     switch (fieldName) {
       case 'destination':
-        // Check if current value is a custom value (not in destinationNames and not empty)
-        const isCustomDest = port.destination && !destinationNames.includes(port.destination);
+        // Check if current value is a custom value (not in sourceNames and not empty)
+        const isCustomSource = port.destination && !sourceNames.includes(port.destination);
         // Build options list - include current custom value if it exists
-        const destOptions = isCustomDest
-          ? [port.destination, ...destinationNames.filter(n => n !== port.destination)]
-          : destinationNames;
+        const sourceOptions = isCustomSource
+          ? [port.destination, ...sourceNames.filter(n => n !== port.destination)]
+          : sourceNames;
         return (
           <select
             key={fieldName}
             value={port.destination || ''}
             onChange={(e) => {
               if (e.target.value === '__custom__') {
-                const customName = prompt('Enter custom destination name:');
+                const customName = prompt('Enter custom source name:');
                 if (customName) {
                   updateOutput(port.id, 'destination', customName);
                 }
@@ -393,8 +375,8 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             className={`port-field ${config.className}`}
             style={style}
           >
-            <option value="">Select Destination</option>
-            {destOptions.map((name) => (
+            <option value="">Select Source</option>
+            {sourceOptions.map((name) => (
               <option key={name} value={name}>{name}</option>
             ))}
             <option value="__custom__">Custom...</option>
@@ -436,7 +418,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           />
         );
     }
-  }, [updateOutput, destinationNames]);
+  }, [updateOutput, sourceNames]);
 
   return (
     <div
