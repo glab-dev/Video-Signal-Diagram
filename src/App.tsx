@@ -307,6 +307,21 @@ function Flow() {
           }
         }
 
+        // Find target input name from BarcoE3 cards
+        if (targetNode.data?.cards && Array.isArray(targetNode.data.cards)) {
+          const handleParts = targetHandleId?.split('-') || [];
+          if (handleParts.length >= 3 && handleParts[0] === 'input') {
+            const cardId = handleParts[1];
+            const connectorId = handleParts.slice(2).join('-');
+            const targetCards = targetNode.data.cards as Array<{ id: string; label?: string; connectors: Array<{ id: string }> }>;
+            const targetCard = targetCards.find(c => c.id === cardId);
+            if (targetCard) {
+              const connectorIndex = targetCard.connectors.findIndex(c => c.id === connectorId);
+              targetInputName = targetCard.label ? `${targetCard.label} #${connectorIndex + 1}` : `Card #${connectorIndex + 1}`;
+            }
+          }
+        }
+
         // Get source node's label and output name for target's source field
         const sourceLabel = sourceNode.data?.label || '';
         let sourceOutputName = '';
@@ -318,6 +333,21 @@ function Flow() {
           );
           if (sourceOutput) {
             sourceOutputName = sourceOutput.name || '';
+          }
+        }
+
+        // Find source output name from BarcoE3 cards
+        if (sourceNode.data?.cards && Array.isArray(sourceNode.data.cards)) {
+          const handleParts = sourceHandleId?.split('-') || [];
+          if (handleParts.length >= 3 && handleParts[0] === 'output') {
+            const cardId = handleParts[1];
+            const connectorId = handleParts.slice(2).join('-');
+            const sourceCards = sourceNode.data.cards as Array<{ id: string; label?: string; connectors: Array<{ id: string }> }>;
+            const sourceCard = sourceCards.find(c => c.id === cardId);
+            if (sourceCard) {
+              const connectorIndex = sourceCard.connectors.findIndex(c => c.id === connectorId);
+              sourceOutputName = sourceCard.label ? `${sourceCard.label} #${connectorIndex + 1}` : `Card #${connectorIndex + 1}`;
+            }
           }
         }
 
@@ -341,6 +371,36 @@ function Flow() {
               return { ...node, data: { ...node.data, outputs: updatedOutputs } };
             }
 
+            // Update BarcoE3 source node's output card connector destination field
+            if (node.id === params.source && node.data?.cards && Array.isArray(node.data.cards)) {
+              // Handle ID format for BarcoE3: "output-{cardId}-{connectorId}"
+              const handleParts = sourceHandleId?.split('-') || [];
+              if (handleParts.length >= 3 && handleParts[0] === 'output') {
+                const cardId = handleParts[1];
+                const connectorId = handleParts.slice(2).join('-');
+
+                const destinationText = targetInputName
+                  ? `${targetLabel} - ${targetInputName}`
+                  : targetLabel;
+
+                const updatedCards = (node.data.cards as Array<{ id: string; connectors: Array<{ id: string; destination?: string }> }>).map(
+                  (card) => {
+                    if (card.id === cardId) {
+                      const updatedConnectors = card.connectors.map((conn) => {
+                        if (conn.id === connectorId) {
+                          return { ...conn, destination: destinationText };
+                        }
+                        return conn;
+                      });
+                      return { ...card, connectors: updatedConnectors };
+                    }
+                    return card;
+                  }
+                );
+                return { ...node, data: { ...node.data, cards: updatedCards } };
+              }
+            }
+
             // Update target node's input source field
             if (node.id === params.target && node.data?.inputs && Array.isArray(node.data.inputs)) {
               const updatedInputs = (node.data.inputs as Array<{ id?: string; source?: string; connection?: string }>).map(
@@ -360,6 +420,32 @@ function Flow() {
                 }
               );
               return { ...node, data: { ...node.data, inputs: updatedInputs } };
+            }
+
+            // Update BarcoE3 node's input card connector source field
+            if (node.id === params.target && node.data?.cards && Array.isArray(node.data.cards)) {
+              // Handle ID format for BarcoE3: "input-{cardId}-{connectorId}"
+              const handleParts = targetHandleId?.split('-') || [];
+              if (handleParts.length >= 3 && handleParts[0] === 'input') {
+                const cardId = handleParts[1];
+                const connectorId = handleParts.slice(2).join('-'); // Handle connector IDs that might have dashes
+
+                const updatedCards = (node.data.cards as Array<{ id: string; connectors: Array<{ id: string; source?: string }> }>).map(
+                  (card) => {
+                    if (card.id === cardId) {
+                      const updatedConnectors = card.connectors.map((conn) => {
+                        if (conn.id === connectorId) {
+                          return { ...conn, source: sourceLabel };
+                        }
+                        return conn;
+                      });
+                      return { ...card, connectors: updatedConnectors };
+                    }
+                    return card;
+                  }
+                );
+                return { ...node, data: { ...node.data, cards: updatedCards } };
+              }
             }
 
             return node;
