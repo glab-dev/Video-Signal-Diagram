@@ -154,3 +154,22 @@ export interface NodePreset {
   category?: string; // Optional category for organizing in sidebar
   createdAt: number;
 }
+
+// Paper size configurations (screen-appropriate dimensions)
+export interface PaperDimensions {
+  width: number;
+  height: number;
+}
+
+export const PAPER_SIZES: Record<string, PaperDimensions> = {
+  'Letter': { width: 850, height: 1100 },       // 8.5" × 11" (scaled for screen)
+  'Legal': { width: 850, height: 1400 },        // 8.5" × 14"
+  'Tabloid': { width: 1100, height: 1700 },     // 11" × 17"
+  'A4': { width: 840, height: 1188 },           // 210mm × 297mm (A4 ratio)
+  'A3': { width: 1188, height: 1680 },          // 297mm × 420mm
+  'A2': { width: 1680, height: 2376 },          // 420mm × 594mm
+  'Custom': { width: 1200, height: 1200 },      // User-definable
+};
+
+export type PaperSize = keyof typeof PAPER_SIZES;
+export type Orientation = 'portrait' | 'landscape';

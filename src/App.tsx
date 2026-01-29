@@ -22,10 +22,12 @@ import { toPng } from 'html-to-image';
 
 import { nodeTypes } from './components/nodes';
 import Sidebar from './components/Sidebar';
+import RightPanel from './components/RightPanel';
 import UpdateNotification from './components/UpdateNotification';
 import EdgeLabelEditor from './components/EdgeLabelEditor';
 import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
+import { PAPER_SIZES, type PaperSize, type Orientation } from './types';
 import './App.css';
 
 interface HistoryState {
@@ -53,6 +55,82 @@ function Flow() {
   const [cascadeDirection, setCascadeDirection] = useState<'right' | 'left'>('right');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, getNodes } = useReactFlow();
+
+  // Paper size state with localStorage persistence
+  const [paperSize, setPaperSize] = useState<PaperSize>(() => {
+    const saved = localStorage.getItem('paperSize');
+    return (saved as PaperSize) || 'Tabloid';
+  });
+
+  const [orientation, setOrientation] = useState<Orientation>(() => {
+    const saved = localStorage.getItem('orientation');
+    return (saved as Orientation) || 'landscape';
+  });
+
+  const [customWidth, setCustomWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('customWidth');
+    return saved ? parseInt(saved) : 1200;
+  });
+
+  const [customHeight, setCustomHeight] = useState<number>(() => {
+    const saved = localStorage.getItem('customHeight');
+    return saved ? parseInt(saved) : 1200;
+  });
+
+  const [showMiniMap, setShowMiniMap] = useState<boolean>(() => {
+    const saved = localStorage.getItem('showMiniMap');
+    return saved === 'true';
+  });
+
+  // Paper size change handlers
+  const handlePaperSizeChange = useCallback((size: PaperSize) => {
+    setPaperSize(size);
+    localStorage.setItem('paperSize', size);
+  }, []);
+
+  const handleOrientationChange = useCallback((orient: Orientation) => {
+    setOrientation(orient);
+    localStorage.setItem('orientation', orient);
+  }, []);
+
+  const handleCustomSizeChange = useCallback((width: number, height: number) => {
+    setCustomWidth(width);
+    setCustomHeight(height);
+    localStorage.setItem('customWidth', width.toString());
+    localStorage.setItem('customHeight', height.toString());
+  }, []);
+
+  const toggleMiniMap = useCallback(() => {
+    setShowMiniMap(prev => {
+      const newValue = !prev;
+      localStorage.setItem('showMiniMap', newValue.toString());
+      return newValue;
+    });
+  }, []);
+
+  // Calculate canvas dimensions
+  const getCanvasDimensions = useCallback(() => {
+    let dims = PAPER_SIZES[paperSize];
+
+    // Use custom dimensions if Custom is selected
+    if (paperSize === 'Custom') {
+      dims = { width: customWidth, height: customHeight };
+    }
+
+    // Apply orientation
+    if (orientation === 'landscape') {
+      return {
+        width: Math.max(dims.width, dims.height),
+        height: Math.min(dims.width, dims.height)
+      };
+    }
+    return {
+      width: Math.min(dims.width, dims.height),
+      height: Math.max(dims.width, dims.height)
+    };
+  }, [paperSize, orientation, customWidth, customHeight]);
+
+  const canvasDimensions = getCanvasDimensions();
 
   // Refs for stable keyboard handler access
   const nodesRef = useRef<Node[]>(nodes);
@@ -966,53 +1044,90 @@ function Flow() {
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodesDelete={onNodesDelete}
-          onEdgeDoubleClick={onEdgeDoubleClick}
-          onNodeContextMenu={onNodeContextMenu}
-          onDragOver={onDragOver}
-          onDrop={onDrop}
-          nodeTypes={nodeTypes}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
-          snapToGrid
-          snapGrid={[10, 10]}
-          deleteKeyCode={['Backspace', 'Delete']}
-          multiSelectionKeyCode={['Shift', 'Meta']}
-          selectionOnDrag
-          selectionMode={SelectionMode.Full}
-          edgesReconnectable={false}
-          selectNodesOnDrag
-          panOnDrag={[1]}
-          minZoom={0.1}
-          maxZoom={2}
+        <div
+          style={{
+            width: `${canvasDimensions.width}px`,
+            height: `${canvasDimensions.height}px`,
+            maxWidth: 'calc(100vw - 480px)',
+            maxHeight: 'calc(100vh - 40px)',
+            aspectRatio: `${canvasDimensions.width} / ${canvasDimensions.height}`,
+            position: 'relative',
+            border: '2px solid #555',
+            borderRadius: '4px',
+            background: '#0a0a14',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+          }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
-          <Controls />
-          <MiniMap
-            nodeColor={(node) => {
-              if (node.type === 'note') return '#ffeb3b';
-              if (node.type === 'ledWall') return '#ff6600';
-              if (node.type === 'processor') return '#0088cc';
-              if (node.type === 'switcher') return '#4a148c';
-              return '#666';
-            }}
-            maskColor="rgba(0, 0, 0, 0.8)"
-          />
-          <Panel position="top-left" className="project-panel">
-            <input
-              className="project-name-input"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Project Name"
-            />
-          </Panel>
-        </ReactFlow>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodesDelete={onNodesDelete}
+            onEdgeDoubleClick={onEdgeDoubleClick}
+            onNodeContextMenu={onNodeContextMenu}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            nodeTypes={nodeTypes}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
+            snapToGrid
+            snapGrid={[10, 10]}
+            deleteKeyCode={['Backspace', 'Delete']}
+            multiSelectionKeyCode={['Shift', 'Meta']}
+            selectionOnDrag
+            selectionMode={SelectionMode.Full}
+            edgesReconnectable={false}
+            selectNodesOnDrag
+            panOnDrag={[1]}
+            minZoom={0.1}
+            maxZoom={2}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
+            <Controls />
+            {showMiniMap && (
+              <MiniMap
+                nodeColor={(node) => {
+                  if (node.type === 'note') return '#ffeb3b';
+                  if (node.type === 'ledWall') return '#ff6600';
+                  if (node.type === 'processor') return '#0088cc';
+                  if (node.type === 'switcher') return '#4a148c';
+                  return '#666';
+                }}
+                maskColor="rgba(0, 0, 0, 0.8)"
+              />
+            )}
+            <Panel position="top-left" className="project-panel">
+              <input
+                className="project-name-input"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Project Name"
+              />
+            </Panel>
+            <Panel position="bottom-right">
+              <button
+                onClick={toggleMiniMap}
+                className="minimap-toggle-btn"
+                title={showMiniMap ? 'Hide MiniMap' : 'Show MiniMap'}
+              >
+                {showMiniMap ? '🗺️ Hide Map' : '🗺️ Show Map'}
+              </button>
+            </Panel>
+          </ReactFlow>
+        </div>
       </div>
+
+      <RightPanel
+        paperSize={paperSize}
+        orientation={orientation}
+        customWidth={customWidth}
+        customHeight={customHeight}
+        onPaperSizeChange={handlePaperSizeChange}
+        onOrientationChange={handleOrientationChange}
+        onCustomSizeChange={handleCustomSizeChange}
+      />
 
       {editingEdge && (
         <EdgeLabelEditor
