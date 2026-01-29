@@ -48,6 +48,7 @@ function Flow() {
   const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeIds: string[] } | null>(null);
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
+  const [cascadeDirection, setCascadeDirection] = useState<'right' | 'left'>('right');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, getNodes } = useReactFlow();
 
@@ -150,43 +151,6 @@ function Flow() {
       }
     };
   }, []);
-
-  // Keyboard shortcuts for undo/redo, copy/paste
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Undo
-      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
-        event.preventDefault();
-        handleUndo();
-      }
-      // Redo
-      else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
-        event.preventDefault();
-        handleRedo();
-      }
-      // Copy
-      else if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-        // Only copy if not typing in an input field
-        const target = event.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          event.preventDefault();
-          handleCopy();
-        }
-      }
-      // Paste
-      else if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
-        // Only paste if not typing in an input field
-        const target = event.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          event.preventDefault();
-          handlePaste();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleCopy, handlePaste]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -477,23 +441,47 @@ function Flow() {
   const handlePaste = useCallback(() => {
     if (copiedNodes.length === 0) return;
 
+    // Helper function to increment label numbers
+    const incrementLabel = (label: string): string => {
+      // Match number at the end of string (e.g., "Camera 1", "Switcher 23")
+      const match = label.match(/^(.*?)(\d+)$/);
+      if (match) {
+        const prefix = match[1].trim();
+        const number = parseInt(match[2]);
+        return `${prefix} ${number + 1}`;
+      }
+      // No number found, add " 1" to the end
+      return `${label} 1`;
+    };
+
     const newNodes: Node[] = [];
     const oldToNewIdMap = new Map<string, string>();
+
+    // Calculate offset based on cascade direction
+    const xOffset = cascadeDirection === 'right' ? 50 : -50;
+    const yOffset = 50;
 
     // Create new nodes with offset positions
     copiedNodes.forEach((node) => {
       const newId = uuidv4();
       oldToNewIdMap.set(node.id, newId);
 
+      // Increment label if it exists
+      const currentLabel = node.data?.label || '';
+      const newLabel = currentLabel ? incrementLabel(currentLabel) : currentLabel;
+
       const newNode: Node = {
         ...node,
         id: newId,
         position: {
-          x: node.position.x + 50,
-          y: node.position.y + 50,
+          x: node.position.x + xOffset,
+          y: node.position.y + yOffset,
         },
         selected: true,
-        data: { ...node.data },
+        data: {
+          ...node.data,
+          label: newLabel
+        },
       };
       newNodes.push(newNode);
     });
@@ -529,7 +517,44 @@ function Flow() {
 
     // Update copied nodes positions for next paste
     setCopiedNodes(newNodes);
-  }, [copiedNodes, edges, setNodes, setEdges]);
+  }, [copiedNodes, edges, setNodes, setEdges, cascadeDirection]);
+
+  // Keyboard shortcuts for undo/redo, copy/paste
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Undo
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        handleUndo();
+      }
+      // Redo
+      else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+        event.preventDefault();
+        handleRedo();
+      }
+      // Copy
+      else if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+        // Only copy if not typing in an input field
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          event.preventDefault();
+          handleCopy();
+        }
+      }
+      // Paste
+      else if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+        // Only paste if not typing in an input field
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          event.preventDefault();
+          handlePaste();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo, handleCopy, handlePaste]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -655,6 +680,8 @@ function Flow() {
         canUndo={canUndo}
         canRedo={canRedo}
         onExportPNG={handleExportPNG}
+        cascadeDirection={cascadeDirection}
+        onCascadeDirectionChange={setCascadeDirection}
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>

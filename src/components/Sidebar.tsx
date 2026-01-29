@@ -45,6 +45,8 @@ interface SidebarProps {
   canUndo: boolean;
   canRedo: boolean;
   onExportPNG: () => void;
+  cascadeDirection: 'right' | 'left';
+  onCascadeDirectionChange: (direction: 'right' | 'left') => void;
 }
 
 // Equipment presets with their specific I/O configurations
@@ -340,7 +342,7 @@ const EQUIPMENT_PRESETS = {
   },
 };
 
-export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG }: SidebarProps) {
+export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG, cascadeDirection, onCascadeDirectionChange }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -882,6 +884,19 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         </div>
         <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
           <button onClick={onExportPNG} title="Export diagram as PNG image">Export PNG</button>
+        </div>
+        <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
+          <button
+            onClick={() => onCascadeDirectionChange(cascadeDirection === 'right' ? 'left' : 'right')}
+            title="Toggle paste cascade direction"
+            style={{
+              gridColumn: '1 / -1',
+              background: cascadeDirection === 'right' ? '#2a4a2a' : '#4a2a2a',
+              borderColor: cascadeDirection === 'right' ? '#3a6a3a' : '#6a3a3a'
+            }}
+          >
+            Paste: {cascadeDirection === 'right' ? '→ Right' : '← Left'}
+          </button>
         </div>
       </div>
 
