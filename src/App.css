@@ -2070,11 +2070,8 @@
 .flow-wrapper {
   flex: 1;
   background-color: #050508;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  overflow: auto;
+  position: relative;
+  overflow: hidden;
 }
 
 .flow-wrapper .react-flow {

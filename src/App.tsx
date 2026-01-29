@@ -2,12 +2,10 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
-  Background,
   MiniMap,
   addEdge,
   useNodesState,
   useEdgesState,
-  BackgroundVariant,
   Panel,
   useReactFlow,
   ReactFlowProvider,
@@ -25,6 +23,8 @@ import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import UpdateNotification from './components/UpdateNotification';
 import EdgeLabelEditor from './components/EdgeLabelEditor';
+import { PageOverlay } from './components/PageOverlay';
+import { usePageGrid } from './hooks/usePageGrid';
 import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
 import { PAPER_SIZES, type PaperSize, type Orientation } from './types';
@@ -54,7 +54,7 @@ function Flow() {
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
   const [cascadeDirection, setCascadeDirection] = useState<'right' | 'left'>('right');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition, getNodes } = useReactFlow();
+  const { screenToFlowPosition, getNodes, setViewport } = useReactFlow();
 
   // Paper size state with localStorage persistence
   const [paperSize, setPaperSize] = useState<PaperSize>(() => {
@@ -131,6 +131,28 @@ function Flow() {
   }, [paperSize, orientation, customWidth, customHeight]);
 
   const canvasDimensions = getCanvasDimensions();
+
+  // Calculate occupied pages based on node positions
+  const pages = usePageGrid({
+    nodes,
+    pageWidth: canvasDimensions.width,
+    pageHeight: canvasDimensions.height,
+  });
+
+  // Center the origin page in the viewport
+  const centerPage = useCallback(() => {
+    const wrapper = reactFlowWrapper.current;
+    if (!wrapper) return;
+
+    const zoom = 0.75;
+    const containerWidth = wrapper.clientWidth;
+    const containerHeight = wrapper.clientHeight;
+
+    const x = (containerWidth - canvasDimensions.width * zoom) / 2;
+    const y = (containerHeight - canvasDimensions.height * zoom) / 2;
+
+    setViewport({ x, y, zoom });
+  }, [canvasDimensions.width, canvasDimensions.height, setViewport]);
 
   // Refs for stable keyboard handler access
   const nodesRef = useRef<Node[]>(nodes);
@@ -597,7 +619,9 @@ function Flow() {
     // Reset copied nodes
     setCopiedNodes([]);
     copiedNodesRef.current = [];
-  }, [nodes.length, setNodes, setEdges]);
+    // Re-center the page
+    centerPage();
+  }, [nodes.length, setNodes, setEdges, centerPage]);
 
   const onEdgeDoubleClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
@@ -1044,79 +1068,65 @@ function Flow() {
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>
-        <div
-          style={{
-            width: `${canvasDimensions.width}px`,
-            height: `${canvasDimensions.height}px`,
-            maxWidth: 'calc(100vw - 480px)',
-            maxHeight: 'calc(100vh - 40px)',
-            aspectRatio: `${canvasDimensions.width} / ${canvasDimensions.height}`,
-            position: 'relative',
-            border: '2px solid #555',
-            borderRadius: '4px',
-            background: '#0a0a14',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-          }}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodesDelete={onNodesDelete}
+          onEdgeDoubleClick={onEdgeDoubleClick}
+          onNodeContextMenu={onNodeContextMenu}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onInit={centerPage}
+          nodeTypes={nodeTypes}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
+          snapToGrid
+          snapGrid={[10, 10]}
+          deleteKeyCode={['Backspace', 'Delete']}
+          multiSelectionKeyCode={['Shift', 'Meta']}
+          selectionOnDrag
+          selectionMode={SelectionMode.Full}
+          edgesReconnectable={false}
+          selectNodesOnDrag
+          panOnDrag={[1]}
+          minZoom={0.1}
+          maxZoom={2}
+          proOptions={{ hideAttribution: true }}
         >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodesDelete={onNodesDelete}
-            onEdgeDoubleClick={onEdgeDoubleClick}
-            onNodeContextMenu={onNodeContextMenu}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            nodeTypes={nodeTypes}
-            defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
-            snapToGrid
-            snapGrid={[10, 10]}
-            deleteKeyCode={['Backspace', 'Delete']}
-            multiSelectionKeyCode={['Shift', 'Meta']}
-            selectionOnDrag
-            selectionMode={SelectionMode.Full}
-            edgesReconnectable={false}
-            selectNodesOnDrag
-            panOnDrag={[1]}
-            minZoom={0.1}
-            maxZoom={2}
-            proOptions={{ hideAttribution: true }}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
-            <Controls />
-            {showMiniMap && (
-              <MiniMap
-                nodeColor={(node) => {
-                  if (node.type === 'note') return '#ffeb3b';
-                  if (node.type === 'ledWall') return '#ff6600';
-                  if (node.type === 'processor') return '#0088cc';
-                  if (node.type === 'switcher') return '#4a148c';
-                  return '#666';
-                }}
-                maskColor="rgba(0, 0, 0, 0.8)"
-              />
-            )}
-            <Panel position="top-left" className="project-panel">
-              <input
-                className="project-name-input"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="Project Name"
-              />
-            </Panel>
-            <Panel position="bottom-right">
-              <button
-                onClick={toggleMiniMap}
-                className="minimap-toggle-btn"
-                title={showMiniMap ? 'Hide MiniMap' : 'Show MiniMap'}
-              >
-                {showMiniMap ? '🗺️ Hide Map' : '🗺️ Show Map'}
-              </button>
-            </Panel>
-          </ReactFlow>
-        </div>
+          <PageOverlay pages={pages} />
+          <Controls />
+          {showMiniMap && (
+            <MiniMap
+              nodeColor={(node) => {
+                if (node.type === 'note') return '#ffeb3b';
+                if (node.type === 'ledWall') return '#ff6600';
+                if (node.type === 'processor') return '#0088cc';
+                if (node.type === 'switcher') return '#4a148c';
+                return '#666';
+              }}
+              maskColor="rgba(0, 0, 0, 0.8)"
+            />
+          )}
+          <Panel position="top-left" className="project-panel">
+            <input
+              className="project-name-input"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="Project Name"
+            />
+          </Panel>
+          <Panel position="bottom-right">
+            <button
+              onClick={toggleMiniMap}
+              className="minimap-toggle-btn"
+              title={showMiniMap ? 'Hide MiniMap' : 'Show MiniMap'}
+            >
+              {showMiniMap ? '🗺️ Hide Map' : '🗺️ Show Map'}
+            </button>
+          </Panel>
+        </ReactFlow>
       </div>
 
       <RightPanel
