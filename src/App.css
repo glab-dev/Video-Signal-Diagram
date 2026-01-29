@@ -898,8 +898,18 @@
   padding: 10px;
 }
 
+.node-generic-io.side-by-side .generic-io-content {
+  display: flex;
+  gap: 12px;
+}
+
 .io-section {
   margin-bottom: 10px;
+}
+
+.node-generic-io.side-by-side .io-section {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .io-section:last-child {
@@ -1288,10 +1298,18 @@
   gap: 16px;
 }
 
+.node-barco-e3.side-by-side .barco-e3-content {
+  flex-direction: row;
+}
+
 .barco-cards-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.node-barco-e3.side-by-side .barco-cards-section {
+  flex: 1;
 }
 
 .cards-section-header {
@@ -1306,6 +1324,58 @@
   color: #aaa;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.cards-section-header.draggable {
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.cards-section-header.draggable:hover {
+  background: #353535;
+}
+
+.cards-section-header.draggable:active {
+  cursor: grabbing;
+}
+
+.cards-section-header.dragging {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* SYSTEM subsection - rendered within INPUT or OUTPUT column */
+.barco-cards-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #444;
+}
+
+.cards-section-header.system-header {
+  background: #2a3a2a;
+  border: 1px solid #3a5a3a;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.cards-section-header.system-header:hover {
+  background: #3a4a3a;
+}
+
+.cards-section-header.system-header:active {
+  cursor: grabbing;
+}
+
+/* Drop target highlight when dragging SYSTEM section */
+.barco-cards-section.drop-target {
+  background: rgba(0, 170, 255, 0.1);
+  border: 2px dashed #00aaff;
+  border-radius: 8px;
 }
 
 .add-card-btn {

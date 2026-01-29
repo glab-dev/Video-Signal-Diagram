@@ -479,7 +479,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     }
   }, [updateOutput, sourceNames, setAllOutputResolutions]);
 
-  const layout = data.layout || 'stacked';
+  const layout = data.layout || 'sideBySide';
 
   return (
     <div

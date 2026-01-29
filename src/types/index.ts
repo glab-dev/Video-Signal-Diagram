@@ -69,6 +69,7 @@ export interface NoteNodeData extends BaseNodeData {
 export interface GenericIONodeData extends BaseNodeData {
   inputs: Port[];
   outputs: Port[];
+  layout?: 'stacked' | 'sideBySide';
 }
 
 // Image node - for imported raster images
@@ -95,6 +96,9 @@ export interface CardConnector {
 // Barco E3 node - contains multiple TRI COMBO cards
 export interface BarcoE3NodeData extends BaseNodeData {
   cards: BarcoCard[];
+  layout?: 'stacked' | 'sideBySide';
+  systemColumn?: 'input' | 'output'; // Which column SYSTEM appears in (side-by-side mode)
+  systemPosition?: 'top' | 'bottom'; // Where SYSTEM appears: stacked mode (top = above inputs, bottom = below outputs), side-by-side mode (top/bottom of the column)
 }
 
 export interface BarcoCard {

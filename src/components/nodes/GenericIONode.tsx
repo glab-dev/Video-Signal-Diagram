@@ -51,6 +51,11 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
     [id, updateNodeData]
   );
 
+  const toggleLayout = useCallback(() => {
+    const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
+    updateNodeData(id, { layout: newLayout });
+  }, [id, data.layout, updateNodeData]);
+
   const updateInput = useCallback(
     (portId: string, name: string) => {
       const newInputs = data.inputs.map((port) =>
@@ -104,10 +109,11 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
   );
 
   const nodeColor = data.color || '#0088cc';
+  const layout = data.layout || 'sideBySide';
 
   return (
     <div
-      className={`node-generic-io ${selected ? 'selected' : ''}`}
+      className={`node-generic-io ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: nodeColor,
         width: measured?.width,
@@ -133,6 +139,13 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
           currentData={data}
           onLoadPreset={handleLoadPreset}
         />
+        <button
+          className="layout-toggle-btn nodrag"
+          onClick={toggleLayout}
+          title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
+        >
+          {layout === 'stacked' ? '⇄' : '⇅'}
+        </button>
       </div>
 
       <div className="color-picker-row">
