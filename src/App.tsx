@@ -167,12 +167,19 @@ function Flow() {
 
   const onConnect = useCallback(
     (params: Connection) => {
+      // Get source node to extract color
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+
+      // Get color from source node, fallback to default grey
+      const edgeColor = sourceNode?.data?.color || '#888';
+
       const label = prompt('Connection label (optional):') || '';
       const edge: Edge = {
         ...params,
         id: uuidv4(),
         type: 'default',
-        style: { stroke: '#888', strokeWidth: 2 },
+        style: { stroke: edgeColor, strokeWidth: 2 },
         label: label || undefined,
         labelStyle: { fill: '#fff', fontWeight: 600 },
         labelBgStyle: { fill: '#333', fillOpacity: 0.8 },
@@ -181,8 +188,6 @@ function Flow() {
       setEdges((eds) => addEdge(edge, eds));
 
       // Auto-fill connection names on source and target nodes
-      const sourceNode = nodes.find(n => n.id === params.source);
-      const targetNode = nodes.find(n => n.id === params.target);
 
       if (sourceNode && targetNode) {
         const sourceHandleId = params.sourceHandle;
