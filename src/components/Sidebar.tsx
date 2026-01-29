@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '@xyflow/react';
 import type { ProjectData, NodePreset } from '../types';
-import { exportProject, importProject, deleteProject, getAllProjects, getAllPresets, deletePreset } from '../store/db';
+import { exportProject, importProject, deleteProject, getAllProjects, getAllPresets, deletePreset, savePreset } from '../store/db';
 
 // Recent files stored in localStorage
 interface RecentFile {
@@ -406,6 +406,60 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       await deletePreset(presetId);
       await loadSavedPresets();
     }
+  }, [loadSavedPresets]);
+
+  // Export all presets to a file for backup
+  const handleExportPresets = useCallback(async () => {
+    const presets = await getAllPresets();
+    if (presets.length === 0) {
+      alert('No saved presets to export.');
+      return;
+    }
+    const json = JSON.stringify(presets, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `presets-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    alert(`Exported ${presets.length} presets to file.`);
+  }, []);
+
+  // Import presets from a backup file
+  const presetInputRef = useRef<HTMLInputElement>(null);
+  const handleImportPresets = useCallback(() => {
+    presetInputRef.current?.click();
+  }, []);
+
+  const handlePresetFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const presets = JSON.parse(e.target?.result as string);
+        if (!Array.isArray(presets)) {
+          alert('Invalid preset file format.');
+          return;
+        }
+        let imported = 0;
+        for (const preset of presets) {
+          if (preset.id && preset.name && preset.nodeType && preset.data) {
+            await savePreset(preset);
+            imported++;
+          }
+        }
+        await loadSavedPresets();
+        window.dispatchEvent(new CustomEvent('presetSaved'));
+        alert(`Imported ${imported} presets successfully!`);
+      } catch {
+        alert('Failed to import presets. Invalid file format.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   }, [loadSavedPresets]);
 
   const handleDragStart = useCallback((e: React.DragEvent, preset: NodePreset) => {
@@ -886,6 +940,10 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
           <button onClick={onExportPNG} title="Export diagram as PNG image">Export PNG</button>
         </div>
         <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
+          <button onClick={handleExportPresets} title="Export saved presets to JSON">Export Presets</button>
+          <button onClick={handleImportPresets} title="Import presets from JSON">Import Presets</button>
+        </div>
+        <div className="sidebar-buttons" style={{ marginTop: '4px' }}>
           <button
             onClick={() => onCascadeDirectionChange(cascadeDirection === 'right' ? 'left' : 'right')}
             title="Toggle paste cascade direction"
@@ -1016,6 +1074,13 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         type="file"
         accept="image/*"
         onChange={handleImageChange}
+        style={{ display: 'none' }}
+      />
+      <input
+        ref={presetInputRef}
+        type="file"
+        accept=".json"
+        onChange={handlePresetFileChange}
         style={{ display: 'none' }}
       />
     </div>

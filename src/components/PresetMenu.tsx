@@ -50,25 +50,31 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const handleSavePreset = useCallback(async () => {
+  const handleSavePreset = useCallback(async (saveToSidebar: boolean) => {
     const name = prompt('Enter preset name:');
     if (!name) return;
 
-    // Ask for category
-    const categoryOptions = ['brompton', 'barco', 'blackmagic', 'sources', 'destinations', 'basic'];
-    const categoryChoice = prompt(
-      `Choose category (or leave empty for node-only access):\n\n` +
-      categoryOptions.map((c, i) => `${i + 1}. ${c}`).join('\n') +
-      '\n\nEnter number or category name:'
-    );
-
     let category: string | undefined = undefined;
-    if (categoryChoice) {
+
+    if (saveToSidebar) {
+      // Ask for sidebar category
+      const categoryOptions = ['brompton', 'barco', 'blackmagic', 'sources', 'destinations', 'basic'];
+      const categoryChoice = prompt(
+        `Choose sidebar category:\n\n` +
+        categoryOptions.map((c, i) => `${i + 1}. ${c}`).join('\n') +
+        '\n\nEnter number or category name:'
+      );
+
+      if (!categoryChoice) return; // User cancelled
+
       const choiceNum = parseInt(categoryChoice);
       if (choiceNum >= 1 && choiceNum <= categoryOptions.length) {
         category = categoryOptions[choiceNum - 1];
       } else if (categoryOptions.includes(categoryChoice.toLowerCase())) {
         category = categoryChoice.toLowerCase();
+      } else {
+        alert('Invalid category. Please try again.');
+        return;
       }
     }
 
@@ -88,9 +94,9 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
     // Notify sidebar to refresh
     window.dispatchEvent(new CustomEvent('presetSaved'));
 
-    const msg = category
-      ? `Preset "${name}" saved to ${category} category!`
-      : `Preset "${name}" saved (node menu only)!`;
+    const msg = saveToSidebar
+      ? `Preset "${name}" saved to sidebar (${category})!`
+      : `Preset "${name}" saved to this node's menu only!`;
     alert(msg);
   }, [nodeType, currentData, loadPresets]);
 
@@ -132,14 +138,24 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
 
       {isOpen && (
         <div className="preset-dropdown">
+          <div className="preset-menu-section-header">Save Preset</div>
           <button
             className="preset-menu-item"
             onClick={(e) => {
               e.stopPropagation();
-              handleSavePreset();
+              handleSavePreset(false);
             }}
           >
-            💾 Save as Preset
+            📋 Save to Node Menu
+          </button>
+          <button
+            className="preset-menu-item"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSavePreset(true);
+            }}
+          >
+            📁 Save to Sidebar
           </button>
 
           {presets.length > 0 && (

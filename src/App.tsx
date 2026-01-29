@@ -355,7 +355,8 @@ function Flow() {
         setNodes((nds) =>
           nds.map((node) => {
             // Update source node's output destination field
-            if (node.id === params.source && node.data?.outputs && Array.isArray(node.data.outputs)) {
+            // Skip for switcher nodes as they use 'destination' field for Source selection
+            if (node.id === params.source && node.type !== 'switcher' && node.data?.outputs && Array.isArray(node.data.outputs)) {
               const destinationText = targetInputName
                 ? `${targetLabel} - ${targetInputName}`
                 : targetLabel;
