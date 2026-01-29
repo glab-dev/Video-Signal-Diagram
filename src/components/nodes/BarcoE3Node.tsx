@@ -87,6 +87,13 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     [id, updateNodeData]
   );
 
+  const updateIpAddress = useCallback(
+    (value: string) => {
+      updateNodeData(id, { ipAddress: value });
+    },
+    [id, updateNodeData]
+  );
+
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
       const barcoData = presetData as BarcoE3NodeData;
@@ -281,6 +288,15 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           currentData={data}
           onLoadPreset={handleLoadPreset}
           onReset={handleReset}
+        />
+      </div>
+      <div className="node-ip-row">
+        <span className="ip-label">IP:</span>
+        <input
+          className="ip-input"
+          value={data.ipAddress || ''}
+          onChange={(e) => updateIpAddress(e.target.value)}
+          placeholder="192.168.1.100"
         />
       </div>
 

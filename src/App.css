@@ -310,6 +310,45 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* IP Address Row */
+.node-ip-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 6px;
+}
+
+.ip-label {
+  font-size: 10px;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.ip-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #333;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+  outline: none;
+  font-family: monospace;
+}
+
+.ip-input:focus {
+  border-color: #00aaff;
+  box-shadow: 0 0 0 1px rgba(0, 170, 255, 0.2);
+}
+
+.ip-input::placeholder {
+  color: #555;
+}
+
 /* Section Headers */
 .section-header {
   display: flex;
@@ -660,6 +699,30 @@
 .field-header.drag-over {
   background: rgba(0, 170, 255, 0.2);
   border-left: 2px solid #00aaff;
+}
+
+/* Set All Resolution dropdown in headers */
+.set-all-resolution {
+  font-size: 8px;
+  padding: 1px 2px;
+  background: #333;
+  color: #aaa;
+  border: 1px solid #444;
+  border-radius: 3px;
+  cursor: pointer;
+  max-width: 35px;
+  flex-shrink: 0;
+}
+
+.set-all-resolution:hover {
+  background: #444;
+  color: #fff;
+  border-color: #00aaff;
+}
+
+.set-all-resolution:focus {
+  outline: none;
+  border-color: #00aaff;
 }
 
 /* Switcher-specific port row styling */
@@ -1613,6 +1676,54 @@
   font-size: 16px;
   color: #fff;
   font-weight: 600;
+}
+
+.edge-editor-field {
+  margin-bottom: 12px;
+}
+
+.edge-editor-field label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.edge-editor-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.edge-editor-row .edge-editor-field {
+  flex: 1;
+}
+
+.edge-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.edge-select:focus {
+  outline: none;
+  border-color: #00aaff;
+  box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.1);
+}
+
+.edge-select option {
+  background: #1a1a2e;
+  color: #fff;
 }
 
 .edge-label-input {

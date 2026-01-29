@@ -92,6 +92,24 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     [id, data.outputs, updateNodeData]
   );
 
+  // Set all input resolutions at once
+  const setAllInputResolutions = useCallback(
+    (resolution: string) => {
+      const newInputs = data.inputs.map((port) => ({ ...port, resolution }));
+      updateNodeData(id, { inputs: newInputs });
+    },
+    [id, data.inputs, updateNodeData]
+  );
+
+  // Set all output resolutions at once
+  const setAllOutputResolutions = useCallback(
+    (resolution: string) => {
+      const newOutputs = data.outputs.map((port) => ({ ...port, resolution }));
+      updateNodeData(id, { outputs: newOutputs });
+    },
+    [id, data.outputs, updateNodeData]
+  );
+
   const addInput = useCallback(() => {
     const newPort: ProcessorPort = {
       id: uuidv4(),
@@ -130,6 +148,13 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
+    },
+    [id, updateNodeData]
+  );
+
+  const updateIpAddress = useCallback(
+    (value: string) => {
+      updateNodeData(id, { ipAddress: value });
     },
     [id, updateNodeData]
   );
@@ -326,7 +351,15 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           <select
             key={fieldName}
             value={port.resolution || ''}
-            onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.startsWith('__setall__:')) {
+                const resolution = value.replace('__setall__:', '');
+                setAllInputResolutions(resolution);
+              } else {
+                updateInput(port.id, 'resolution', value);
+              }
+            }}
             className={`port-field ${config.className}`}
             style={style}
           >
@@ -334,6 +367,11 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             {VIDEO_RESOLUTIONS.map((res) => (
               <option key={res} value={res}>{res}</option>
             ))}
+            <optgroup label="── Set All Inputs ──">
+              {VIDEO_RESOLUTIONS.filter(r => r !== 'Custom').map((res) => (
+                <option key={`setall-${res}`} value={`__setall__:${res}`}>{res}</option>
+              ))}
+            </optgroup>
           </select>
         ) : (
           <input
@@ -346,7 +384,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           />
         );
     }
-  }, [updateInput, sourceNames]);
+  }, [updateInput, sourceNames, setAllInputResolutions]);
 
   const renderOutputField = useCallback((port: ProcessorPort, fieldName: OutputFieldType) => {
     const config = OUTPUT_FIELD_CONFIG[fieldName];
@@ -400,7 +438,15 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           <select
             key={fieldName}
             value={port.resolution || ''}
-            onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.startsWith('__setall__:')) {
+                const resolution = value.replace('__setall__:', '');
+                setAllOutputResolutions(resolution);
+              } else {
+                updateOutput(port.id, 'resolution', value);
+              }
+            }}
             className={`port-field ${config.className}`}
             style={style}
           >
@@ -408,6 +454,11 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             {VIDEO_RESOLUTIONS.map((res) => (
               <option key={res} value={res}>{res}</option>
             ))}
+            <optgroup label="── Set All Outputs ──">
+              {VIDEO_RESOLUTIONS.filter(r => r !== 'Custom').map((res) => (
+                <option key={`setall-${res}`} value={`__setall__:${res}`}>{res}</option>
+              ))}
+            </optgroup>
           </select>
         ) : (
           <input
@@ -420,7 +471,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           />
         );
     }
-  }, [updateOutput, sourceNames]);
+  }, [updateOutput, sourceNames, setAllOutputResolutions]);
 
   return (
     <div
@@ -452,6 +503,15 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           onReset={handleReset}
         />
       </div>
+      <div className="node-ip-row">
+        <span className="ip-label">IP:</span>
+        <input
+          className="ip-input"
+          value={data.ipAddress || ''}
+          onChange={(e) => updateIpAddress(e.target.value)}
+          placeholder="192.168.1.100"
+        />
+      </div>
 
       <div className="switcher-content">
         {/* Inputs Column */}
@@ -464,6 +524,48 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             {inputColumnOrder.map((fieldName, index) => {
               const config = INPUT_FIELD_CONFIG[fieldName];
               const isDragging = draggedColumn?.type === 'input' && draggedColumn?.index === index;
+
+              // Special handling for resolution column - add "Set All" dropdown
+              if (fieldName === 'resolution') {
+                return (
+                  <div
+                    key={fieldName}
+                    className={`field-header ${config.className} draggable nodrag ${isDragging ? 'dragging' : ''}`}
+                    draggable="true"
+                    onDragStart={(e) => handleDragStart(e, index, 'input')}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index, 'input')}
+                    style={{
+                      flex: config.flex,
+                      minWidth: `${config.minWidth}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>{config.label}</span>
+                    <select
+                      className="set-all-resolution nodrag"
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setAllInputResolutions(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      title="Set all input resolutions"
+                    >
+                      <option value="">All</option>
+                      {VIDEO_RESOLUTIONS.map((res) => (
+                        <option key={res} value={res}>{res}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
+
               return (
                 <span
                   key={fieldName}
@@ -520,6 +622,48 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             {outputColumnOrder.map((fieldName, index) => {
               const config = OUTPUT_FIELD_CONFIG[fieldName];
               const isDragging = draggedColumn?.type === 'output' && draggedColumn?.index === index;
+
+              // Special handling for resolution column - add "Set All" dropdown
+              if (fieldName === 'resolution') {
+                return (
+                  <div
+                    key={fieldName}
+                    className={`field-header ${config.className} draggable nodrag ${isDragging ? 'dragging' : ''}`}
+                    draggable="true"
+                    onDragStart={(e) => handleDragStart(e, index, 'output')}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index, 'output')}
+                    style={{
+                      flex: config.flex,
+                      minWidth: `${config.minWidth}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>{config.label}</span>
+                    <select
+                      className="set-all-resolution nodrag"
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setAllOutputResolutions(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      title="Set all output resolutions"
+                    >
+                      <option value="">All</option>
+                      {VIDEO_RESOLUTIONS.map((res) => (
+                        <option key={res} value={res}>{res}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
+
               return (
                 <span
                   key={fieldName}

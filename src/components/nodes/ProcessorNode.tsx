@@ -112,6 +112,13 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
     [id, updateNodeData]
   );
 
+  const updateIpAddress = useCallback(
+    (value: string) => {
+      updateNodeData(id, { ipAddress: value });
+    },
+    [id, updateNodeData]
+  );
+
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
       updateNodeData(id, presetData as Partial<ProcessorNodeData>);
@@ -179,6 +186,15 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
         >
           {layout === 'stacked' ? '⇄' : '⇅'}
         </button>
+      </div>
+      <div className="node-ip-row">
+        <span className="ip-label">IP:</span>
+        <input
+          className="ip-input"
+          value={data.ipAddress || ''}
+          onChange={(e) => updateIpAddress(e.target.value)}
+          placeholder="192.168.1.100"
+        />
       </div>
 
       <div className="processor-content">

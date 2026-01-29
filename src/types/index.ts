@@ -14,6 +14,7 @@ export interface Port {
 export interface BaseNodeData {
   label: string;
   color?: string;
+  ipAddress?: string;  // IP address for network devices
 }
 
 // Router node - like BMD 20x20 in the screenshot

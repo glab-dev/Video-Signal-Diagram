@@ -13,6 +13,7 @@ import {
   ReactFlowProvider,
   getNodesBounds,
   getViewportForBounds,
+  SelectionMode,
 } from '@xyflow/react';
 import type { Connection, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -23,6 +24,7 @@ import { nodeTypes } from './components/nodes';
 import Sidebar from './components/Sidebar';
 import UpdateNotification from './components/UpdateNotification';
 import EdgeLabelEditor from './components/EdgeLabelEditor';
+import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
 import './App.css';
 
@@ -51,6 +53,29 @@ function Flow() {
   const [cascadeDirection, setCascadeDirection] = useState<'right' | 'left'>('right');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, getNodes } = useReactFlow();
+
+  // Refs for stable keyboard handler access
+  const nodesRef = useRef<Node[]>(nodes);
+  const copiedNodesRef = useRef<Node[]>(copiedNodes);
+  const edgesRef = useRef<Edge[]>(edges);
+  const cascadeDirectionRef = useRef<'right' | 'left'>(cascadeDirection);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  useEffect(() => {
+    copiedNodesRef.current = copiedNodes;
+  }, [copiedNodes]);
+
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
+
+  useEffect(() => {
+    cascadeDirectionRef.current = cascadeDirection;
+  }, [cascadeDirection]);
 
   // History tracking for undo/redo
   const [history, setHistory] = useState<HistoryState[]>([{ nodes: [], edges: [] }]);
@@ -152,27 +177,115 @@ function Flow() {
     };
   }, []);
 
+  // Helper function to trace back to the original source color
+  const getOriginalSourceColor = useCallback((nodeId: string, sourceHandleId?: string | null, visited: Set<string> = new Set()): string => {
+    // Prevent infinite loops
+    if (visited.has(nodeId)) return '#888';
+    visited.add(nodeId);
+
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return '#888';
+
+    // Check if this is a pass-through node (routing matrix like 20x20, 40x40, or routers)
+    const isPassThrough = node.type === 'switcher' || node.type === 'router';
+    const label = (node.data?.label as string) || '';
+    const isRoutingMatrix = label.toLowerCase().includes('20x20') ||
+                           label.toLowerCase().includes('40x40') ||
+                           label.toLowerCase().includes('router');
+
+    // If it's a pass-through routing device, check the output's selected source
+    if (isPassThrough && isRoutingMatrix && sourceHandleId) {
+      // Check if this output has a source selected in the dropdown
+      const outputs = (node.data?.outputs as Array<{ id?: string; destination?: string }>) || [];
+      const outputPort = outputs.find(out =>
+        `output-${out.id}` === sourceHandleId || out.id === sourceHandleId
+      );
+
+      if (outputPort?.destination) {
+        // Find the source node by its label
+        const sourceNode = nodes.find(n =>
+          (n.data?.label as string) === outputPort.destination
+        );
+        if (sourceNode?.data?.color) {
+          return sourceNode.data.color as string;
+        }
+      }
+
+      // Also try tracing back through incoming connections
+      const incomingEdges = edges.filter(e => e.target === nodeId);
+      if (incomingEdges.length > 0) {
+        // Try to find the original source color by tracing back
+        for (const edge of incomingEdges) {
+          const color = getOriginalSourceColor(edge.source, edge.sourceHandle, visited);
+          if (color !== '#888') {
+            return color;
+          }
+        }
+        // If we have an incoming edge, use its color
+        const firstEdge = incomingEdges[0];
+        if (firstEdge.style?.stroke) {
+          return firstEdge.style.stroke as string;
+        }
+      }
+    }
+
+    // Return this node's color (original source)
+    return (node.data?.color as string) || '#888';
+  }, [nodes, edges]);
+
+  // State for pending new connection (to show editor modal)
+  const [pendingConnection, setPendingConnection] = useState<{ params: Connection; edgeColor: string } | null>(null);
+
   const onConnect = useCallback(
     (params: Connection) => {
-      // Get source node to extract color
-      const sourceNode = nodes.find(n => n.id === params.source);
-      const targetNode = nodes.find(n => n.id === params.target);
+      // Get color - trace back through pass-through nodes to find original source color
+      const edgeColor = params.source ? getOriginalSourceColor(params.source, params.sourceHandle) : '#888';
 
-      // Get color from source node, fallback to default grey
-      const edgeColor = sourceNode?.data?.color || '#888';
+      // Store the pending connection and show the editor modal
+      setPendingConnection({ params, edgeColor });
+    },
+    [getOriginalSourceColor]
+  );
 
-      const label = prompt('Connection label (optional):') || '';
+  // Handle saving a new connection from the modal
+  const handleSaveNewConnection = useCallback(
+    (data: EdgeData) => {
+      if (!pendingConnection) return;
+
+      const { params, edgeColor } = pendingConnection;
+
+      // Build label string that includes cable info if provided
+      let displayLabel = data.label || '';
+      const cableInfo: string[] = [];
+      if (data.cableType) cableInfo.push(data.cableType);
+      if (data.cableLength) cableInfo.push(data.cableLength);
+
+      if (cableInfo.length > 0) {
+        displayLabel = displayLabel
+          ? `${displayLabel} (${cableInfo.join(' - ')})`
+          : cableInfo.join(' - ');
+      }
+
       const edge: Edge = {
         ...params,
         id: uuidv4(),
         type: 'default',
         style: { stroke: edgeColor, strokeWidth: 2 },
-        label: label || undefined,
+        label: displayLabel || undefined,
         labelStyle: { fill: '#fff', fontWeight: 600 },
         labelBgStyle: { fill: '#333', fillOpacity: 0.8 },
         labelBgPadding: [4, 8] as [number, number],
+        data: {
+          cableType: data.cableType,
+          cableLength: data.cableLength,
+          rawLabel: data.label,
+        },
       } as Edge;
       setEdges((eds) => addEdge(edge, eds));
+
+      // Get source and target nodes for auto-fill
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
 
       // Auto-fill connection names on source and target nodes
 
@@ -253,9 +366,15 @@ function Flow() {
           })
         );
       }
+      setPendingConnection(null);
     },
-    [setEdges, nodes, setNodes]
+    [pendingConnection, setEdges, nodes, setNodes]
   );
+
+  // Handle cancelling a new connection
+  const handleCancelNewConnection = useCallback(() => {
+    setPendingConnection(null);
+  }, []);
 
   const onAddNode = useCallback(
     (node: Node) => {
@@ -287,6 +406,9 @@ function Flow() {
       // Reset history when loading a project
       setHistory([{ nodes: project.nodes, edges: project.edges }]);
       setHistoryIndex(0);
+      // Reset copied nodes
+      setCopiedNodes([]);
+      copiedNodesRef.current = [];
     },
     [setNodes, setEdges]
   );
@@ -307,6 +429,9 @@ function Flow() {
     // Reset history when creating a new project
     setHistory([{ nodes: [], edges: [] }]);
     setHistoryIndex(0);
+    // Reset copied nodes
+    setCopiedNodes([]);
+    copiedNodesRef.current = [];
   }, [nodes.length, setNodes, setEdges]);
 
   const onEdgeDoubleClick = useCallback(
@@ -317,12 +442,33 @@ function Flow() {
   );
 
   const handleSaveEdgeLabel = useCallback(
-    (label: string) => {
+    (data: EdgeData) => {
       if (editingEdge) {
+        // Build label string that includes cable info if provided
+        let displayLabel = data.label || '';
+        const cableInfo: string[] = [];
+        if (data.cableType) cableInfo.push(data.cableType);
+        if (data.cableLength) cableInfo.push(data.cableLength);
+
+        if (cableInfo.length > 0) {
+          displayLabel = displayLabel
+            ? `${displayLabel} (${cableInfo.join(' - ')})`
+            : cableInfo.join(' - ');
+        }
+
         setEdges((eds) =>
           eds.map((e) =>
             e.id === editingEdge.id
-              ? { ...e, label: label || undefined }
+              ? {
+                  ...e,
+                  label: displayLabel || undefined,
+                  data: {
+                    ...((e.data || {}) as Record<string, unknown>),
+                    cableType: data.cableType,
+                    cableLength: data.cableLength,
+                    rawLabel: data.label,
+                  },
+                }
               : e
           )
         );
@@ -432,14 +578,22 @@ function Flow() {
   }, []);
 
   const handleCopy = useCallback(() => {
-    const selectedNodes = nodes.filter(n => n.selected);
+    // Get current nodes from ReactFlow to ensure we have latest selection state
+    const currentNodes = getNodes();
+    const selectedNodes = currentNodes.filter(n => n.selected);
     if (selectedNodes.length > 0) {
       setCopiedNodes(selectedNodes);
+      copiedNodesRef.current = selectedNodes;
+      console.log('Copied', selectedNodes.length, 'nodes'); // Debug
+    } else {
+      console.log('No nodes selected to copy'); // Debug
     }
-  }, [nodes]);
+  }, [getNodes]);
 
   const handlePaste = useCallback(() => {
-    if (copiedNodes.length === 0) return;
+    const currentCopiedNodes = copiedNodesRef.current;
+    console.log('Paste triggered, copied nodes:', currentCopiedNodes.length); // Debug
+    if (currentCopiedNodes.length === 0) return;
 
     // Helper function to increment label numbers
     const incrementLabel = (label: string): string => {
@@ -458,16 +612,16 @@ function Flow() {
     const oldToNewIdMap = new Map<string, string>();
 
     // Calculate offset based on cascade direction
-    const xOffset = cascadeDirection === 'right' ? 50 : -50;
+    const xOffset = cascadeDirectionRef.current === 'right' ? 50 : -50;
     const yOffset = 50;
 
     // Create new nodes with offset positions
-    copiedNodes.forEach((node) => {
+    currentCopiedNodes.forEach((node) => {
       const newId = uuidv4();
       oldToNewIdMap.set(node.id, newId);
 
       // Increment label if it exists
-      const currentLabel = node.data?.label || '';
+      const currentLabel = typeof node.data?.label === 'string' ? node.data.label : '';
       const newLabel = currentLabel ? incrementLabel(currentLabel) : currentLabel;
 
       const newNode: Node = {
@@ -494,7 +648,7 @@ function Flow() {
 
     // Duplicate edges that connect pasted nodes
     const newEdges: Edge[] = [];
-    edges.forEach((edge) => {
+    edgesRef.current.forEach((edge) => {
       const sourceInCopied = oldToNewIdMap.has(edge.source);
       const targetInCopied = oldToNewIdMap.has(edge.target);
 
@@ -517,43 +671,55 @@ function Flow() {
 
     // Update copied nodes positions for next paste
     setCopiedNodes(newNodes);
-  }, [copiedNodes, edges, setNodes, setEdges, cascadeDirection]);
+    copiedNodesRef.current = newNodes;
+  }, [setNodes, setEdges]);
 
   // Keyboard shortcuts for undo/redo, copy/paste
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Undo
-      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+      const target = event.target as HTMLElement;
+      const tagName = target?.tagName?.toUpperCase() || '';
+      const isInInput = tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
+
+      // Undo - Ctrl+Z
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z' && !event.shiftKey) {
         event.preventDefault();
+        event.stopPropagation();
         handleUndo();
+        return;
       }
-      // Redo
-      else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+
+      // Redo - Ctrl+Y or Ctrl+Shift+Z
+      if ((event.ctrlKey || event.metaKey) && (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey))) {
         event.preventDefault();
+        event.stopPropagation();
         handleRedo();
+        return;
       }
-      // Copy
-      else if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-        // Only copy if not typing in an input field
-        const target = event.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          event.preventDefault();
-          handleCopy();
-        }
+
+      // Skip copy/paste if typing in input
+      if (isInInput) return;
+
+      // Copy - Ctrl+C
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
+        event.preventDefault();
+        event.stopPropagation();
+        handleCopy();
+        return;
       }
-      // Paste
-      else if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
-        // Only paste if not typing in an input field
-        const target = event.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          event.preventDefault();
-          handlePaste();
-        }
+
+      // Paste - Ctrl+V
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+        event.preventDefault();
+        event.stopPropagation();
+        handlePaste();
+        return;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Attach to window with capture to intercept before anything else
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleUndo, handleRedo, handleCopy, handlePaste]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -637,24 +803,52 @@ function Flow() {
     // Get bounds of all nodes
     const nodesBounds = getNodesBounds(nodesList);
 
-    // Calculate viewport to fit all nodes with padding
+    // Add padding around the bounds
+    const padding = 100;
+    const paddedBounds = {
+      x: nodesBounds.x - padding,
+      y: nodesBounds.y - padding,
+      width: nodesBounds.width + padding * 2,
+      height: nodesBounds.height + padding * 2,
+    };
+
+    // Calculate dimensions - use higher resolution for better quality
+    const scaleFactor = 2; // 2x resolution for crisp text
+    const aspectRatio = paddedBounds.width / paddedBounds.height;
+
+    // Set minimum dimensions but scale based on content
+    let exportWidth = Math.max(1920, paddedBounds.width);
+    let exportHeight = exportWidth / aspectRatio;
+
+    // Ensure minimum height
+    if (exportHeight < 1080) {
+      exportHeight = 1080;
+      exportWidth = exportHeight * aspectRatio;
+    }
+
+    // Apply scale factor for better quality
+    const finalWidth = exportWidth * scaleFactor;
+    const finalHeight = exportHeight * scaleFactor;
+
+    // Calculate viewport to fit all nodes
     const viewport = getViewportForBounds(
-      nodesBounds,
-      1920, // width
-      1080, // height
-      0.5,  // minZoom
-      2,    // maxZoom
-      0.1   // padding
+      paddedBounds,
+      finalWidth,
+      finalHeight,
+      0.1,  // minZoom
+      4,    // maxZoom
+      0     // padding (already added above)
     );
 
     // Export to PNG with high quality
     toPng(document.querySelector('.react-flow') as HTMLElement, {
       backgroundColor: '#1a1a2e',
-      width: 1920,
-      height: 1080,
+      width: finalWidth,
+      height: finalHeight,
+      pixelRatio: scaleFactor,
       style: {
-        width: '1920px',
-        height: '1080px',
+        width: `${finalWidth}px`,
+        height: `${finalHeight}px`,
         transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
       },
     }).then((dataUrl: string) => {
@@ -703,6 +897,9 @@ function Flow() {
           deleteKeyCode={['Backspace', 'Delete']}
           multiSelectionKeyCode={['Shift', 'Meta']}
           selectionOnDrag
+          selectionMode={SelectionMode.Full}
+          edgesReconnectable={false}
+          selectNodesOnDrag
           panOnDrag={[1]}
           minZoom={0.1}
           maxZoom={2}
@@ -732,11 +929,24 @@ function Flow() {
 
       {editingEdge && (
         <EdgeLabelEditor
-          initialLabel={(editingEdge.label as string) || ''}
+          initialLabel={(editingEdge.data as { rawLabel?: string })?.rawLabel || (editingEdge.label as string) || ''}
+          initialCableType={(editingEdge.data as { cableType?: string })?.cableType || ''}
+          initialCableLength={(editingEdge.data as { cableLength?: string })?.cableLength || ''}
           onSave={handleSaveEdgeLabel}
           onDeleteLabel={handleDeleteEdgeLabel}
           onDeleteConnection={handleDeleteConnection}
           onCancel={handleCancelEdgeEdit}
+        />
+      )}
+
+      {pendingConnection && (
+        <EdgeLabelEditor
+          initialLabel=""
+          initialCableType=""
+          initialCableLength=""
+          onSave={handleSaveNewConnection}
+          onCancel={handleCancelNewConnection}
+          isNewConnection
         />
       )}
 
