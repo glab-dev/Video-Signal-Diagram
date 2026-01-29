@@ -48,12 +48,14 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
   const allNodes = useNodes();
 
-  // Get all source node names (nodes that have outputs - they can be sources)
+  // Get all source node names (only pure source nodes, not switchers/processors)
   const sourceNames = useMemo(() => {
     const names: string[] = [];
     allNodes.forEach((node: Node) => {
       // Skip this node itself
       if (node.id === id) return;
+      // Skip processor and switcher nodes - only include pure sources
+      if (node.type === 'processor' || node.type === 'switcher') return;
       // Include nodes that have outputs (they can be sources)
       const nodeData = node.data as { label?: string; outputs?: unknown[] };
       if (nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0) {
