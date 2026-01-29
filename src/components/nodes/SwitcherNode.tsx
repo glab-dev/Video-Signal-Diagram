@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useRef, useMemo } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer, useNodes, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps, Node } from '@xyflow/react';
 import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,6 +46,7 @@ type SwitcherNodeProps = NodeProps & {
 
 function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
   const allNodes = useNodes();
 
   // Get all source node names (only pure source nodes, not switchers/processors)
@@ -114,7 +115,9 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
-  }, [id, data.layout, updateNodeData]);
+    // Force React Flow to update handle positions after layout change
+    setTimeout(() => updateNodeInternals(id), 0);
+  }, [id, data.layout, updateNodeData, updateNodeInternals]);
 
   const addInput = useCallback(() => {
     const newPort: ProcessorPort = {
@@ -260,10 +263,14 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           port.id === portId ? { ...port, spacing: newSpacing } : port
         );
         updateNodeData(id, { inputs: newInputs });
+        // Force React Flow to update handle positions in real-time during drag
+        updateNodeInternals(id);
       };
 
       const handleMouseUp = () => {
         setDraggedPort(null);
+        // Force React Flow to update handle positions after spacing change
+        setTimeout(() => updateNodeInternals(id), 0);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
@@ -271,7 +278,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [id, data.inputs, updateNodeData]
+    [id, data.inputs, updateNodeData, updateNodeInternals]
   );
 
   // Vertical Space Tab handlers for outputs
@@ -291,10 +298,14 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           port.id === portId ? { ...port, spacing: newSpacing } : port
         );
         updateNodeData(id, { outputs: newOutputs });
+        // Force React Flow to update handle positions in real-time during drag
+        updateNodeInternals(id);
       };
 
       const handleMouseUp = () => {
         setDraggedPort(null);
+        // Force React Flow to update handle positions after spacing change
+        setTimeout(() => updateNodeInternals(id), 0);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
@@ -302,7 +313,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [id, data.outputs, updateNodeData]
+    [id, data.outputs, updateNodeData, updateNodeInternals]
   );
 
   const renderInputField = useCallback((port: ProcessorPort, fieldName: InputFieldType) => {

@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,6 +23,7 @@ const NODE_COLORS = [
 
 function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
   const { updateNodeData } = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -54,7 +55,9 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
-  }, [id, data.layout, updateNodeData]);
+    // Force React Flow to update handle positions after layout change
+    setTimeout(() => updateNodeInternals(id), 0);
+  }, [id, data.layout, updateNodeData, updateNodeInternals]);
 
   const updateInput = useCallback(
     (portId: string, name: string) => {

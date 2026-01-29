@@ -119,7 +119,9 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
-  }, [id, data.layout, updateNodeData]);
+    // Force React Flow to update handle positions after layout change
+    setTimeout(() => updateNodeInternals(id), 0);
+  }, [id, data.layout, updateNodeData, updateNodeInternals]);
 
   const [isDraggingSystem, setIsDraggingSystem] = useState(false);
   const [systemDropTarget, setSystemDropTarget] = useState<'input' | 'output' | null>(null);
@@ -315,10 +317,14 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
           card.id === cardId ? { ...card, spacing: newSpacing } : card
         );
         updateNodeData(id, { cards: newCards });
+        // Force React Flow to update handle positions in real-time during drag
+        updateNodeInternals(id);
       };
 
       const handleMouseUp = () => {
         setDraggedCard(null);
+        // Force React Flow to update handle positions after spacing change
+        setTimeout(() => updateNodeInternals(id), 0);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
@@ -326,7 +332,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [id, data.cards, updateNodeData]
+    [id, data.cards, updateNodeData, updateNodeInternals]
   );
 
   const inputCards = data.cards.filter((card) => card.cardType === 'input');
