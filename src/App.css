@@ -965,6 +965,23 @@
   stroke-width: 2;
 }
 
+/* Make edges appear above nodes */
+.react-flow__edges {
+  z-index: 1000 !important;
+}
+
+.react-flow__edge {
+  pointer-events: all;
+}
+
+.react-flow__edge-textbg {
+  fill: #333;
+}
+
+.react-flow__edge-text {
+  fill: #fff;
+}
+
 .react-flow__controls {
   background: #2a2a4a;
   border: 1px solid #444;
