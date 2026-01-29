@@ -1584,6 +1584,129 @@
   color: #ffbb33 !important;
 }
 
+/* Edge Label Editor Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.edge-editor-modal {
+  background: linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.edge-editor-modal h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.edge-label-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.edge-label-input:focus {
+  outline: none;
+  border-color: #00aaff;
+  box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.1);
+}
+
+.edge-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.edge-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edge-btn-primary {
+  background: #00aaff;
+  color: #fff;
+}
+
+.edge-btn-primary:hover {
+  background: #0099ee;
+  box-shadow: 0 2px 8px rgba(0, 170, 255, 0.3);
+}
+
+.edge-btn-secondary {
+  background: #3a3a5a;
+  color: #fff;
+}
+
+.edge-btn-secondary:hover {
+  background: #4a4a6a;
+}
+
+.edge-editor-divider {
+  height: 1px;
+  background: #333;
+  margin: 20px 0 16px;
+}
+
+.edge-editor-danger-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edge-btn-warning {
+  flex: 1;
+  background: rgba(255, 165, 0, 0.15);
+  color: #ffaa00;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.edge-btn-warning:hover {
+  background: rgba(255, 165, 0, 0.25);
+  border-color: rgba(255, 165, 0, 0.5);
+  color: #ffbb33;
+}
+
+.edge-btn-danger {
+  flex: 1;
+  background: rgba(255, 50, 50, 0.15);
+  color: #ff6666;
+  border: 1px solid rgba(255, 50, 50, 0.3);
+}
+
+.edge-btn-danger:hover {
+  background: rgba(255, 50, 50, 0.25);
+  border-color: rgba(255, 50, 50, 0.5);
+  color: #ff8888;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {
@@ -1594,5 +1717,10 @@
   .node-btn {
     font-size: 10px;
     padding: 4px 6px;
+  }
+
+  .edge-editor-modal {
+    min-width: 300px;
+    padding: 20px;
   }
 }

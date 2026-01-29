@@ -22,6 +22,7 @@ import { toPng } from 'html-to-image';
 import { nodeTypes } from './components/nodes';
 import Sidebar from './components/Sidebar';
 import UpdateNotification from './components/UpdateNotification';
+import EdgeLabelEditor from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
 import './App.css';
 
@@ -44,6 +45,7 @@ function Flow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(defaultProject.edges);
   const [projectName, setProjectName] = useState(defaultProject.name);
   const [projectId, setProjectId] = useState(defaultProject.id);
+  const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, getNodes } = useReactFlow();
 
@@ -317,19 +319,50 @@ function Flow() {
 
   const onEdgeDoubleClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
-      const newLabel = prompt('Edit connection label:', (edge.label as string) || '');
-      if (newLabel !== null) {
+      setEditingEdge(edge);
+    },
+    []
+  );
+
+  const handleSaveEdgeLabel = useCallback(
+    (label: string) => {
+      if (editingEdge) {
         setEdges((eds) =>
           eds.map((e) =>
-            e.id === edge.id
-              ? { ...e, label: newLabel || undefined }
+            e.id === editingEdge.id
+              ? { ...e, label: label || undefined }
               : e
           )
         );
       }
+      setEditingEdge(null);
     },
-    [setEdges]
+    [editingEdge, setEdges]
   );
+
+  const handleDeleteEdgeLabel = useCallback(() => {
+    if (editingEdge) {
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === editingEdge.id
+            ? { ...e, label: undefined }
+            : e
+        )
+      );
+    }
+    setEditingEdge(null);
+  }, [editingEdge, setEdges]);
+
+  const handleDeleteConnection = useCallback(() => {
+    if (editingEdge && confirm('Delete this connection?')) {
+      setEdges((eds) => eds.filter((e) => e.id !== editingEdge.id));
+    }
+    setEditingEdge(null);
+  }, [editingEdge, setEdges]);
+
+  const handleCancelEdgeEdit = useCallback(() => {
+    setEditingEdge(null);
+  }, []);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -499,6 +532,16 @@ function Flow() {
           </Panel>
         </ReactFlow>
       </div>
+
+      {editingEdge && (
+        <EdgeLabelEditor
+          initialLabel={(editingEdge.label as string) || ''}
+          onSave={handleSaveEdgeLabel}
+          onDeleteLabel={handleDeleteEdgeLabel}
+          onDeleteConnection={handleDeleteConnection}
+          onCancel={handleCancelEdgeEdit}
+        />
+      )}
     </div>
   );
 }
