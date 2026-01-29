@@ -616,8 +616,13 @@
 
 .switcher-content {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 10px;
+}
+
+.node-switcher.side-by-side .switcher-content {
+  flex-direction: row;
 }
 
 .switcher-column {

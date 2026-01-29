@@ -110,6 +110,12 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     [id, data.outputs, updateNodeData]
   );
 
+  // Toggle layout between stacked and side-by-side
+  const toggleLayout = useCallback(() => {
+    const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
+    updateNodeData(id, { layout: newLayout });
+  }, [id, data.layout, updateNodeData]);
+
   const addInput = useCallback(() => {
     const newPort: ProcessorPort = {
       id: uuidv4(),
@@ -473,9 +479,11 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
     }
   }, [updateOutput, sourceNames, setAllOutputResolutions]);
 
+  const layout = data.layout || 'stacked';
+
   return (
     <div
-      className={`node-switcher ${selected ? 'selected' : ''}`}
+      className={`node-switcher ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: data.color || '#4a148c',
         width: measured?.width,
@@ -496,6 +504,13 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
           onChange={(e) => updateLabel(e.target.value)}
           placeholder="Switcher Name"
         />
+        <button
+          className="layout-toggle-btn nodrag"
+          onClick={toggleLayout}
+          title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
+        >
+          {layout === 'stacked' ? '⇄' : '⇅'}
+        </button>
         <PresetMenu
           nodeType="processor"
           currentData={data}
