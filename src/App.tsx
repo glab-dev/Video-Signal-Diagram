@@ -46,6 +46,8 @@ function Flow() {
   const [projectName, setProjectName] = useState(defaultProject.name);
   const [projectId, setProjectId] = useState(defaultProject.id);
   const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeIds: string[] } | null>(null);
+  const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, getNodes } = useReactFlow();
 
@@ -149,21 +151,42 @@ function Flow() {
     };
   }, []);
 
-  // Keyboard shortcuts for undo/redo
+  // Keyboard shortcuts for undo/redo, copy/paste
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Undo
       if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
         event.preventDefault();
         handleUndo();
-      } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+      }
+      // Redo
+      else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
         event.preventDefault();
         handleRedo();
+      }
+      // Copy
+      else if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+        // Only copy if not typing in an input field
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          event.preventDefault();
+          handleCopy();
+        }
+      }
+      // Paste
+      else if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+        // Only paste if not typing in an input field
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          event.preventDefault();
+          handlePaste();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo]);
+  }, [handleUndo, handleRedo, handleCopy, handlePaste]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -369,6 +392,145 @@ function Flow() {
     setEditingEdge(null);
   }, []);
 
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+
+      // Get all selected nodes (including the one that was right-clicked)
+      const selectedNodes = nodes.filter(n => n.selected || n.id === node.id);
+      const nodeIds = selectedNodes.map(n => n.id);
+
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        nodeIds,
+      });
+    },
+    [nodes]
+  );
+
+  const handleDuplicateNodes = useCallback(() => {
+    if (!contextMenu) return;
+
+    const nodesToDuplicate = nodes.filter(n => contextMenu.nodeIds.includes(n.id));
+    const newNodes: Node[] = [];
+    const oldToNewIdMap = new Map<string, string>();
+
+    // Create new nodes with offset positions
+    nodesToDuplicate.forEach((node) => {
+      const newId = uuidv4();
+      oldToNewIdMap.set(node.id, newId);
+
+      const newNode: Node = {
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + 50,
+          y: node.position.y + 50,
+        },
+        selected: false,
+        data: { ...node.data },
+      };
+      newNodes.push(newNode);
+    });
+
+    // Add new nodes
+    setNodes((nds) => [...nds, ...newNodes]);
+
+    // Duplicate edges that connect duplicated nodes
+    const newEdges: Edge[] = [];
+    edges.forEach((edge) => {
+      const sourceInDuplicated = oldToNewIdMap.has(edge.source);
+      const targetInDuplicated = oldToNewIdMap.has(edge.target);
+
+      // Only duplicate edge if both source and target are in the duplicated set
+      if (sourceInDuplicated && targetInDuplicated) {
+        const newEdge: Edge = {
+          ...edge,
+          id: uuidv4(),
+          source: oldToNewIdMap.get(edge.source)!,
+          target: oldToNewIdMap.get(edge.target)!,
+          selected: false,
+        };
+        newEdges.push(newEdge);
+      }
+    });
+
+    if (newEdges.length > 0) {
+      setEdges((eds) => [...eds, ...newEdges]);
+    }
+
+    setContextMenu(null);
+  }, [contextMenu, nodes, edges, setNodes, setEdges]);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleCopy = useCallback(() => {
+    const selectedNodes = nodes.filter(n => n.selected);
+    if (selectedNodes.length > 0) {
+      setCopiedNodes(selectedNodes);
+    }
+  }, [nodes]);
+
+  const handlePaste = useCallback(() => {
+    if (copiedNodes.length === 0) return;
+
+    const newNodes: Node[] = [];
+    const oldToNewIdMap = new Map<string, string>();
+
+    // Create new nodes with offset positions
+    copiedNodes.forEach((node) => {
+      const newId = uuidv4();
+      oldToNewIdMap.set(node.id, newId);
+
+      const newNode: Node = {
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + 50,
+          y: node.position.y + 50,
+        },
+        selected: true,
+        data: { ...node.data },
+      };
+      newNodes.push(newNode);
+    });
+
+    // Deselect all current nodes
+    setNodes((nds) => [
+      ...nds.map(n => ({ ...n, selected: false })),
+      ...newNodes
+    ]);
+
+    // Duplicate edges that connect pasted nodes
+    const newEdges: Edge[] = [];
+    edges.forEach((edge) => {
+      const sourceInCopied = oldToNewIdMap.has(edge.source);
+      const targetInCopied = oldToNewIdMap.has(edge.target);
+
+      // Only duplicate edge if both source and target are in the copied set
+      if (sourceInCopied && targetInCopied) {
+        const newEdge: Edge = {
+          ...edge,
+          id: uuidv4(),
+          source: oldToNewIdMap.get(edge.source)!,
+          target: oldToNewIdMap.get(edge.target)!,
+          selected: false,
+        };
+        newEdges.push(newEdge);
+      }
+    });
+
+    if (newEdges.length > 0) {
+      setEdges((eds) => [...eds, ...newEdges]);
+    }
+
+    // Update copied nodes positions for next paste
+    setCopiedNodes(newNodes);
+  }, [copiedNodes, edges, setNodes, setEdges]);
+
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
@@ -504,6 +666,7 @@ function Flow() {
           onConnect={onConnect}
           onNodesDelete={onNodesDelete}
           onEdgeDoubleClick={onEdgeDoubleClick}
+          onNodeContextMenu={onNodeContextMenu}
           onDragOver={onDragOver}
           onDrop={onDrop}
           nodeTypes={nodeTypes}
@@ -512,6 +675,8 @@ function Flow() {
           snapGrid={[10, 10]}
           deleteKeyCode={['Backspace', 'Delete']}
           multiSelectionKeyCode={['Shift', 'Meta']}
+          selectionOnDrag
+          panOnDrag={[1]}
           minZoom={0.1}
           maxZoom={2}
         >
@@ -546,6 +711,25 @@ function Flow() {
           onDeleteConnection={handleDeleteConnection}
           onCancel={handleCancelEdgeEdit}
         />
+      )}
+
+      {contextMenu && (
+        <>
+          <div className="context-menu-overlay" onClick={handleCloseContextMenu} />
+          <div
+            className="context-menu"
+            style={{
+              position: 'fixed',
+              top: `${contextMenu.y}px`,
+              left: `${contextMenu.x}px`,
+              zIndex: 10000,
+            }}
+          >
+            <button className="context-menu-item" onClick={handleDuplicateNodes}>
+              Duplicate ({contextMenu.nodeIds.length} {contextMenu.nodeIds.length === 1 ? 'node' : 'nodes'})
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
