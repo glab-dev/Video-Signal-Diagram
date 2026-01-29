@@ -885,7 +885,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     <div className="sidebar">
       <div className="sidebar-header">
         <h2>Signal Flow</h2>
-        <div className="version-number">V1.0.0</div>
+        <div className="version-number">V{__APP_VERSION__}</div>
       </div>
 
       {/* Project Actions */}
