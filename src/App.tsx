@@ -1186,11 +1186,22 @@ function Flow() {
       }
       isUndoRedo.current = true;
       setNodes(project.nodes);
-      setEdges(project.edges);
+      // Migrate existing edges to use 'styled' type for new features
+      const migratedEdges = project.edges.map(edge => ({
+        ...edge,
+        type: 'styled',
+        data: {
+          ...((edge.data || {}) as Record<string, unknown>),
+          showOutline: (edge.data as Record<string, unknown>)?.showOutline ?? false,
+          dashPattern: (edge.data as Record<string, unknown>)?.dashPattern ?? '',
+          animated: (edge.data as Record<string, unknown>)?.animated ?? false,
+        },
+      }));
+      setEdges(migratedEdges);
       setProjectName(project.name);
       setProjectId(project.id);
       // Reset history when loading a project
-      setHistory([{ nodes: project.nodes, edges: project.edges }]);
+      setHistory([{ nodes: project.nodes, edges: migratedEdges }]);
       setHistoryIndex(0);
       // Reset copied nodes
       setCopiedNodes([]);

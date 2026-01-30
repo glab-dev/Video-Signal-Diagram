@@ -53,8 +53,10 @@ function StyledEdge({
       <path
         d={edgePath}
         fill="none"
-        stroke="transparent"
+        stroke="#000"
+        strokeOpacity={0}
         strokeWidth={20}
+        style={{ cursor: 'pointer' }}
         className="react-flow__edge-interaction"
       />
 
