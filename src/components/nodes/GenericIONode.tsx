@@ -181,13 +181,19 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
         </button>
       </div>
 
-      <div className="color-picker-row">
+      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
         {NODE_COLORS.map((color) => (
           <button
+            type="button"
             key={color}
             className={`color-btn ${nodeColor === color ? 'active' : ''}`}
-            style={{ backgroundColor: color }}
-            onClick={() => updateColor(color)}
+            style={{ backgroundColor: color, pointerEvents: 'auto' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              updateColor(color);
+            }}
           />
         ))}
       </div>

@@ -80,13 +80,19 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
         />
-        <div className="note-color-picker">
+        <div className="note-color-picker nodrag" style={{ pointerEvents: 'auto' }}>
           {NOTE_COLORS.map((color) => (
             <button
+              type="button"
               key={color}
               className={`color-btn ${bgColor === color ? 'active' : ''}`}
-              style={{ backgroundColor: color }}
-              onClick={() => updateColor(color)}
+              style={{ backgroundColor: color, pointerEvents: 'auto' }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                updateColor(color);
+              }}
             />
           ))}
         </div>

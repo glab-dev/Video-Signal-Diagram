@@ -2805,6 +2805,31 @@
   line-height: 1.4;
 }
 
+/* Paper Ratio Overlay Button */
+.ratio-overlay-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 8px;
+}
+
+.ratio-overlay-btn:hover {
+  background: #3a3a5a;
+  color: #fff;
+}
+
+.ratio-overlay-btn.active {
+  background: #1a3a5a;
+  border-color: #00bfff;
+  color: #00bfff;
+}
+
 /* What's New Popup */
 .whats-new-popup {
   margin: 10px;
@@ -3880,4 +3905,165 @@
   text-align: center;
   color: #666;
   font-size: 11px;
+}
+
+/* ================================
+   Edge Style Editor Modal
+   ================================ */
+
+.edge-style-modal {
+  background: linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.edge-style-modal h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.edge-style-count {
+  margin: 0 0 20px;
+  font-size: 12px;
+  color: #888;
+}
+
+.edge-style-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.edge-style-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.edge-style-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #444;
+}
+
+.edge-style-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  cursor: pointer;
+  accent-color: #00aaff;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.toggle-desc {
+  font-size: 11px;
+  color: #888;
+}
+
+.edge-style-field {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.edge-style-field .field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.edge-style-field .field-desc {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+}
+
+.edge-style-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.edge-style-select:focus {
+  outline: none;
+  border-color: #00aaff;
+}
+
+.edge-style-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ================================
+   Styled Edge Styles
+   ================================ */
+
+.edge-outline {
+  pointer-events: none;
+}
+
+.edge-selection-highlight {
+  pointer-events: none;
+}
+
+.edge-animated {
+  animation: edge-dash-flow 1s linear infinite;
+}
+
+@keyframes edge-dash-flow {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge-flow-dot {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.edge-label-container {
+  z-index: 1001;
+}
+
+.edge-label-bg {
+  border-radius: 4px;
+}
+
+/* Selected edge highlight */
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3px;
 }

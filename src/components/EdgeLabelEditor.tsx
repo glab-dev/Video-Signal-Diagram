@@ -36,6 +36,10 @@ export interface EdgeData {
   label?: string;
   cableType?: string;
   cableLength?: string;
+  // Style options
+  showOutline?: boolean;
+  dashPattern?: string;
+  animated?: boolean;
 }
 
 interface EdgeLabelEditorProps {

@@ -22,6 +22,9 @@ interface RightPanelProps {
   onSaveGearPreset: (config: GearConfig) => void;
   selectedNodeCount: number;
   onApplyToSelected: (config: GearConfig) => void;
+  showRatioOverlay: boolean;
+  onToggleRatioOverlay: () => void;
+  pageCount: number;
 }
 
 type MainSectionId = 'sizing' | 'gearBuilder' | 'permanentSources' | 'projectTally';
@@ -43,6 +46,9 @@ export default function RightPanel({
   onSaveGearPreset,
   selectedNodeCount,
   onApplyToSelected,
+  showRatioOverlay,
+  onToggleRatioOverlay,
+  pageCount,
 }: RightPanelProps) {
   // What's New popup state
   const [whatsNew, setWhatsNew] = useState<{ version: string; entries: { version: string; changes: string[] }[] } | null>(null);
@@ -193,6 +199,17 @@ export default function RightPanel({
         <div className="canvas-dimensions">
           <div>{currentDims.width} × {currentDims.height} px</div>
         </div>
+      </div>
+
+      {/* Paper Ratio Overlay Toggle */}
+      <div className="sidebar-section">
+        <label>Paper Ratio Overlay</label>
+        <button
+          className={`ratio-overlay-btn ${showRatioOverlay ? 'active' : ''}`}
+          onClick={onToggleRatioOverlay}
+        >
+          {showRatioOverlay ? 'Hide' : 'Show'} Paper Outline ({pageCount} {pageCount === 1 ? 'sheet' : 'sheets'})
+        </button>
       </div>
     </div>
   );

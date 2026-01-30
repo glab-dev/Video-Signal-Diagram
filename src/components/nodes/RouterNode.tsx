@@ -179,6 +179,46 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
         height: nodeHeight,
       }}
     >
+      <NodeResizer
+        minWidth={220}
+        minHeight={120}
+        keepAspectRatio
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
+      {/* Color picker OUTSIDE scaled content to avoid transform coordinate issues */}
+      <div
+        className="color-picker-row nodrag"
+        style={{
+          pointerEvents: 'auto',
+          position: 'absolute',
+          top: 40,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '3px',
+          padding: '6px 10px',
+          background: 'rgba(30, 30, 30, 0.95)',
+          borderBottom: '1px solid #333'
+        }}
+      >
+        {NODE_COLORS.map((color) => (
+          <button
+            type="button"
+            key={color}
+            className={`color-btn nodrag ${(data.color || '#444') === color ? 'active' : ''}`}
+            style={{ backgroundColor: color }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              updateColor(color);
+            }}
+          />
+        ))}
+      </div>
       <div ref={contentRef} style={scaleStyle}>
       <Handle type="target" position={Position.Left} id="input" />
 
@@ -199,17 +239,6 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
         >
           ⊕
         </button>
-      </div>
-
-      <div className="color-picker-row">
-        {NODE_COLORS.map((color) => (
-          <button
-            key={color}
-            className={`color-btn ${(data.color || '#444') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color }}
-            onClick={() => updateColor(color)}
-          />
-        ))}
       </div>
 
       <table className="router-table nodrag">

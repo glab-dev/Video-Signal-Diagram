@@ -23,6 +23,8 @@ import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import UpdateNotification from './components/UpdateNotification';
 import EdgeLabelEditor from './components/EdgeLabelEditor';
+import EdgeStyleEditor, { type EdgeStyleOptions } from './components/EdgeStyleEditor';
+import StyledEdge from './components/edges/StyledEdge';
 import { PageOverlay } from './components/PageOverlay';
 import { usePageGrid } from './hooks/usePageGrid';
 import { useNodeSummaries, NodeSummariesContext } from './hooks/useNodeSummaries';
@@ -46,6 +48,11 @@ interface HistoryState {
   edges: Edge[];
 }
 
+// Custom edge types
+const edgeTypes = {
+  styled: StyledEdge,
+};
+
 const defaultProject: ProjectData = {
   id: uuidv4(),
   name: 'Untitled Project',
@@ -61,6 +68,8 @@ function Flow() {
   const [projectName, setProjectName] = useState(defaultProject.name);
   const [projectId, setProjectId] = useState(defaultProject.id);
   const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
+  const [showEdgeStyleEditor, setShowEdgeStyleEditor] = useState(false);
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([]);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeIds: string[] } | null>(null);
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
   const [cascadeDirection, setCascadeDirection] = useState<'right' | 'left'>('right');
@@ -92,6 +101,8 @@ function Flow() {
     const saved = localStorage.getItem('showMiniMap');
     return saved === 'true';
   });
+
+  const [showRatioOverlay, setShowRatioOverlay] = useState<boolean>(false);
 
   // Paper size change handlers
   const handlePaperSizeChange = useCallback((size: PaperSize) => {
@@ -954,7 +965,7 @@ function Flow() {
       const edge: Edge = {
         ...params,
         id: uuidv4(),
-        type: 'default',
+        type: 'styled',
         style: { stroke: edgeColor, strokeWidth: 2 },
         label: displayLabel || undefined,
         labelStyle: { fill: '#fff', fontWeight: 600 },
@@ -964,6 +975,9 @@ function Flow() {
           cableType: data.cableType,
           cableLength: data.cableLength,
           rawLabel: data.label,
+          showOutline: false,
+          dashPattern: '',
+          animated: false,
         },
       } as Edge;
       setEdges((eds) => addEdge(edge, eds));
@@ -1210,10 +1224,63 @@ function Flow() {
 
   const onEdgeDoubleClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
-      setEditingEdge(edge);
+      // Check if multiple edges are selected
+      const selectedEdges = edges.filter(e => e.selected);
+      if (selectedEdges.length > 1) {
+        // Multiple edges selected - open style editor
+        setSelectedEdgeIds(selectedEdges.map(e => e.id));
+        setShowEdgeStyleEditor(true);
+      } else {
+        // Single edge - open label editor
+        setEditingEdge(edge);
+      }
     },
-    []
+    [edges]
   );
+
+  // Handle applying styles to selected edges
+  const handleApplyEdgeStyles = useCallback(
+    (options: EdgeStyleOptions) => {
+      setEdges((eds) =>
+        eds.map((e) =>
+          selectedEdgeIds.includes(e.id)
+            ? {
+                ...e,
+                type: 'styled',
+                data: {
+                  ...((e.data || {}) as Record<string, unknown>),
+                  showOutline: options.showOutline,
+                  dashPattern: options.dashPattern,
+                  animated: options.animated,
+                },
+              }
+            : e
+        )
+      );
+      setShowEdgeStyleEditor(false);
+      setSelectedEdgeIds([]);
+    },
+    [selectedEdgeIds, setEdges]
+  );
+
+  const handleCancelEdgeStyleEdit = useCallback(() => {
+    setShowEdgeStyleEditor(false);
+    setSelectedEdgeIds([]);
+  }, []);
+
+  // Get current style options from selected edges (use first edge's values as defaults)
+  const getSelectedEdgeStyleOptions = useCallback((): EdgeStyleOptions => {
+    if (selectedEdgeIds.length === 0) {
+      return { showOutline: false, dashPattern: '', animated: false };
+    }
+    const firstEdge = edges.find(e => e.id === selectedEdgeIds[0]);
+    const data = firstEdge?.data as Record<string, unknown> | undefined;
+    return {
+      showOutline: (data?.showOutline as boolean) ?? false,
+      dashPattern: (data?.dashPattern as string) ?? '',
+      animated: (data?.animated as boolean) ?? false,
+    };
+  }, [selectedEdgeIds, edges]);
 
   const handleSaveEdgeLabel = useCallback(
     (data: EdgeData) => {
@@ -1670,6 +1737,7 @@ function Flow() {
           onDrop={onDrop}
           onInit={centerPage}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
           snapToGrid
           snapGrid={[10, 10]}
@@ -1684,7 +1752,7 @@ function Flow() {
           maxZoom={8}
           proOptions={{ hideAttribution: true }}
         >
-          <PageOverlay pages={pages} />
+          <PageOverlay pages={pages} showRatioOverlay={showRatioOverlay} paperSize={paperSize} />
           <Controls />
           {showMiniMap && (
             <MiniMap
@@ -1736,6 +1804,9 @@ function Flow() {
         onSaveGearPreset={handleSaveGearPreset}
         selectedNodeCount={nodes.filter(n => n.selected).length}
         onApplyToSelected={handleApplyGearToSelected}
+        showRatioOverlay={showRatioOverlay}
+        onToggleRatioOverlay={() => setShowRatioOverlay(prev => !prev)}
+        pageCount={pages.length}
       />
 
       {editingEdge && (
@@ -1747,6 +1818,15 @@ function Flow() {
           onDeleteLabel={handleDeleteEdgeLabel}
           onDeleteConnection={handleDeleteConnection}
           onCancel={handleCancelEdgeEdit}
+        />
+      )}
+
+      {showEdgeStyleEditor && (
+        <EdgeStyleEditor
+          selectedCount={selectedEdgeIds.length}
+          initialOptions={getSelectedEdgeStyleOptions()}
+          onApply={handleApplyEdgeStyles}
+          onCancel={handleCancelEdgeStyleEdit}
         />
       )}
 

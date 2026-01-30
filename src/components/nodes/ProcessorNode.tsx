@@ -263,13 +263,19 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
         </button>
       </div>
 
-      <div className="color-picker-row">
+      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
         {NODE_COLORS.map((color) => (
           <button
+            type="button"
             key={color}
             className={`color-btn ${(data.color || '#0088cc') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color }}
-            onClick={() => updateColor(color)}
+            style={{ backgroundColor: color, pointerEvents: 'auto' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              updateColor(color);
+            }}
           />
         ))}
       </div>

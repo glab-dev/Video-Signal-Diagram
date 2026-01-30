@@ -99,13 +99,19 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
         />
       </div>
 
-      <div className="color-picker-row">
+      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
         {NODE_COLORS.map((color) => (
           <button
+            type="button"
             key={color}
             className={`color-btn ${(data.color || '#ff6600') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color }}
-            onClick={() => updateColor(color)}
+            style={{ backgroundColor: color, pointerEvents: 'auto' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              updateColor(color);
+            }}
           />
         ))}
       </div>
