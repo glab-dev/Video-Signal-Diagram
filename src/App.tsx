@@ -1617,7 +1617,9 @@ function Flow() {
         onPaperSizeChange={handlePaperSizeChange}
         onOrientationChange={handleOrientationChange}
         onCustomSizeChange={handleCustomSizeChange}
+        nodes={nodes}
         edges={edges}
+        projectName={projectName}
         onAddGearNode={handleAddGearNode}
         onSaveGearPreset={handleSaveGearPreset}
       />

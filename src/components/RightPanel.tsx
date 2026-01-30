@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { Edge } from '@xyflow/react';
+import type { Edge, Node } from '@xyflow/react';
 import type { PaperSize, Orientation, GearConfig } from '../types';
 import { PAPER_SIZES } from '../types';
 import { getNewChangelog, markVersionSeen } from '../changelog';
 import { GearBuilder } from './GearBuilder';
-import CableTallySection from './CableTallySection';
+import ProjectTallySection from './ProjectTallySection';
 
 interface RightPanelProps {
   paperSize: PaperSize;
@@ -14,7 +14,9 @@ interface RightPanelProps {
   onPaperSizeChange: (size: PaperSize) => void;
   onOrientationChange: (orientation: Orientation) => void;
   onCustomSizeChange: (width: number, height: number) => void;
+  nodes: Node[];
   edges: Edge[];
+  projectName?: string;
   onAddGearNode: (config: GearConfig) => void;
   onSaveGearPreset: (config: GearConfig) => void;
 }
@@ -27,7 +29,9 @@ export default function RightPanel({
   onPaperSizeChange,
   onOrientationChange,
   onCustomSizeChange,
+  nodes,
   edges,
+  projectName,
   onAddGearNode,
   onSaveGearPreset,
 }: RightPanelProps) {
@@ -169,8 +173,8 @@ export default function RightPanel({
         onSavePreset={onSaveGearPreset}
       />
 
-      {/* Cable Tally Section */}
-      <CableTallySection edges={edges} />
+      {/* Project Tally Section */}
+      <ProjectTallySection nodes={nodes} edges={edges} projectName={projectName} />
     </div>
   );
 }
