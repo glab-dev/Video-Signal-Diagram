@@ -4,16 +4,14 @@ import { useRef, useLayoutEffect, useState, type RefObject, type CSSProperties }
  * Hook that enables uniform proportional scaling of node content.
  *
  * Measures the content element's natural (unconstrained) dimensions
- * on mount, then applies a CSS transform: scale() factor when the node
- * is resized via NodeResizer (with keepAspectRatio).
+ * on mount, then applies CSS zoom when the node is resized via
+ * NodeResizer (with keepAspectRatio).
  *
- * The content div uses pointer-events: none so the transform stacking
- * context cannot intercept events meant for NodeResizer handles.
- * A companion CSS rule re-enables pointer-events on all descendants
- * so interactive content (inputs, buttons, etc.) remains usable.
- * Negative margins collapse the layout overflow caused by the
- * untransformed dimensions so the parent node element matches
- * the visual size.
+ * Unlike transform: scale(), CSS zoom adjusts BOTH visual AND layout
+ * dimensions without creating a stacking context. This means:
+ *   - No pointer-events conflicts with NodeResizer handles
+ *   - No negative margins needed to collapse overflow
+ *   - No z-index workarounds required
  *
  * This correctly handles nodes loaded from saved files where explicit
  * width/height from a previous resize would otherwise be misinterpreted
@@ -39,14 +37,14 @@ export function useNodeScale(
         position: el.style.position,
         width: el.style.width,
         height: el.style.height,
-        transform: el.style.transform,
+        zoom: el.style.zoom,
       };
 
       // Remove constraints to measure intrinsic content size
       el.style.position = 'absolute';
       el.style.width = 'max-content';
       el.style.height = 'max-content';
-      el.style.transform = 'none';
+      el.style.zoom = '1';
 
       naturalSize.current = {
         w: el.scrollWidth,
@@ -57,7 +55,7 @@ export function useNodeScale(
       el.style.position = saved.position;
       el.style.width = saved.width;
       el.style.height = saved.height;
-      el.style.transform = saved.transform;
+      el.style.zoom = saved.zoom;
 
       // Trigger re-render to apply correct scaleStyle
       setTick(t => t + 1);
@@ -85,16 +83,7 @@ export function useNodeScale(
     scaleStyle: {
       width: nw,
       height: nh,
-      transformOrigin: '0 0',
-      transform: `scale(${scale})`,
-      // Prevent the transform stacking context from intercepting
-      // pointer events meant for NodeResizer handles.
-      // A CSS rule re-enables pointer-events on all descendants.
-      pointerEvents: 'none' as const,
-      // Collapse the extra layout space so the parent node element
-      // matches the visual (post-transform) size
-      marginRight: -(nw - measuredWidth),
-      marginBottom: -(nh - measuredHeight),
+      zoom: scale,
     },
   };
 }
