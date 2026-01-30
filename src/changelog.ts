@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.26': [
+    'Add paper ratio overlay button and edge group style editor',
+  ],
   '1.0.25': [
     'Render NodeResizer after content div for reliable handle interaction, widen zoom range',
   ],
