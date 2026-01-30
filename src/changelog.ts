@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.20': [
+    'Use setNodes for group resize to properly update edge paths',
+  ],
   '1.0.19': [
     'Measure actual content dimensions for node scaling on file load',
   ],
