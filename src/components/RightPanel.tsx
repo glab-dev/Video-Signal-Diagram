@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import type { PaperSize, Orientation, GearConfig } from '../types';
 import { PAPER_SIZES } from '../types';
@@ -21,6 +21,10 @@ interface RightPanelProps {
   onSaveGearPreset: (config: GearConfig) => void;
 }
 
+type MainSectionId = 'sizing' | 'gearBuilder' | 'projectTally';
+
+const DEFAULT_SECTION_ORDER: MainSectionId[] = ['sizing', 'gearBuilder', 'projectTally'];
+
 export default function RightPanel({
   paperSize,
   orientation,
@@ -38,11 +42,51 @@ export default function RightPanel({
   // What's New popup state
   const [whatsNew, setWhatsNew] = useState<{ version: string; changes: string[] } | null>(null);
 
+  // Section collapse and order state
+  const [sizingExpanded, setSizingExpanded] = useState(true);
+  const [sectionOrder, setSectionOrder] = useState<MainSectionId[]>(DEFAULT_SECTION_ORDER);
+  const [draggedSection, setDraggedSection] = useState<MainSectionId | null>(null);
+
   useEffect(() => {
     const changelog = getNewChangelog(__APP_VERSION__);
     if (changelog) {
       setWhatsNew(changelog);
     }
+  }, []);
+
+  // Drag and drop handlers for section reordering
+  const handleSectionDragStart = useCallback((sectionId: MainSectionId) => {
+    setDraggedSection(sectionId);
+  }, []);
+
+  const handleSectionDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleSectionDrop = useCallback((targetSectionId: MainSectionId) => {
+    if (!draggedSection || draggedSection === targetSectionId) {
+      setDraggedSection(null);
+      return;
+    }
+
+    setSectionOrder(prev => {
+      const newOrder = [...prev];
+      const draggedIndex = newOrder.indexOf(draggedSection);
+
+      if (draggedIndex !== -1) {
+        newOrder.splice(draggedIndex, 1);
+        const newTargetIndex = newOrder.indexOf(targetSectionId);
+        newOrder.splice(newTargetIndex, 0, draggedSection);
+      }
+
+      return newOrder;
+    });
+
+    setDraggedSection(null);
+  }, [draggedSection]);
+
+  const handleSectionDragEnd = useCallback(() => {
+    setDraggedSection(null);
   }, []);
 
   const handleDismissWhatsNew = () => {
@@ -74,30 +118,10 @@ export default function RightPanel({
 
   const currentDims = getCurrentDimensions();
 
-  return (
-    <div className="right-panel">
-      <div className="sidebar-header">
-        <h2>Canvas Settings</h2>
-      </div>
-
-      {/* What's New Popup */}
-      {whatsNew && (
-        <div className="whats-new-popup">
-          <div className="whats-new-header">
-            <span className="whats-new-title">What's New in v{whatsNew.version}</span>
-            <button className="whats-new-close" onClick={handleDismissWhatsNew} title="Close">
-              ×
-            </button>
-          </div>
-          <ul className="whats-new-list">
-            {whatsNew.changes.map((change, i) => (
-              <li key={i}>{change}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Paper Size Selection */}
+  // Render the Sizing section content
+  const renderSizingContent = () => (
+    <div className="sizing-content">
+      {/* Paper Size */}
       <div className="sidebar-section">
         <label>Paper Size</label>
         <select
@@ -113,7 +137,6 @@ export default function RightPanel({
           <option value="Custom">Custom</option>
         </select>
 
-        {/* Custom size inputs */}
         {paperSize === 'Custom' && (
           <div style={{ marginTop: '12px' }}>
             <label>Width (px)</label>
@@ -159,22 +182,108 @@ export default function RightPanel({
         </div>
       </div>
 
-      {/* Canvas Dimensions Display */}
+      {/* Canvas Dimensions */}
       <div className="sidebar-section">
         <label>Canvas Dimensions</label>
         <div className="canvas-dimensions">
           <div>{currentDims.width} × {currentDims.height} px</div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Gear Builder Section */}
-      <GearBuilder
-        onAddToCanvas={onAddGearNode}
-        onSavePreset={onSaveGearPreset}
-      />
+  // Render main section by ID
+  const renderSection = (sectionId: MainSectionId) => {
+    const isDragging = draggedSection === sectionId;
 
-      {/* Project Tally Section */}
-      <ProjectTallySection nodes={nodes} edges={edges} projectName={projectName} />
+    switch (sectionId) {
+      case 'sizing':
+        return (
+          <div
+            key={sectionId}
+            className={`sidebar-section-wrapper sizing-section ${isDragging ? 'dragging' : ''}`}
+            draggable
+            onDragStart={() => handleSectionDragStart(sectionId)}
+            onDragOver={handleSectionDragOver}
+            onDrop={() => handleSectionDrop(sectionId)}
+            onDragEnd={handleSectionDragEnd}
+          >
+            <div
+              className="category-header"
+              onClick={() => setSizingExpanded(!sizingExpanded)}
+            >
+              <span className="section-drag-handle" onMouseDown={(e) => e.stopPropagation()}>⋮⋮</span>
+              <span>{sizingExpanded ? '▼' : '▶'} Sizing</span>
+            </div>
+            {sizingExpanded && renderSizingContent()}
+          </div>
+        );
+
+      case 'gearBuilder':
+        return (
+          <div
+            key={sectionId}
+            className={`sidebar-section-wrapper ${isDragging ? 'dragging' : ''}`}
+            draggable
+            onDragStart={() => handleSectionDragStart(sectionId)}
+            onDragOver={handleSectionDragOver}
+            onDrop={() => handleSectionDrop(sectionId)}
+            onDragEnd={handleSectionDragEnd}
+          >
+            <div className="section-drag-handle">⋮⋮</div>
+            <GearBuilder
+              onAddToCanvas={onAddGearNode}
+              onSavePreset={onSaveGearPreset}
+            />
+          </div>
+        );
+
+      case 'projectTally':
+        return (
+          <div
+            key={sectionId}
+            className={`sidebar-section-wrapper ${isDragging ? 'dragging' : ''}`}
+            draggable
+            onDragStart={() => handleSectionDragStart(sectionId)}
+            onDragOver={handleSectionDragOver}
+            onDrop={() => handleSectionDrop(sectionId)}
+            onDragEnd={handleSectionDragEnd}
+          >
+            <div className="section-drag-handle">⋮⋮</div>
+            <ProjectTallySection nodes={nodes} edges={edges} projectName={projectName} />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="right-panel">
+      <div className="sidebar-header">
+        <h2>Canvas Settings</h2>
+      </div>
+
+      {/* What's New Popup */}
+      {whatsNew && (
+        <div className="whats-new-popup">
+          <div className="whats-new-header">
+            <span className="whats-new-title">What's New in v{whatsNew.version}</span>
+            <button className="whats-new-close" onClick={handleDismissWhatsNew} title="Close">
+              ×
+            </button>
+          </div>
+          <ul className="whats-new-list">
+            {whatsNew.changes.map((change, i) => (
+              <li key={i}>{change}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Reorderable Main Sections */}
+      {sectionOrder.map(renderSection)}
     </div>
   );
 }
