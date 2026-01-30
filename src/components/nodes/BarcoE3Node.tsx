@@ -770,16 +770,13 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
       />
       <div ref={scaleRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#006400' }}>
-        <input
-          className="node-title-input light"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Barco E3"
-        />
+        <span className="node-title light">{data.label || 'Barco E3'}</span>
         <PresetMenu
           nodeType="barcoE3"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
           onReset={handleReset}
         />
         <button

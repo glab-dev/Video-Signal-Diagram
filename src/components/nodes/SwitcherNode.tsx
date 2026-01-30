@@ -538,12 +538,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#4a148c' }}>
-        <input
-          className="node-title-input light"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Switcher Name"
-        />
+        <span className="node-title light">{data.label || 'Switcher Name'}</span>
         <button
           className="layout-toggle-btn nodrag"
           onClick={toggleLayout}
@@ -554,7 +549,9 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
         <PresetMenu
           nodeType="processor"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
           onReset={handleReset}
         />
       </div>

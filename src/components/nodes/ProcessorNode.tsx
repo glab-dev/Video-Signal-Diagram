@@ -154,16 +154,13 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#0088cc' }}>
-        <input
-          className="node-title-input light"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Processor Name"
-        />
+        <span className="node-title light">{data.label || 'Processor Name'}</span>
         <PresetMenu
           nodeType="processor"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
         />
         <button
           className="layout-toggle-btn"

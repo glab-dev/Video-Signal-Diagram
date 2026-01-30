@@ -116,16 +116,13 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || (data.cardType === 'input' ? '#4a9eff' : '#50e3c2') }}>
-        <input
-          className="node-title-input light"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Card Name"
-        />
+        <span className="node-title light">{data.label || 'Card Name'}</span>
         <PresetMenu
           nodeType="card"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
         />
         <button
           className="layout-toggle-btn"

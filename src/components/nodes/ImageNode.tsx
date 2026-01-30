@@ -67,16 +67,13 @@ function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
       <div ref={contentRef} style={scaleStyle}>
       <div className={`node-image ${selected ? 'selected' : ''}`}>
         <div className="image-label">
-          <input
-            className="image-label-input"
-            value={data.label}
-            onChange={(e) => updateLabel(e.target.value)}
-            placeholder="Image Label"
-          />
+          <span className="image-label-text">{data.label || 'Image Label'}</span>
           <PresetMenu
             nodeType="image"
             currentData={data}
+            currentLabel={data.label}
             onLoadPreset={handleLoadPreset}
+            onRename={updateLabel}
           />
         </div>
         {data.imageUrl ? (

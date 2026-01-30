@@ -228,12 +228,14 @@ function Flow() {
     if (sameLabelNodes.length < 2) return [];
 
     // Check if the x positions span a reasonable range (allows staircase arrangements)
+    // Each paste offsets by ~50px, so allow ~100px per node to accommodate various arrangements
     const xPositions = sameLabelNodes.map(n => n.position.x);
     const minX = Math.min(...xPositions);
     const maxX = Math.max(...xPositions);
-    const MAX_SPREAD = 300;
+    const MAX_SPREAD_PER_NODE = 100;
+    const maxSpread = Math.max(400, sameLabelNodes.length * MAX_SPREAD_PER_NODE);
 
-    if (maxX - minX > MAX_SPREAD) return [];
+    if (maxX - minX > maxSpread) return [];
 
     // Sort by label number, then by y position
     return sameLabelNodes
@@ -491,15 +493,25 @@ function Flow() {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return '#888';
 
-    // Check if this is a pass-through node (routing matrix like 20x20, 40x40, or routers)
+    // Check if this is a pass-through node (routing matrix, routers, or converters)
     const isPassThrough = node.type === 'switcher' || node.type === 'router';
     const label = (node.data?.label as string) || '';
-    const isRoutingMatrix = label.toLowerCase().includes('20x20') ||
-                           label.toLowerCase().includes('40x40') ||
-                           label.toLowerCase().includes('router');
+    const labelLower = label.toLowerCase();
 
-    // If it's a pass-through routing device, check the output's selected source
-    if (isPassThrough && isRoutingMatrix && sourceHandleId) {
+    // Detect routing matrices
+    const isRoutingMatrix = labelLower.includes('20x20') ||
+                           labelLower.includes('40x40') ||
+                           labelLower.includes('router');
+
+    // Detect converters (SDI/HDMI, 12G, Blackmagic converters, etc.)
+    const isConverter = labelLower.includes('12g') ||
+                       labelLower.includes('sdi') ||
+                       labelLower.includes('hdmi') ||
+                       labelLower.includes('converter') ||
+                       labelLower.includes('bm ');
+
+    // If it's a pass-through device (routing matrix or converter), always trace back to original source
+    if ((isPassThrough && isRoutingMatrix) || isConverter) {
       // Check if this output has a source selected in the dropdown
       const outputs = (node.data?.outputs as Array<{ id?: string; destination?: string }>) || [];
       const outputPort = outputs.find(out =>
@@ -537,6 +549,86 @@ function Flow() {
     // Return this node's color (original source)
     return (node.data?.color as string) || '#888';
   }, [nodes, edges]);
+
+  // Update edge colors when source node colors change
+  // This effect runs whenever nodes change and checks if any edge colors need updating
+  useEffect(() => {
+    if (edges.length === 0) return;
+
+    // Check each edge to see if its color matches what it should be
+    let needsUpdate = false;
+    const updatedEdges = edges.map(edge => {
+      if (!edge.source) return edge;
+
+      // Get the color this edge should have based on its source
+      const sourceNode = nodes.find(n => n.id === edge.source);
+      if (!sourceNode) return edge;
+
+      const expectedColor = getOriginalSourceColor(edge.source, edge.sourceHandle);
+      const currentColor = edge.style?.stroke as string || '#888';
+
+      if (expectedColor !== currentColor) {
+        needsUpdate = true;
+        return {
+          ...edge,
+          style: { ...edge.style, stroke: expectedColor, strokeWidth: 2 }
+        };
+      }
+      return edge;
+    });
+
+    if (needsUpdate) {
+      setEdges(updatedEdges);
+    }
+  }, [nodes, getOriginalSourceColor]);
+
+  // Update converter node colors to match their input source
+  // This makes pass-through devices visually show the source color
+  useEffect(() => {
+    if (edges.length === 0) return;
+
+    let needsUpdate = false;
+    const updatedNodes = nodes.map(node => {
+      const label = (node.data?.label as string) || '';
+      const labelLower = label.toLowerCase();
+
+      // Check if this is a converter/pass-through device
+      const isConverter = labelLower.includes('12g') ||
+                         labelLower.includes('sdi') ||
+                         labelLower.includes('hdmi') ||
+                         labelLower.includes('converter') ||
+                         labelLower.includes('bm ');
+
+      if (!isConverter) return node;
+
+      // Find incoming edges to this converter
+      const incomingEdges = edges.filter(e => e.target === node.id);
+      if (incomingEdges.length === 0) return node;
+
+      // Get the source color from the first incoming connection
+      const firstEdge = incomingEdges[0];
+      const sourceNode = nodes.find(n => n.id === firstEdge.source);
+      if (!sourceNode) return node;
+
+      // Trace back to get the original source color
+      const sourceColor = getOriginalSourceColor(firstEdge.source, firstEdge.sourceHandle);
+      const currentColor = node.data?.color as string;
+
+      // Update if different
+      if (sourceColor && sourceColor !== '#888' && sourceColor !== currentColor) {
+        needsUpdate = true;
+        return {
+          ...node,
+          data: { ...node.data, color: sourceColor }
+        };
+      }
+      return node;
+    });
+
+    if (needsUpdate) {
+      setNodes(updatedNodes);
+    }
+  }, [edges, getOriginalSourceColor]);
 
   // State for pending new connection (to show editor modal)
   const [pendingConnection, setPendingConnection] = useState<{ params: Connection; edgeColor: string } | null>(null);

@@ -105,16 +105,13 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header">
-        <input
-          className="node-title-input"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Router Name"
-        />
+        <span className="node-title">{data.label || 'Router Name'}</span>
         <PresetMenu
           nodeType="router"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
         />
       </div>
 

@@ -6,11 +6,13 @@ import { savePreset, getPresetsByType, deletePreset } from '../store/db';
 interface PresetMenuProps {
   nodeType: CustomNodeType;
   currentData: NodeData;
+  currentLabel?: string;
   onLoadPreset: (data: NodeData) => void;
+  onRename?: (newLabel: string) => void;
   onReset?: () => void;
 }
 
-export default function PresetMenu({ nodeType, currentData, onLoadPreset, onReset }: PresetMenuProps) {
+export default function PresetMenu({ nodeType, currentData, currentLabel, onLoadPreset, onRename, onReset }: PresetMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<NodePreset[]>([]);
   const [_showPresetList, setShowPresetList] = useState(false);
@@ -23,6 +25,15 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
       setIsOpen(false);
     }
   }, [onReset]);
+
+  const handleRename = useCallback(() => {
+    if (!onRename) return;
+    const newName = prompt('Enter new name:', currentLabel || '');
+    if (newName !== null && newName.trim() !== '') {
+      onRename(newName.trim());
+      setIsOpen(false);
+    }
+  }, [onRename, currentLabel]);
 
   const loadPresets = useCallback(async () => {
     const loadedPresets = await getPresetsByType(nodeType);
@@ -138,6 +149,20 @@ export default function PresetMenu({ nodeType, currentData, onLoadPreset, onRese
 
       {isOpen && (
         <div className="preset-dropdown">
+          {onRename && (
+            <>
+              <button
+                className="preset-menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRename();
+                }}
+              >
+                ✏️ Rename
+              </button>
+              <div className="preset-menu-divider"></div>
+            </>
+          )}
           <div className="preset-menu-section-header">Save Preset</div>
           <button
             className="preset-menu-item"

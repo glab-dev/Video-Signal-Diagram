@@ -78,16 +78,13 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header" style={{ backgroundColor: data.color || '#ff6600' }}>
-        <input
-          className="node-title-input light"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="LED Wall Name"
-        />
+        <span className="node-title light">{data.label || 'LED Wall Name'}</span>
         <PresetMenu
           nodeType="ledWall"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
         />
       </div>
 

@@ -79,16 +79,13 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="note-header">
-        <input
-          className="note-title-input"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Note Title"
-        />
+        <span className="note-title">{data.label || 'Note Title'}</span>
         <PresetMenu
           nodeType="note"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
         />
         <div className="note-color-picker">
           {NOTE_COLORS.map((color) => (
