@@ -3,9 +3,28 @@ import type { IDBPDatabase } from 'idb';
 import type { ProjectData, NodePreset } from '../types';
 
 const DB_NAME = 'video-signal-flow';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 const STORE_NAME = 'projects';
 const PRESETS_STORE_NAME = 'presets';
+const PERMANENT_SOURCES_STORE_NAME = 'permanentSources';
+const SIDEBAR_CUSTOMIZATION_STORE_NAME = 'sidebarCustomization';
+
+// Category override entry that persists across all projects
+export interface PermanentSource {
+  id: string;
+  name: string;
+  color: string;
+  category: 'source' | 'destination';
+  createdAt: number;
+}
+
+// Sidebar customization - tracks hidden categories, hidden items, and item moves
+export interface SidebarCustomization {
+  id: 'main'; // Single record
+  hiddenCategories: string[]; // e.g., ['utilities']
+  hiddenItems: string[]; // e.g., ['sources:Mac', 'processors:Brompton S4']
+  itemMoves: Record<string, string>; // e.g., { 'sources:Mac': 'destinations' } - item key to new category
+}
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -24,6 +43,17 @@ function getDB() {
           const presetsStore = db.createObjectStore(PRESETS_STORE_NAME, { keyPath: 'id' });
           presetsStore.createIndex('nodeType', 'nodeType');
           presetsStore.createIndex('createdAt', 'createdAt');
+        }
+
+        // Create permanent sources store if upgrading to v3+
+        if (oldVersion < 3 && !db.objectStoreNames.contains(PERMANENT_SOURCES_STORE_NAME)) {
+          const sourcesStore = db.createObjectStore(PERMANENT_SOURCES_STORE_NAME, { keyPath: 'id' });
+          sourcesStore.createIndex('createdAt', 'createdAt');
+        }
+
+        // Create sidebar customization store if upgrading to v4+
+        if (oldVersion < 4 && !db.objectStoreNames.contains(SIDEBAR_CUSTOMIZATION_STORE_NAME)) {
+          db.createObjectStore(SIDEBAR_CUSTOMIZATION_STORE_NAME, { keyPath: 'id' });
         }
       },
     });
@@ -89,4 +119,44 @@ export async function getAllPresets(): Promise<NodePreset[]> {
 export async function deletePreset(id: string): Promise<void> {
   const db = await getDB();
   await db.delete(PRESETS_STORE_NAME, id);
+}
+
+// Permanent Sources Management Functions
+export async function savePermanentSource(source: PermanentSource): Promise<void> {
+  const db = await getDB();
+  await db.put(PERMANENT_SOURCES_STORE_NAME, source);
+}
+
+export async function getAllPermanentSources(): Promise<PermanentSource[]> {
+  const db = await getDB();
+  return db.getAll(PERMANENT_SOURCES_STORE_NAME);
+}
+
+export async function deletePermanentSource(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete(PERMANENT_SOURCES_STORE_NAME, id);
+}
+
+// Sidebar Customization Functions
+const DEFAULT_SIDEBAR_CUSTOMIZATION: SidebarCustomization = {
+  id: 'main',
+  hiddenCategories: [],
+  hiddenItems: [],
+  itemMoves: {},
+};
+
+export async function getSidebarCustomization(): Promise<SidebarCustomization> {
+  const db = await getDB();
+  const customization = await db.get(SIDEBAR_CUSTOMIZATION_STORE_NAME, 'main');
+  return customization || DEFAULT_SIDEBAR_CUSTOMIZATION;
+}
+
+export async function saveSidebarCustomization(customization: SidebarCustomization): Promise<void> {
+  const db = await getDB();
+  await db.put(SIDEBAR_CUSTOMIZATION_STORE_NAME, customization);
+}
+
+export async function resetSidebarCustomization(): Promise<void> {
+  const db = await getDB();
+  await db.put(SIDEBAR_CUSTOMIZATION_STORE_NAME, DEFAULT_SIDEBAR_CUSTOMIZATION);
 }

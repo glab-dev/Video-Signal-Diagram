@@ -6,6 +6,17 @@ import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
 import EditableTitle from '../EditableTitle';
 
+const NODE_COLORS = [
+  '#ff0000', // Red
+  '#00ff00', // Green
+  '#0088cc', // Blue
+  '#ff6600', // Orange
+  '#ff00ff', // Magenta
+  '#00ffff', // Cyan
+  '#ffff00', // Yellow
+  '#8800ff', // Purple
+];
+
 type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
 };
@@ -17,6 +28,13 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
+    },
+    [id, updateNodeData]
+  );
+
+  const updateColor = useCallback(
+    (color: string) => {
+      updateNodeData(id, { color });
     },
     [id, updateNodeData]
   );
@@ -87,6 +105,17 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
         />
+      </div>
+
+      <div className="color-picker-row">
+        {NODE_COLORS.map((color) => (
+          <button
+            key={color}
+            className={`color-btn ${(data.color || '#ff6600') === color ? 'active' : ''}`}
+            style={{ backgroundColor: color }}
+            onClick={() => updateColor(color)}
+          />
+        ))}
       </div>
 
       <div className="led-wall-content">

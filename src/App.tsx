@@ -26,6 +26,7 @@ import EdgeLabelEditor from './components/EdgeLabelEditor';
 import { PageOverlay } from './components/PageOverlay';
 import { usePageGrid } from './hooks/usePageGrid';
 import { useNodeSummaries, NodeSummariesContext } from './hooks/useNodeSummaries';
+import { usePermanentSourcesProvider, PermanentSourcesContext } from './hooks/usePermanentSources';
 import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData, GenericIONodeData, GearConfig, NodePreset } from './types';
 import { PAPER_SIZES, type PaperSize, type Orientation } from './types';
@@ -170,6 +171,35 @@ function Flow() {
     window.dispatchEvent(new CustomEvent('presetSaved'));
   }, []);
 
+  const handleApplyGearToSelected = useCallback((config: GearConfig) => {
+    setNodes(nds => nds.map(node => {
+      if (!node.selected) return node;
+
+      // Apply gear config to selected nodes
+      return {
+        ...node,
+        type: config.nodeType,
+        data: {
+          ...node.data,
+          label: node.data?.label || config.label, // Keep existing label
+          color: config.color,
+          layout: config.layout,
+          ipAddress: config.ipAddress || node.data?.ipAddress,
+          inputs: config.inputs.map(p => ({
+            id: p.id,
+            name: p.name,
+            type: p.type || 'HDMI',
+          })),
+          outputs: config.outputs.map(p => ({
+            id: p.id,
+            name: p.name,
+            type: p.type || 'HDMI',
+          })),
+        },
+      };
+    }));
+  }, [setNodes]);
+
   const toggleMiniMap = useCallback(() => {
     setShowMiniMap(prev => {
       const newValue = !prev;
@@ -204,6 +234,9 @@ function Flow() {
 
   // Single store subscription for node summaries - shared via context to all nodes
   const nodeSummaries = useNodeSummaries();
+
+  // Permanent sources that persist across all projects
+  const permanentSourcesValue = usePermanentSourcesProvider();
 
   // Calculate occupied pages based on node positions
   const pages = usePageGrid({
@@ -1545,6 +1578,7 @@ function Flow() {
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>
         <CascadeLockContext.Provider value={cascadeLockContext}>
+        <PermanentSourcesContext.Provider value={permanentSourcesValue}>
         <NodeSummariesContext.Provider value={nodeSummaries}>
         <ReactFlow
           nodes={nodes}
@@ -1606,6 +1640,7 @@ function Flow() {
           </Panel>
         </ReactFlow>
         </NodeSummariesContext.Provider>
+        </PermanentSourcesContext.Provider>
         </CascadeLockContext.Provider>
       </div>
 
@@ -1622,6 +1657,8 @@ function Flow() {
         projectName={projectName}
         onAddGearNode={handleAddGearNode}
         onSaveGearPreset={handleSaveGearPreset}
+        selectedNodeCount={nodes.filter(n => n.selected).length}
+        onApplyToSelected={handleApplyGearToSelected}
       />
 
       {editingEdge && (

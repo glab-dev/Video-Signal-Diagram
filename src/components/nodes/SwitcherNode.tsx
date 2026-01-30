@@ -1,7 +1,9 @@
 import { memo, useCallback, useState, useRef, useMemo } from 'react';
+import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { usePermanentSources } from '../../hooks/usePermanentSources';
 import { useNodeScale } from '../../hooks/useNodeScale';
 import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,6 +45,17 @@ const OUTPUT_FIELD_CONFIG: Record<OutputFieldType, { label: string; className: s
   resolution: { label: 'RESOLUTION', className: 'resolution', flex: 1.2, minWidth: 100 }
 };
 
+const NODE_COLORS = [
+  '#ff0000', // Red
+  '#00ff00', // Green
+  '#0088cc', // Blue
+  '#ff6600', // Orange
+  '#ff00ff', // Magenta
+  '#00ffff', // Cyan
+  '#ffff00', // Yellow
+  '#8800ff', // Purple
+];
+
 type SwitcherNodeProps = NodeProps & {
   data: ProcessorNodeData;
 };
@@ -51,16 +64,58 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeSummaries = useNodeSummariesContext();
+  const { sources: permanentSources } = usePermanentSources();
 
-  // Get all source nodes with their colors (only pure source nodes, not switchers/processors)
+  // Get sources with colors - category overrides + pure source nodes (output-only)
   const sourcesWithColors = useMemo(() => {
-    const sources = nodeSummaries
-      .filter(n => n.id !== id && n.type !== 'processor' && n.type !== 'switcher' && n.hasOutputs && n.label)
+    // Start with category overrides marked as 'source'
+    const overrides = permanentSources
+      .filter(s => s.category === 'source')
+      .map(s => ({ label: s.name, color: s.color }));
+
+    // Skip nodes with destination override
+    const destinationOverrideNames = new Set(
+      permanentSources.filter(s => s.category === 'destination').map(s => s.name)
+    );
+
+    // Add dynamic sources from nodes
+    const dynamic = nodeSummaries
+      .filter(n => {
+        if (n.id === id || !n.label) return false;
+        // Skip if has destination override
+        if (destinationOverrideNames.has(n.label)) return false;
+        // Pure sources: nodes that output signals but don't receive them
+        const isPureSource =
+          // GenericIO with outputs only
+          (n.hasOutputs && !n.hasInputs && !n.hasRows) ||
+          // Card configured as output type
+          (n.hasOutputConnectors && !n.hasInputConnectors) ||
+          // BarcoE3 with only output cards
+          (n.hasOutputCards && !n.hasInputCards);
+        return isPureSource;
+      })
       .map(n => ({ label: n.label, color: n.color }));
-    // Remove duplicates by label, keeping first occurrence
-    const unique = sources.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+
+    // Merge and deduplicate (overrides take precedence)
+    const all = [...overrides, ...dynamic];
+    const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
-  }, [nodeSummaries, id]);
+  }, [nodeSummaries, id, permanentSources]);
+
+  // For backwards compatibility, also get just the names
+  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
+
+  const nodeColor = data.color || '#0088cc';
+
+  // Handle drag start for category override drop zone
+  const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
+      label: data.label,
+      color: nodeColor,
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, [data.label, nodeColor]);
 
   // Lock at 20x20 or 40x40 for Blackmagic switchers
   const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
@@ -150,6 +205,13 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
+    },
+    [id, updateNodeData]
+  );
+
+  const updateColor = useCallback(
+    (color: string) => {
+      updateNodeData(id, { color });
     },
     [id, updateNodeData]
   );
@@ -485,7 +547,27 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           onRename={updateLabel}
           onReset={handleReset}
         />
+        <button
+          className="category-drag-btn nodrag"
+          draggable
+          onDragStart={handleCategoryDragStart}
+          title="Drag to Category Overrides to set as source/destination"
+        >
+          ⊕
+        </button>
       </div>
+
+      <div className="color-picker-row">
+        {NODE_COLORS.map((color) => (
+          <button
+            key={color}
+            className={`color-btn ${(data.color || '#4a148c') === color ? 'active' : ''}`}
+            style={{ backgroundColor: color }}
+            onClick={() => updateColor(color)}
+          />
+        ))}
+      </div>
+
       <div className="node-ip-row">
         <span className="ip-label">IP:</span>
         <input

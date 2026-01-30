@@ -32,9 +32,11 @@ const DEFAULT_CONFIG: GearConfig = {
 interface GearBuilderProps {
   onAddToCanvas: (config: GearConfig) => void;
   onSavePreset: (config: GearConfig) => void;
+  selectedNodeCount: number;
+  onApplyToSelected: (config: GearConfig) => void;
 }
 
-function GearBuilder({ onAddToCanvas, onSavePreset }: GearBuilderProps) {
+function GearBuilder({ onAddToCanvas, onSavePreset, selectedNodeCount, onApplyToSelected }: GearBuilderProps) {
   const [expanded, setExpanded] = useState(true);
   const [config, setConfig] = useState<GearConfig>(DEFAULT_CONFIG);
 
@@ -102,6 +104,10 @@ function GearBuilder({ onAddToCanvas, onSavePreset }: GearBuilderProps) {
     setConfig(DEFAULT_CONFIG);
   }, []);
 
+  const handleApplyToSelected = useCallback(() => {
+    onApplyToSelected(config);
+  }, [config, onApplyToSelected]);
+
   return (
     <div className="gear-builder-section">
       <div
@@ -149,6 +155,14 @@ function GearBuilder({ onAddToCanvas, onSavePreset }: GearBuilderProps) {
               onClick={handleAddToCanvas}
             >
               Add to Canvas
+            </button>
+            <button
+              className={`gear-btn apply-selected ${selectedNodeCount > 0 ? 'active' : 'disabled'}`}
+              onClick={handleApplyToSelected}
+              disabled={selectedNodeCount === 0}
+              title={selectedNodeCount > 0 ? `Apply to ${selectedNodeCount} selected node${selectedNodeCount > 1 ? 's' : ''}` : 'Select nodes to apply'}
+            >
+              Apply to Selected {selectedNodeCount > 0 && `(${selectedNodeCount})`}
             </button>
             <button
               className="gear-btn secondary"

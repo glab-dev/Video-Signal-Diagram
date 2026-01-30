@@ -1,13 +1,26 @@
 import { memo, useCallback, useMemo } from 'react';
+import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { usePermanentSources } from '../../hooks/usePermanentSources';
 import { useNodeScale } from '../../hooks/useNodeScale';
 import type { ProcessorNodeData, ProcessorPort, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 import EditableTitle from '../EditableTitle';
 import EditableSelect from '../EditableSelect';
+
+const NODE_COLORS = [
+  '#ff0000', // Red
+  '#00ff00', // Green
+  '#0088cc', // Blue
+  '#ff6600', // Orange
+  '#ff00ff', // Magenta
+  '#00ffff', // Cyan
+  '#ffff00', // Yellow
+  '#8800ff', // Purple
+];
 
 type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
@@ -16,22 +29,89 @@ type ProcessorNodeProps = NodeProps & {
 function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps) {
   const { updateNodeData } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
+  const { sources: permanentSources } = usePermanentSources();
 
+  // Get source names - category overrides + pure source nodes (output-only)
   const sourceNames = useMemo(() => {
-    return nodeSummaries
-      .filter(n => n.id !== id && n.hasOutputs && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
-  }, [nodeSummaries, id]);
+    // Start with category overrides marked as 'source'
+    const overrides = permanentSources
+      .filter(s => s.category === 'source')
+      .map(s => s.name);
 
+    // Add dynamic sources from nodes (excluding those with destination override)
+    const destinationOverrideNames = new Set(
+      permanentSources.filter(s => s.category === 'destination').map(s => s.name)
+    );
+
+    const dynamic = nodeSummaries
+      .filter(n => {
+        if (n.id === id || !n.label) return false;
+        // Skip if has destination override
+        if (destinationOverrideNames.has(n.label)) return false;
+        // Pure sources: nodes that output signals but don't receive them
+        const isPureSource =
+          // GenericIO with outputs only
+          (n.hasOutputs && !n.hasInputs && !n.hasRows) ||
+          // Card configured as output type
+          (n.hasOutputConnectors && !n.hasInputConnectors) ||
+          // BarcoE3 with only output cards
+          (n.hasOutputCards && !n.hasInputCards);
+        return isPureSource;
+      })
+      .map(n => n.label);
+
+    // Merge and deduplicate
+    const all = [...overrides, ...dynamic];
+    return all.filter((v, i, a) => a.indexOf(v) === i).sort();
+  }, [nodeSummaries, id, permanentSources]);
+
+  // Get destination names - category overrides + pure destination nodes (input-only)
   const destinationNames = useMemo(() => {
-    return nodeSummaries
-      .filter(n => n.id !== id && n.hasInputs && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
-  }, [nodeSummaries, id]);
+    // Start with category overrides marked as 'destination'
+    const overrides = permanentSources
+      .filter(s => s.category === 'destination')
+      .map(s => s.name);
+
+    // Skip nodes with source override
+    const sourceOverrideNames = new Set(
+      permanentSources.filter(s => s.category === 'source').map(s => s.name)
+    );
+
+    const dynamic = nodeSummaries
+      .filter(n => {
+        if (n.id === id || !n.label) return false;
+        // Skip if has source override
+        if (sourceOverrideNames.has(n.label)) return false;
+        // Pure destinations: nodes that receive signals but don't output them
+        const isPureDestination =
+          // GenericIO with inputs only
+          (n.hasInputs && !n.hasOutputs && !n.hasRows) ||
+          // Card configured as input type
+          (n.hasInputConnectors && !n.hasOutputConnectors) ||
+          // BarcoE3 with only input cards
+          (n.hasInputCards && !n.hasOutputCards) ||
+          // LEDWall is always a destination
+          n.type === 'ledWall';
+        return isPureDestination;
+      })
+      .map(n => n.label);
+
+    // Merge and deduplicate
+    const all = [...overrides, ...dynamic];
+    return all.filter((v, i, a) => a.indexOf(v) === i).sort();
+  }, [nodeSummaries, id, permanentSources]);
+
+  const nodeColor = data.color || '#9b59b6';
+
+  // Handle drag start for category override drop zone
+  const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
+      label: data.label,
+      color: nodeColor,
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, [data.label, nodeColor]);
 
   const sourceOptions = useMemo(() => sourceNames.map(name => ({ label: name })), [sourceNames]);
   const destinationOptions = useMemo(() => destinationNames.map(name => ({ label: name })), [destinationNames]);
@@ -105,6 +185,13 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
     [id, updateNodeData]
   );
 
+  const updateColor = useCallback(
+    (color: string) => {
+      updateNodeData(id, { color });
+    },
+    [id, updateNodeData]
+  );
+
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
       updateNodeData(id, presetData as Partial<ProcessorNodeData>);
@@ -174,7 +261,27 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
         >
           {layout === 'stacked' ? '⇄' : '⇅'}
         </button>
+        <button
+          className="category-drag-btn nodrag"
+          draggable
+          onDragStart={handleCategoryDragStart}
+          title="Drag to Category Overrides to set as source/destination"
+        >
+          ⊕
+        </button>
       </div>
+
+      <div className="color-picker-row">
+        {NODE_COLORS.map((color) => (
+          <button
+            key={color}
+            className={`color-btn ${(data.color || '#0088cc') === color ? 'active' : ''}`}
+            style={{ backgroundColor: color }}
+            onClick={() => updateColor(color)}
+          />
+        ))}
+      </div>
+
       <div className="node-ip-row">
         <span className="ip-label">IP:</span>
         <input

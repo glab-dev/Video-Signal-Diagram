@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '@xyflow/react';
 import type { ProjectData, NodePreset } from '../types';
 import { exportProject, importProject, deleteProject, getAllProjects, getAllPresets, deletePreset, savePreset } from '../store/db';
+import { useSidebarCustomization } from '../hooks/useSidebarCustomization';
 
 // Recent files stored in localStorage
 interface RecentFile {
@@ -49,12 +50,99 @@ interface SidebarProps {
   onCascadeDirectionChange: (direction: 'right' | 'left') => void;
 }
 
-// Equipment presets with their specific I/O configurations
-const EQUIPMENT_PRESETS = {
-  // Brompton LED Processors
-  brompton: {
-    label: 'Brompton',
+// Node categories organized by signal flow role
+const NODE_CATEGORIES = {
+  // SOURCES - Signal origins
+  sources: {
+    label: 'Sources',
+    icon: '📤',
     items: [
+      {
+        name: 'Custom Source',
+        type: 'genericIO',
+        color: '#00aa44',
+        inputs: [],
+        outputs: [
+          { name: 'Output 1', type: 'Other' },
+        ],
+      },
+      {
+        name: 'Mac',
+        type: 'genericIO',
+        color: '#4a4a4a',
+        inputs: [],
+        outputs: [
+          { name: 'HDMI', type: 'HDMI' },
+          { name: 'USB-C', type: 'USB-C' },
+          { name: 'Thunderbolt', type: 'USB-C' },
+        ],
+      },
+      {
+        name: 'Laptop',
+        type: 'genericIO',
+        color: '#4a4a4a',
+        inputs: [],
+        outputs: [
+          { name: 'HDMI', type: 'HDMI' },
+          { name: 'USB-C', type: 'USB-C' },
+        ],
+      },
+      {
+        name: 'Camera',
+        type: 'genericIO',
+        color: '#2d2d2d',
+        inputs: [],
+        outputs: [
+          { name: 'SDI Out', type: 'SDI' },
+          { name: 'HDMI Out', type: 'HDMI' },
+        ],
+      },
+      {
+        name: 'Media Server',
+        type: 'genericIO',
+        color: '#1a3a5c',
+        inputs: [],
+        outputs: [
+          { name: 'SDI 1', type: 'SDI' },
+          { name: 'SDI 2', type: 'SDI' },
+          { name: 'SDI 3', type: 'SDI' },
+          { name: 'SDI 4', type: 'SDI' },
+        ],
+      },
+      {
+        name: 'NDI Source',
+        type: 'genericIO',
+        color: '#5c3d1a',
+        inputs: [],
+        outputs: [
+          { name: 'NDI', type: 'NDI' },
+        ],
+      },
+      {
+        name: 'Output Card',
+        type: 'card',
+        cardType: 'output',
+        color: '#50e3c2',
+      },
+    ],
+  },
+
+  // PROCESSORS - Signal processing devices
+  processors: {
+    label: 'Processors',
+    icon: '⚙️',
+    items: [
+      {
+        name: 'Custom Processor',
+        type: 'processor',
+        color: '#0088cc',
+        inputs: [
+          { name: 'IN 1', connection: 'HDMI 2.0', resolution: '1920x1080@60' },
+        ],
+        outputs: [
+          { name: 'OUT 1', connection: 'Ethernet', resolution: 'LED Data', destination: '' },
+        ],
+      },
       {
         name: 'Brompton SX40',
         type: 'processor',
@@ -110,10 +198,35 @@ const EQUIPMENT_PRESETS = {
       },
     ],
   },
-  // Barco Switchers
-  barco: {
-    label: 'Barco',
+
+  // SWITCHERS - Signal routing devices
+  switchers: {
+    label: 'Switchers',
+    icon: '🔀',
     items: [
+      {
+        name: 'Custom Switcher',
+        type: 'switcher',
+        color: '#4a148c',
+        inputs: [
+          { name: 'IN 1', connection: 'HDMI', resolution: '1920x1080@60' },
+          { name: 'IN 2', connection: 'HDMI', resolution: '1920x1080@60' },
+        ],
+        outputs: [
+          { name: 'PGM', connection: 'HDMI', resolution: '1920x1080@60', destination: '' },
+        ],
+      },
+      {
+        name: 'Custom Router',
+        type: 'router',
+        color: '#444',
+        size: 4,
+      },
+      {
+        name: 'Barco E3',
+        type: 'barcoE3',
+        color: '#006400',
+      },
       {
         name: 'Barco E2',
         type: 'switcher',
@@ -152,12 +265,6 @@ const EQUIPMENT_PRESETS = {
           { name: 'PGM 2', connection: 'HDMI 2.0', resolution: '1920x1080@60' },
         ],
       },
-    ],
-  },
-  // Blackmagic
-  blackmagic: {
-    label: 'Blackmagic',
-    items: [
       {
         name: 'ATEM 4 M/E',
         type: 'switcher',
@@ -240,68 +347,21 @@ const EQUIPMENT_PRESETS = {
       },
     ],
   },
-  // Sources
-  sources: {
-    label: 'Sources',
-    items: [
-      {
-        name: 'Mac',
-        type: 'genericIO',
-        color: '#4a4a4a',
-        inputs: [],
-        outputs: [
-          { name: 'HDMI', type: 'HDMI' },
-          { name: 'USB-C', type: 'USB-C' },
-          { name: 'Thunderbolt', type: 'USB-C' },
-        ],
-      },
-      {
-        name: 'Laptop',
-        type: 'genericIO',
-        color: '#4a4a4a',
-        inputs: [],
-        outputs: [
-          { name: 'HDMI', type: 'HDMI' },
-          { name: 'USB-C', type: 'USB-C' },
-        ],
-      },
-      {
-        name: 'Camera',
-        type: 'genericIO',
-        color: '#2d2d2d',
-        inputs: [],
-        outputs: [
-          { name: 'SDI Out', type: 'SDI' },
-          { name: 'HDMI Out', type: 'HDMI' },
-        ],
-      },
-      {
-        name: 'Media Server',
-        type: 'genericIO',
-        color: '#1a3a5c',
-        inputs: [],
-        outputs: [
-          { name: 'SDI 1', type: 'SDI' },
-          { name: 'SDI 2', type: 'SDI' },
-          { name: 'SDI 3', type: 'SDI' },
-          { name: 'SDI 4', type: 'SDI' },
-        ],
-      },
-      {
-        name: 'NDI Source',
-        type: 'genericIO',
-        color: '#5c3d1a',
-        inputs: [],
-        outputs: [
-          { name: 'NDI', type: 'NDI' },
-        ],
-      },
-    ],
-  },
-  // Destinations
+
+  // DESTINATIONS - Signal endpoints
   destinations: {
     label: 'Destinations',
+    icon: '📥',
     items: [
+      {
+        name: 'Custom Destination',
+        type: 'genericIO',
+        color: '#cc4400',
+        inputs: [
+          { name: 'Input 1', type: 'Other' },
+        ],
+        outputs: [],
+      },
       {
         name: 'Monitor',
         type: 'genericIO',
@@ -338,24 +398,80 @@ const EQUIPMENT_PRESETS = {
         ],
         outputs: [],
       },
+      {
+        name: 'Input Card',
+        type: 'card',
+        cardType: 'input',
+        color: '#4a9eff',
+      },
     ],
   },
+
+  // UTILITIES - Annotation and misc
+  utilities: {
+    label: 'Utilities',
+    icon: '🛠️',
+    items: [
+      {
+        name: 'Note',
+        type: 'note',
+        color: '#ffeb3b',
+      },
+      {
+        name: 'Image',
+        type: 'image',
+        color: '#666',
+      },
+      {
+        name: 'Custom Device',
+        type: 'genericIO',
+        color: '#0088cc',
+        inputs: [{ name: 'Input 1', type: 'Other' }],
+        outputs: [{ name: 'Output 1', type: 'Other' }],
+      },
+    ],
+  },
+};
+
+// Keep old name for backwards compatibility with saved presets
+const EQUIPMENT_PRESETS = NODE_CATEGORIES;
+
+// Type for preset items
+type PresetItem = {
+  name: string;
+  type: string;
+  color: string;
+  inputs?: { name: string; connection?: string; resolution?: string; type?: string }[];
+  outputs?: { name: string; connection?: string; resolution?: string; type?: string }[];
+  size?: number;
+  cardType?: string;
 };
 
 export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG, cascadeDirection, onCascadeDirectionChange }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    brompton: true,
-    barco: true,
-    blackmagic: true,
     sources: true,
+    processors: true,
+    switchers: true,
     destinations: true,
-    basic: true,
+    utilities: true,
   });
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
   const [showRecents, setShowRecents] = useState(false);
   const [savedPresets, setSavedPresets] = useState<NodePreset[]>([]);
+  const [moveItemDialog, setMoveItemDialog] = useState<{ categoryKey: string; itemName: string } | null>(null);
+
+  // Sidebar customization (hidden items, moved items)
+  const {
+    hideCategory,
+    isCategoryHidden,
+    hideItem,
+    isItemHidden,
+    moveItem,
+    getItemCategory,
+    resetToDefaults,
+  } = useSidebarCustomization();
 
   const loadSavedPresets = useCallback(async () => {
     console.log('Loading saved presets...');
@@ -470,21 +586,21 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     }));
   }, []);
 
-  const addPresetNode = useCallback((preset: typeof EQUIPMENT_PRESETS.brompton.items[0]) => {
+  const addPresetNode = useCallback((preset: PresetItem) => {
     let node: Node;
 
     if (preset.type === 'processor' || preset.type === 'switcher') {
-      const inputs = ('inputs' in preset ? preset.inputs : []).map(inp => ({
+      const inputs = (preset.inputs || []).map(inp => ({
         id: uuidv4(),
         name: inp.name,
-        connection: inp.connection,
-        resolution: inp.resolution,
+        connection: inp.connection || 'HDMI',
+        resolution: inp.resolution || '1920x1080@60',
       }));
-      const outputs = ('outputs' in preset ? preset.outputs : []).map(out => ({
+      const outputs = (preset.outputs || []).map(out => ({
         id: uuidv4(),
         name: out.name,
-        connection: out.connection,
-        resolution: out.resolution,
+        connection: out.connection || 'HDMI',
+        resolution: out.resolution || '1920x1080@60',
         destination: '',
       }));
 
@@ -528,6 +644,82 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
           color: preset.color,
         },
       };
+    } else if (preset.type === 'barcoE3') {
+      node = {
+        id: uuidv4(),
+        type: 'barcoE3',
+        position: { x: 100, y: 100 },
+        data: {
+          label: preset.name,
+          color: preset.color,
+          cards: [
+            {
+              id: uuidv4(),
+              label: 'TRI COMBO - INPUT',
+              cardType: 'input',
+              connectors: [
+                { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '3840x2160@60' },
+                { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
+                { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
+              ],
+            },
+            {
+              id: uuidv4(),
+              label: 'TRI COMBO - OUTPUT',
+              cardType: 'output',
+              connectors: [
+                { id: uuidv4(), type: 'DP 1.2', resolution: '3840x2160@60', destination: '' },
+                { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
+                { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
+              ],
+            },
+          ],
+        },
+      };
+    } else if (preset.type === 'card') {
+      const isInput = preset.cardType === 'input';
+      node = {
+        id: uuidv4(),
+        type: 'card',
+        position: { x: 100, y: 100 },
+        data: {
+          label: preset.name,
+          color: preset.color,
+          cardType: preset.cardType || 'input',
+          connectors: isInput ? [
+            { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '3840x2160@60' },
+            { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
+            { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
+          ] : [
+            { id: uuidv4(), type: 'DP 1.2', resolution: '3840x2160@60', destination: '' },
+            { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
+            { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
+          ],
+        },
+      };
+    } else if (preset.type === 'note') {
+      node = {
+        id: uuidv4(),
+        type: 'note',
+        position: { x: 100, y: 100 },
+        data: {
+          label: 'NOTES',
+          content: '',
+          backgroundColor: preset.color,
+        },
+      };
+    } else if (preset.type === 'image') {
+      // Image requires file upload, so just create placeholder
+      node = {
+        id: uuidv4(),
+        type: 'note',
+        position: { x: 100, y: 100 },
+        data: {
+          label: 'Use Image button to import',
+          content: '',
+          backgroundColor: '#666',
+        },
+      };
     } else {
       // genericIO
       const inputs = ('inputs' in preset && Array.isArray(preset.inputs) ? preset.inputs : []).map((inp: { name: string; type?: string }) => ({
@@ -557,164 +749,6 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     onAddNode(node);
   }, [onAddNode]);
 
-  const addNoteNode = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'note',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'NOTES',
-        content: '',
-        backgroundColor: '#ffeb3b',
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addCustomDevice = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'genericIO',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'Custom Device',
-        color: '#0088cc',
-        inputs: [{ id: uuidv4(), name: 'Input 1', type: 'Other' }],
-        outputs: [{ id: uuidv4(), name: 'Output 1', type: 'Other' }],
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addCustomRouter = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'router',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'Router',
-        rows: Array.from({ length: 4 }, (_, i) => ({
-          id: uuidv4(),
-          source: '',
-          inOut: String(i + 1),
-          destination: '',
-        })),
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addCustomSwitcher = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'switcher',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'Switcher',
-        color: '#4a148c',
-        inputs: [
-          { id: uuidv4(), name: 'IN 1', connection: 'HDMI', resolution: '1920x1080@60' },
-          { id: uuidv4(), name: 'IN 2', connection: 'HDMI', resolution: '1920x1080@60' },
-        ],
-        outputs: [
-          { id: uuidv4(), name: 'PGM', connection: 'HDMI', resolution: '1920x1080@60', destination: '' },
-        ],
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addCustomProcessor = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'processor',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'Processor',
-        color: '#0088cc',
-        inputs: [
-          { id: uuidv4(), name: 'IN 1', connection: 'HDMI 2.0', resolution: '1920x1080@60' },
-        ],
-        outputs: [
-          { id: uuidv4(), name: 'OUT 1', connection: 'Ethernet', resolution: 'LED Data', destination: '' },
-        ],
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addInputCard = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'card',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'TRI COMBO - INPUT',
-        color: '#4a9eff',
-        cardType: 'input',
-        connectors: [
-          { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '3840x2160@60' },
-          { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
-          { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
-        ],
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addOutputCard = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'card',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'TRI COMBO - OUTPUT',
-        color: '#50e3c2',
-        cardType: 'output',
-        connectors: [
-          { id: uuidv4(), type: 'DP 1.2', resolution: '3840x2160@60', destination: '' },
-          { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
-          { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
-        ],
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
-
-  const addBarcoE3 = useCallback(() => {
-    const node: Node = {
-      id: uuidv4(),
-      type: 'barcoE3',
-      position: { x: 100, y: 100 },
-      data: {
-        label: 'BARCO E3',
-        color: '#006400',
-        cards: [
-          {
-            id: uuidv4(),
-            label: 'TRI COMBO - INPUT',
-            cardType: 'input',
-            connectors: [
-              { id: uuidv4(), type: 'DP 1.2', source: '', resolution: '3840x2160@60' },
-              { id: uuidv4(), type: 'HDMI 2.0', source: '', resolution: '3840x2160@60' },
-              { id: uuidv4(), type: '12G SDI', source: '', resolution: '3840x2160@60' },
-            ],
-          },
-          {
-            id: uuidv4(),
-            label: 'TRI COMBO - OUTPUT',
-            cardType: 'output',
-            connectors: [
-              { id: uuidv4(), type: 'DP 1.2', resolution: '3840x2160@60', destination: '' },
-              { id: uuidv4(), type: 'HDMI 2.0', resolution: '3840x2160@60', destination: '' },
-              { id: uuidv4(), type: '12G SDI', resolution: '3840x2160@60', destination: '' },
-            ],
-          },
-        ],
-      },
-    };
-    onAddNode(node);
-  }, [onAddNode]);
 
   const handleSave = useCallback(() => {
     const filename = prompt('Save As:', projectData.name);
@@ -959,72 +993,90 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         </div>
       </div>
 
-      {/* Basic Nodes */}
-      <div className="sidebar-section">
-        <div className="category-header" onClick={() => toggleCategory('basic')}>
-          <span>{expandedCategories.basic ? '▼' : '▶'} Basic Nodes</span>
-        </div>
-        {expandedCategories.basic && (
-          <div className="category-items">
-            <button className="node-btn" onClick={addCustomDevice}>
-              <span className="node-icon" style={{ background: '#0088cc' }}></span>
-              Custom Device
-            </button>
-            <button className="node-btn" onClick={addCustomRouter}>
-              <span className="node-icon" style={{ background: '#444' }}></span>
-              Router
-            </button>
-            <button className="node-btn" onClick={addCustomSwitcher}>
-              <span className="node-icon" style={{ background: '#4a148c' }}></span>
-              Switcher
-            </button>
-            <button className="node-btn" onClick={addCustomProcessor}>
-              <span className="node-icon" style={{ background: '#0088cc' }}></span>
-              Processor
-            </button>
-            <button className="node-btn" onClick={addBarcoE3}>
-              <span className="node-icon" style={{ background: '#006400' }}></span>
-              Barco E3
-            </button>
-            <button className="node-btn" onClick={addInputCard}>
-              <span className="node-icon" style={{ background: '#4a9eff' }}></span>
-              Input Card
-            </button>
-            <button className="node-btn" onClick={addOutputCard}>
-              <span className="node-icon" style={{ background: '#50e3c2' }}></span>
-              Output Card
-            </button>
-            <button className="node-btn" onClick={addNoteNode}>
-              <span className="node-icon" style={{ background: '#ffeb3b' }}></span>
-              Note
-            </button>
-            <button className="node-btn" onClick={handleImageImport}>
-              <span className="node-icon" style={{ background: '#666' }}></span>
-              Image
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Equipment Categories */}
-      {Object.entries(EQUIPMENT_PRESETS).map(([key, category]) => {
+      {/* Node Categories */}
+      {Object.entries(EQUIPMENT_PRESETS)
+        .filter(([key]) => !isCategoryHidden(key))
+        .map(([key, category]) => {
         const categorySavedPresets = savedPresets.filter(p => p.category === key);
+
+        // Get items that belong to this category (original + moved here)
+        // Items originally in this category that haven't been moved elsewhere
+        const originalItems = category.items
+          .filter(item => {
+            const effectiveCategory = getItemCategory(key, item.name);
+            return effectiveCategory === key && !isItemHidden(key, item.name);
+          })
+          .map(item => ({ item, originalCategory: key }));
+
+        // Items moved here from other categories
+        const movedItems: { item: PresetItem; originalCategory: string }[] = [];
+        Object.entries(EQUIPMENT_PRESETS).forEach(([otherKey, otherCategory]) => {
+          if (otherKey !== key) {
+            otherCategory.items.forEach(item => {
+              const effectiveCategory = getItemCategory(otherKey, item.name);
+              if (effectiveCategory === key && !isItemHidden(otherKey, item.name)) {
+                movedItems.push({ item: item as PresetItem, originalCategory: otherKey });
+              }
+            });
+          }
+        });
+
+        const categoryItems = [...originalItems, ...movedItems];
+
         return (
           <div className="sidebar-section" key={key}>
-            <div className="category-header" onClick={() => toggleCategory(key)}>
-              <span>{expandedCategories[key] ? '▼' : '▶'} {category.label}</span>
+            <div className="category-header">
+              <span onClick={() => toggleCategory(key)}>
+                {expandedCategories[key] ? '▼' : '▶'} {category.icon} {category.label}
+              </span>
+              <button
+                className="category-delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`Hide "${category.label}" category? You can restore it later.`)) {
+                    hideCategory(key);
+                  }
+                }}
+                title={`Hide ${category.label} category`}
+              >
+                ×
+              </button>
             </div>
             {expandedCategories[key] && (
               <div className="category-items">
-                {category.items.map((item, index) => (
-                  <button
-                    key={index}
-                    className="node-btn"
-                    onClick={() => addPresetNode(item as typeof EQUIPMENT_PRESETS.brompton.items[0])}
-                  >
-                    <span className="node-icon" style={{ background: item.color }}></span>
-                    {item.name}
-                  </button>
+                {categoryItems.map(({ item, originalCategory }, index) => (
+                  <div key={`${originalCategory}-${item.name}-${index}`} className="sidebar-item-row">
+                    <button
+                      className="node-btn"
+                      onClick={() => item.type === 'image' ? handleImageImport() : addPresetNode(item)}
+                    >
+                      <span className="node-icon" style={{ background: item.color }}></span>
+                      {item.name}
+                      {originalCategory !== key && <span className="moved-indicator" title={`Moved from ${EQUIPMENT_PRESETS[originalCategory as keyof typeof EQUIPMENT_PRESETS]?.label}`}>↵</span>}
+                    </button>
+                    <button
+                      className="item-move-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMoveItemDialog({ categoryKey: originalCategory, itemName: item.name });
+                      }}
+                      title="Move to another category"
+                    >
+                      ⇄
+                    </button>
+                    <button
+                      className="item-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Hide "${item.name}"? You can restore it later.`)) {
+                          hideItem(originalCategory, item.name);
+                        }
+                      }}
+                      title="Hide this item"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
                 {categorySavedPresets.length > 0 && (
                   <>
@@ -1062,6 +1114,50 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
           </div>
         );
       })}
+
+      {/* Move Item Dialog */}
+      {moveItemDialog && (
+        <div className="move-item-dialog-overlay" onClick={() => setMoveItemDialog(null)}>
+          <div className="move-item-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="move-item-dialog-header">
+              Move "{moveItemDialog.itemName}" to:
+            </div>
+            <div className="move-item-dialog-options">
+              {Object.entries(EQUIPMENT_PRESETS).map(([catKey, cat]) => (
+                <button
+                  key={catKey}
+                  className={`move-item-option ${catKey === getItemCategory(moveItemDialog.categoryKey, moveItemDialog.itemName) ? 'current' : ''}`}
+                  onClick={() => {
+                    moveItem(moveItemDialog.categoryKey, moveItemDialog.itemName, catKey);
+                    setMoveItemDialog(null);
+                  }}
+                >
+                  {cat.icon} {cat.label}
+                  {catKey === moveItemDialog.categoryKey && ' (original)'}
+                </button>
+              ))}
+            </div>
+            <button className="move-item-dialog-cancel" onClick={() => setMoveItemDialog(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Restore Defaults Button */}
+      <div className="sidebar-section restore-section">
+        <button
+          className="restore-defaults-btn"
+          onClick={() => {
+            if (confirm('Restore all hidden categories and items? This will undo all customizations.')) {
+              resetToDefaults();
+            }
+          }}
+          title="Restore all hidden categories and items"
+        >
+          Restore Hidden Items
+        </button>
+      </div>
 
       <input
         ref={fileInputRef}

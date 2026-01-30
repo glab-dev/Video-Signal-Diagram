@@ -1,4 +1,5 @@
 import { useCallback, useContext } from 'react';
+import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData } from '../../types';
@@ -125,6 +126,15 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const showLockToggle = cascadeInfo && cascadeInfo.isFirstInGroup && cascadeInfo.groupNodes.length >= 2;
   const isLocked = cascadeInfo?.isLocked || false;
 
+  // Handle drag start for category override drop zone
+  const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
+      label: data.label,
+      color: nodeColor,
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, [data.label, nodeColor]);
 
   return (
     <div
@@ -168,6 +178,14 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
           title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
         >
           {layout === 'stacked' ? '⇄' : '⇅'}
+        </button>
+        <button
+          className="category-drag-btn nodrag"
+          draggable
+          onDragStart={handleCategoryDragStart}
+          title="Drag to Category Overrides to set as source/destination"
+        >
+          ⊕
         </button>
       </div>
 

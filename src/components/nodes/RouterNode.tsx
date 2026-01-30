@@ -1,13 +1,26 @@
 import { memo, useCallback, useMemo } from 'react';
+import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { usePermanentSources } from '../../hooks/usePermanentSources';
 import { useNodeScale } from '../../hooks/useNodeScale';
 import type { RouterNodeData, RouterRow, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 import EditableTitle from '../EditableTitle';
 import EditableSelect from '../EditableSelect';
+
+const NODE_COLORS = [
+  '#ff0000', // Red
+  '#00ff00', // Green
+  '#0088cc', // Blue
+  '#ff6600', // Orange
+  '#ff00ff', // Magenta
+  '#00ffff', // Cyan
+  '#ffff00', // Yellow
+  '#8800ff', // Purple
+];
 
 type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
@@ -16,28 +29,96 @@ type RouterNodeProps = NodeProps & {
 function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
   const { updateNodeData } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
+  const { sources: permanentSources } = usePermanentSources();
 
-  // Get sources with colors
+  // Get sources with colors - category overrides + pure source nodes (output-only)
   const sourcesWithColors = useMemo(() => {
-    const sources = nodeSummaries
-      .filter(n => n.id !== id && (n.hasOutputs || n.hasRows) && n.label)
+    // Start with category overrides marked as 'source'
+    const overrides = permanentSources
+      .filter(s => s.category === 'source')
+      .map(s => ({ label: s.name, color: s.color }));
+
+    // Skip nodes with destination override
+    const destinationOverrideNames = new Set(
+      permanentSources.filter(s => s.category === 'destination').map(s => s.name)
+    );
+
+    // Add dynamic sources from nodes
+    const dynamic = nodeSummaries
+      .filter(n => {
+        if (n.id === id || !n.label) return false;
+        // Skip if has destination override
+        if (destinationOverrideNames.has(n.label)) return false;
+        // Pure sources: nodes that output signals but don't receive them
+        const isPureSource =
+          // GenericIO with outputs only
+          (n.hasOutputs && !n.hasInputs && !n.hasRows) ||
+          // Card configured as output type
+          (n.hasOutputConnectors && !n.hasInputConnectors) ||
+          // BarcoE3 with only output cards
+          (n.hasOutputCards && !n.hasInputCards);
+        return isPureSource;
+      })
       .map(n => ({ label: n.label, color: n.color }));
-    const unique = sources.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+
+    // Merge and deduplicate (overrides take precedence)
+    const all = [...overrides, ...dynamic];
+    const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
-  }, [nodeSummaries, id]);
+  }, [nodeSummaries, id, permanentSources]);
 
   const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
 
-  // Get destinations with colors
+  // Get destinations with colors - category overrides + pure destination nodes (input-only)
   const destinationsWithColors = useMemo(() => {
+    // Start with category overrides marked as 'destination'
+    const overrides = permanentSources
+      .filter(s => s.category === 'destination')
+      .map(s => ({ label: s.name, color: s.color }));
+
+    // Skip nodes with source override
+    const sourceOverrideNames = new Set(
+      permanentSources.filter(s => s.category === 'source').map(s => s.name)
+    );
+
     const dests = nodeSummaries
-      .filter(n => n.id !== id && (n.hasInputs || n.hasRows) && n.label)
+      .filter(n => {
+        if (n.id === id || !n.label) return false;
+        // Skip if has source override
+        if (sourceOverrideNames.has(n.label)) return false;
+        // Pure destinations: nodes that receive signals but don't output them
+        const isPureDestination =
+          // GenericIO with inputs only
+          (n.hasInputs && !n.hasOutputs && !n.hasRows) ||
+          // Card configured as input type
+          (n.hasInputConnectors && !n.hasOutputConnectors) ||
+          // BarcoE3 with only input cards
+          (n.hasInputCards && !n.hasOutputCards) ||
+          // LEDWall is always a destination
+          n.type === 'ledWall';
+        return isPureDestination;
+      })
       .map(n => ({ label: n.label, color: n.color }));
-    const unique = dests.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+
+    // Merge and deduplicate
+    const all = [...overrides, ...dests];
+    const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
-  }, [nodeSummaries, id]);
+  }, [nodeSummaries, id, permanentSources]);
 
   const destinationNames = useMemo(() => destinationsWithColors.map(d => d.label), [destinationsWithColors]);
+
+  const nodeColor = data.color || '#0088cc';
+
+  // Handle drag start for category override drop zone
+  const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
+      label: data.label,
+      color: nodeColor,
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, [data.label, nodeColor]);
 
   const updateRow = useCallback(
     (rowId: string, field: keyof RouterRow, value: string) => {
@@ -75,6 +156,13 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
     [id, updateNodeData]
   );
 
+  const updateColor = useCallback(
+    (color: string) => {
+      updateNodeData(id, { color });
+    },
+    [id, updateNodeData]
+  );
+
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
       updateNodeData(id, presetData as Partial<RouterNodeData>);
@@ -106,8 +194,8 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
       <div ref={contentRef} style={scaleStyle}>
       <Handle type="target" position={Position.Left} id="input" />
 
-      <div className="node-header">
-        <EditableTitle value={data.label} placeholder="Router Name" onChange={updateLabel} className="node-title" />
+      <div className="node-header" style={{ backgroundColor: data.color || '#444' }}>
+        <EditableTitle value={data.label} placeholder="Router Name" onChange={updateLabel} className="node-title light" />
         <PresetMenu
           nodeType="router"
           currentData={data}
@@ -115,6 +203,25 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
         />
+        <button
+          className="category-drag-btn nodrag"
+          draggable
+          onDragStart={handleCategoryDragStart}
+          title="Drag to Category Overrides to set as source/destination"
+        >
+          ⊕
+        </button>
+      </div>
+
+      <div className="color-picker-row">
+        {NODE_COLORS.map((color) => (
+          <button
+            key={color}
+            className={`color-btn ${(data.color || '#444') === color ? 'active' : ''}`}
+            style={{ backgroundColor: color }}
+            onClick={() => updateColor(color)}
+          />
+        ))}
       </div>
 
       <table className="router-table nodrag">

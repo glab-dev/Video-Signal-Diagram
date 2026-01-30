@@ -5,6 +5,7 @@ import { PAPER_SIZES } from '../types';
 import { getNewChangelog, markVersionSeen } from '../changelog';
 import { GearBuilder } from './GearBuilder';
 import ProjectTallySection from './ProjectTallySection';
+import PermanentSourcesSection from './PermanentSourcesSection';
 
 interface RightPanelProps {
   paperSize: PaperSize;
@@ -19,11 +20,13 @@ interface RightPanelProps {
   projectName?: string;
   onAddGearNode: (config: GearConfig) => void;
   onSaveGearPreset: (config: GearConfig) => void;
+  selectedNodeCount: number;
+  onApplyToSelected: (config: GearConfig) => void;
 }
 
-type MainSectionId = 'sizing' | 'gearBuilder' | 'projectTally';
+type MainSectionId = 'sizing' | 'gearBuilder' | 'permanentSources' | 'projectTally';
 
-const DEFAULT_SECTION_ORDER: MainSectionId[] = ['sizing', 'gearBuilder', 'projectTally'];
+const DEFAULT_SECTION_ORDER: MainSectionId[] = ['sizing', 'gearBuilder', 'permanentSources', 'projectTally'];
 
 export default function RightPanel({
   paperSize,
@@ -38,6 +41,8 @@ export default function RightPanel({
   projectName,
   onAddGearNode,
   onSaveGearPreset,
+  selectedNodeCount,
+  onApplyToSelected,
 }: RightPanelProps) {
   // What's New popup state
   const [whatsNew, setWhatsNew] = useState<{ version: string; changes: string[] } | null>(null);
@@ -234,7 +239,25 @@ export default function RightPanel({
             <GearBuilder
               onAddToCanvas={onAddGearNode}
               onSavePreset={onSaveGearPreset}
+              selectedNodeCount={selectedNodeCount}
+              onApplyToSelected={onApplyToSelected}
             />
+          </div>
+        );
+
+      case 'permanentSources':
+        return (
+          <div
+            key={sectionId}
+            className={`sidebar-section-wrapper ${isDragging ? 'dragging' : ''}`}
+            draggable
+            onDragStart={() => handleSectionDragStart(sectionId)}
+            onDragOver={handleSectionDragOver}
+            onDrop={() => handleSectionDrop(sectionId)}
+            onDragEnd={handleSectionDragEnd}
+          >
+            <div className="section-drag-handle">⋮⋮</div>
+            <PermanentSourcesSection />
           </div>
         );
 
