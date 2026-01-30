@@ -551,13 +551,14 @@ function Flow() {
     }
 
     // Handle group resize: when one selected node is resized, scale all other selected nodes
+    // and adjust their positions proportionally so the layout scales uniformly.
+    // Uses setNodes directly (rather than injecting changes) so React Flow properly
+    // updates internal state and recomputes edge paths.
     const dimensionChanges = changes.filter(
       (c): c is NodeDimensionChange => c.type === 'dimensions' && c.resizing === true
     );
 
     if (dimensionChanges.length > 0) {
-      const additionalChanges: NodeDimensionChange[] = [];
-
       for (const change of dimensionChanges) {
         const node = nodes.find(n => n.id === change.id);
         if (!node || !node.selected) continue;
@@ -570,26 +571,36 @@ function Flow() {
         const scaleY = change.dimensions.height / oldH;
 
         const otherSelected = nodes.filter(n => n.selected && n.id !== change.id);
-        for (const other of otherSelected) {
-          const ow = other.measured?.width ?? other.width;
-          const oh = other.measured?.height ?? other.height;
-          if (!ow || !oh) continue;
-          if (dimensionChanges.some(dc => dc.id === other.id)) continue;
+        if (otherSelected.length === 0) continue;
 
-          additionalChanges.push({
-            id: other.id,
-            type: 'dimensions',
-            resizing: true,
-            dimensions: {
-              width: ow * scaleX,
-              height: oh * scaleY,
+        // Use the resized node as anchor — other nodes move toward/away from it
+        const anchorX = node.position.x;
+        const anchorY = node.position.y;
+        const otherIds = new Set(otherSelected.map(n => n.id));
+
+        // Process the original resize changes for the dragged node
+        onNodesChange(changes);
+
+        // Directly update other selected nodes' dimensions and positions
+        setNodes(nds => nds.map(n => {
+          if (!otherIds.has(n.id)) return n;
+          const ow = n.measured?.width ?? n.width;
+          const oh = n.measured?.height ?? n.height;
+          if (!ow || !oh) return n;
+
+          const dx = n.position.x - anchorX;
+          const dy = n.position.y - anchorY;
+
+          return {
+            ...n,
+            width: ow * scaleX,
+            height: oh * scaleY,
+            position: {
+              x: anchorX + dx * scaleX,
+              y: anchorY + dy * scaleY,
             },
-          });
-        }
-      }
-
-      if (additionalChanges.length > 0) {
-        onNodesChange([...changes, ...additionalChanges]);
+          };
+        }));
         return;
       }
     }
