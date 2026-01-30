@@ -1,6 +1,27 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.13': [
+    'Collapsible and reorderable sections in right panel',
+    'Drag-and-drop section reordering with drag handles',
+  ],
+  '1.0.12': [
+    'Renamed Cable Tally to Project Tally with equipment categories',
+  ],
+  '1.0.11': [
+    'Gear Builder for planning equipment lists',
+    'Cable Tally feature for tracking cable requirements',
+  ],
+  '1.0.10': [
+    'Edge color propagation from source nodes',
+    'Pass-through device support for edge coloring',
+  ],
+  '1.0.9': [
+    'Fixed cascade lock not appearing on copy/paste',
+  ],
+  '1.0.8': [
+    'What\'s New changelog popup in the right panel',
+  ],
   '1.0.7': [
     'Added destination dropdown to all output/destination fields',
     'Added source name dropdown to CardNode, BarcoE3Node, RouterNode',
@@ -31,11 +52,12 @@ export function getNewChangelog(currentVersion: string): { version: string; chan
   }
 
   const changes = CHANGELOG[currentVersion];
-  if (!changes) {
-    return null;
+  if (changes) {
+    return { version: currentVersion, changes };
   }
 
-  return { version: currentVersion, changes };
+  // Always show popup on version change, even without specific entries
+  return { version: currentVersion, changes: ['App updated — enjoy the latest improvements!'] };
 }
 
 export function markVersionSeen(version: string) {

@@ -6,6 +6,8 @@ import { useNodeScale } from '../../hooks/useNodeScale';
 import type { ProcessorNodeData, ProcessorPort, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
+import EditableTitle from '../EditableTitle';
+import EditableSelect from '../EditableSelect';
 
 type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
@@ -30,6 +32,9 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
       .filter((v, i, a) => a.indexOf(v) === i)
       .sort();
   }, [nodeSummaries, id]);
+
+  const sourceOptions = useMemo(() => sourceNames.map(name => ({ label: name })), [sourceNames]);
+  const destinationOptions = useMemo(() => destinationNames.map(name => ({ label: name })), [destinationNames]);
 
   const updateInput = useCallback(
     (portId: string, field: keyof ProcessorPort, value: string) => {
@@ -154,7 +159,7 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#0088cc' }}>
-        <span className="node-title light">{data.label || 'Processor Name'}</span>
+        <EditableTitle value={data.label} placeholder="Processor Name" onChange={updateLabel} className="node-title light" />
         <PresetMenu
           nodeType="processor"
           currentData={data}
@@ -180,7 +185,7 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
         />
       </div>
 
-      <div className="processor-content">
+      <div className="processor-content nodrag">
         <div className="processor-section">
           <div className="section-header">
             <span>INPUTS</span>
@@ -233,30 +238,13 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
                       />
                     )}
                     {visibleInputFields.includes('connection') && (
-                      <select
-                        value={sourceNames.includes(port.connection) ? port.connection : (port.connection ? port.connection : '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__custom__') {
-                            const customName = prompt('Enter custom source name:');
-                            if (customName) {
-                              updateInput(port.id, 'connection', customName);
-                            }
-                          } else {
-                            updateInput(port.id, 'connection', e.target.value);
-                          }
-                        }}
+                      <EditableSelect
+                        value={port.connection || ''}
+                        options={sourceOptions}
+                        onChange={(value) => updateInput(port.id, 'connection', value)}
+                        placeholder="Select Source"
                         className="port-field connection"
-                      >
-                        <option value="">Select Source</option>
-                        {/* Show current custom value if it exists */}
-                        {port.connection && !sourceNames.includes(port.connection) && (
-                          <option value={port.connection}>{port.connection}</option>
-                        )}
-                        {sourceNames.map((name) => (
-                          <option key={name} value={name}>{name}</option>
-                        ))}
-                        <option value="__custom__">Custom...</option>
-                      </select>
+                      />
                     )}
                     {visibleInputFields.includes('resolution') && (
                       <input
@@ -276,29 +264,13 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
                       className="port-field name"
                       placeholder="Source"
                     />
-                    <select
-                      value={sourceNames.includes(port.connection) ? port.connection : (port.connection ? port.connection : '')}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          const customName = prompt('Enter custom source name:');
-                          if (customName) {
-                            updateInput(port.id, 'connection', customName);
-                          }
-                        } else {
-                          updateInput(port.id, 'connection', e.target.value);
-                        }
-                      }}
+                    <EditableSelect
+                      value={port.connection || ''}
+                      options={sourceOptions}
+                      onChange={(value) => updateInput(port.id, 'connection', value)}
+                      placeholder="Select Source"
                       className="port-field connection"
-                    >
-                      <option value="">Select Source</option>
-                      {port.connection && !sourceNames.includes(port.connection) && (
-                        <option value={port.connection}>{port.connection}</option>
-                      )}
-                      {sourceNames.map((name) => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                      <option value="__custom__">Custom...</option>
-                    </select>
+                    />
                     <input
                       value={port.resolution}
                       onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
@@ -367,29 +339,13 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
                       />
                     )}
                     {visibleOutputFields.includes('destination') && (
-                      <select
-                        value={destinationNames.includes(port.destination || '') ? port.destination : (port.destination ? port.destination : '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__custom__') {
-                            const customName = prompt('Enter custom destination name:');
-                            if (customName) {
-                              updateOutput(port.id, 'destination', customName);
-                            }
-                          } else {
-                            updateOutput(port.id, 'destination', e.target.value);
-                          }
-                        }}
+                      <EditableSelect
+                        value={port.destination || ''}
+                        options={destinationOptions}
+                        onChange={(value) => updateOutput(port.id, 'destination', value)}
+                        placeholder="Select Destination"
                         className="port-field destination"
-                      >
-                        <option value="">Select Destination</option>
-                        {port.destination && !destinationNames.includes(port.destination) && (
-                          <option value={port.destination}>{port.destination}</option>
-                        )}
-                        {destinationNames.map((name) => (
-                          <option key={name} value={name}>{name}</option>
-                        ))}
-                        <option value="__custom__">Custom...</option>
-                      </select>
+                      />
                     )}
                     <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                   </>
@@ -407,29 +363,13 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
                       className="port-field resolution"
                       placeholder="Resolution"
                     />
-                    <select
-                      value={destinationNames.includes(port.destination || '') ? port.destination : (port.destination ? port.destination : '')}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          const customName = prompt('Enter custom destination name:');
-                          if (customName) {
-                            updateOutput(port.id, 'destination', customName);
-                          }
-                        } else {
-                          updateOutput(port.id, 'destination', e.target.value);
-                        }
-                      }}
+                    <EditableSelect
+                      value={port.destination || ''}
+                      options={destinationOptions}
+                      onChange={(value) => updateOutput(port.id, 'destination', value)}
+                      placeholder="Select Destination"
                       className="port-field destination"
-                    >
-                      <option value="">Select Destination</option>
-                      {port.destination && !destinationNames.includes(port.destination) && (
-                        <option value={port.destination}>{port.destination}</option>
-                      )}
-                      {destinationNames.map((name) => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                      <option value="__custom__">Custom...</option>
-                    </select>
+                    />
                     <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
                   </>
                 )}

@@ -1099,11 +1099,212 @@
 }
 
 /* React Flow Customization */
+
+/* ============================================
+   Cursor Behavior Overrides
+   ============================================ */
+
+/* Canvas pane: default arrow (panning is middle-mouse only) */
+.react-flow__pane {
+  cursor: default !important;
+}
+
+.react-flow__pane.dragging {
+  cursor: grabbing !important;
+}
+
+.react-flow__pane.selection {
+  cursor: default !important;
+}
+
+/* Nodes: default arrow, not grab */
+.react-flow__node.draggable {
+  cursor: default !important;
+}
+
+.react-flow__node.draggable.dragging {
+  cursor: grabbing !important;
+}
+
+/* Selection rectangle: default arrow */
+.react-flow__nodesselection-rect {
+  cursor: default;
+}
+
+/* Grab cursor limited to node header bars */
+.node-header {
+  cursor: grab;
+}
+
+.node-header:active {
+  cursor: grabbing;
+}
+
+.note-header {
+  cursor: grab;
+}
+
+.note-header:active {
+  cursor: grabbing;
+}
+
+.image-label {
+  cursor: grab;
+}
+
+.image-label:active {
+  cursor: grabbing;
+}
+
+/* Text cursor on all text input fields inside nodes */
+.react-flow__node input[type="text"],
+.react-flow__node input:not([type]),
+.react-flow__node textarea {
+  cursor: text;
+}
+
+/* Pointer cursor on all select dropdowns inside nodes */
+.react-flow__node select {
+  cursor: pointer;
+}
+
+/* Editable title - double-click to edit (inherits grab cursor from header) */
+.editable-title {
+  cursor: inherit;
+}
+
+.editable-title-input {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 1px 4px;
+  outline: none;
+  width: 100%;
+  min-width: 60px;
+  box-sizing: border-box;
+}
+
+.editable-title-input:focus {
+  border-color: #00aaff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Editable Select - combobox with text edit + dropdown */
+.editable-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 3px;
+  height: 26px;
+  min-width: 80px;
+  font-size: 11px;
+  cursor: default;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.editable-select-value {
+  flex: 1;
+  padding: 2px 4px;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  line-height: 22px;
+}
+
+.editable-select-value.placeholder {
+  color: #888;
+}
+
+.editable-select-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  padding: 2px 4px;
+  outline: none;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.editable-select-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-left: 1px solid #555;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.editable-select-arrow:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.editable-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.editable-select-option {
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editable-select-option:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.editable-select-option.selected {
+  background: rgba(0, 170, 255, 0.25);
+}
+
+.editable-select-option.clear-option {
+  color: #888;
+  font-style: italic;
+}
+
+/* ============================================ */
+
 .react-flow__handle {
   width: 14px;
   height: 14px;
   background: #00aaff;
   border: 2px solid #fff;
+  cursor: crosshair;
   transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
@@ -1166,13 +1367,13 @@
   border-radius: 4px;
 }
 
-/* Node Resizer */
+/* Node Resizer - enlarged hit areas for easier targeting */
 .node-resizer {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
   cursor: se-resize;
 }
 
@@ -1184,8 +1385,40 @@
   border-radius: 2px !important;
 }
 
+/* Invisible expanded hit area around resize handles */
+.react-flow__resize-control.handle::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+}
+
 .react-flow__resize-control.line {
   border-color: #00aaff !important;
+}
+
+/* Invisible expanded hit area on resize lines */
+.react-flow__resize-control.line::before {
+  content: '';
+  position: absolute;
+}
+
+.react-flow__resize-control.line.left::before,
+.react-flow__resize-control.line.right::before {
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  right: -6px;
+}
+
+.react-flow__resize-control.line.top::before,
+.react-flow__resize-control.line.bottom::before {
+  left: 0;
+  right: 0;
+  top: -6px;
+  bottom: -6px;
 }
 
 /* Update Notification */

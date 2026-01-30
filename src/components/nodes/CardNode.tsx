@@ -6,6 +6,8 @@ import { useNodeScale } from '../../hooks/useNodeScale';
 import type { CardNodeData, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
+import EditableTitle from '../EditableTitle';
+import EditableSelect from '../EditableSelect';
 
 type CardNodeProps = NodeProps & {
   data: CardNodeData;
@@ -116,7 +118,7 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || (data.cardType === 'input' ? '#4a9eff' : '#50e3c2') }}>
-        <span className="node-title light">{data.label || 'Card Name'}</span>
+        <EditableTitle value={data.label} placeholder="Card Name" onChange={updateLabel} className="node-title light" />
         <PresetMenu
           nodeType="card"
           currentData={data}
@@ -133,7 +135,7 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
         </button>
       </div>
 
-      <div className="card-content">
+      <div className="card-content nodrag">
         <div className="card-header-row">
           {data.cardType === 'input' ? (
             <>
@@ -161,33 +163,13 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
               />
               {data.cardType === 'input' ? (
                 <>
-                  <select
-                    value={sourceNames.includes(connector.source || '') ? connector.source : (connector.source ? connector.source : '')}
-                    onChange={(e) => {
-                      if (e.target.value === '__custom__') {
-                        const customName = prompt('Enter custom source name:');
-                        if (customName) {
-                          updateConnector(connector.id, 'source', customName);
-                        }
-                      } else {
-                        updateConnector(connector.id, 'source', e.target.value);
-                      }
-                    }}
+                  <EditableSelect
+                    value={connector.source || ''}
+                    options={sourcesWithColors}
+                    onChange={(value) => updateConnector(connector.id, 'source', value)}
+                    placeholder="Select Source"
                     className="card-field source"
-                    style={{
-                      backgroundColor: sourcesWithColors.find(s => s.label === connector.source)?.color || undefined,
-                      color: sourcesWithColors.find(s => s.label === connector.source)?.color ? '#fff' : undefined,
-                    }}
-                  >
-                    <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
-                    {connector.source && !sourceNames.includes(connector.source) && (
-                      <option value={connector.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.source}</option>
-                    )}
-                    {sourcesWithColors.map((source) => (
-                      <option key={source.label} value={source.label} style={{ backgroundColor: source.color || '#2a2a2a', color: '#fff' }}>{source.label}</option>
-                    ))}
-                    <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                  </select>
+                  />
                   <select
                     value={connector.type}
                     onChange={(e) => updateConnector(connector.id, 'type', e.target.value as any)}
@@ -221,33 +203,13 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
                     <option value="HDMI 2.0">HDMI 2.0</option>
                     <option value="12G SDI">12G SDI</option>
                   </select>
-                  <select
-                    value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
-                    onChange={(e) => {
-                      if (e.target.value === '__custom__') {
-                        const customName = prompt('Enter custom destination name:');
-                        if (customName) {
-                          updateConnector(connector.id, 'destination', customName);
-                        }
-                      } else {
-                        updateConnector(connector.id, 'destination', e.target.value);
-                      }
-                    }}
+                  <EditableSelect
+                    value={connector.destination || ''}
+                    options={destinationsWithColors}
+                    onChange={(value) => updateConnector(connector.id, 'destination', value)}
+                    placeholder="Select Destination"
                     className="card-field destination"
-                    style={{
-                      backgroundColor: destinationsWithColors.find(d => d.label === connector.destination)?.color || undefined,
-                      color: destinationsWithColors.find(d => d.label === connector.destination)?.color ? '#fff' : undefined,
-                    }}
-                  >
-                    <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
-                    {connector.destination && !destinationNames.includes(connector.destination) && (
-                      <option value={connector.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.destination}</option>
-                    )}
-                    {destinationsWithColors.map((dest) => (
-                      <option key={dest.label} value={dest.label} style={{ backgroundColor: dest.color || '#2a2a2a', color: '#fff' }}>{dest.label}</option>
-                    ))}
-                    <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                  </select>
+                  />
                 </>
               )}
               <button className="remove-btn" onClick={() => removeConnector(connector.id)}>×</button>

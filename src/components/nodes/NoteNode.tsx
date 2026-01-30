@@ -4,6 +4,7 @@ import type { NodeProps } from '@xyflow/react';
 import type { NoteNodeData, NodeData } from '../../types';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
+import EditableTitle from '../EditableTitle';
 
 type NoteNodeProps = NodeProps & {
   data: NoteNodeData;
@@ -79,7 +80,7 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="note-header">
-        <span className="note-title">{data.label || 'Note Title'}</span>
+        <EditableTitle value={data.label} placeholder="Note Title" onChange={updateLabel} className="note-title" />
         <PresetMenu
           nodeType="note"
           currentData={data}
@@ -99,7 +100,7 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
         </div>
       </div>
       <textarea
-        className="note-content"
+        className="note-content nodrag"
         value={data.content}
         onChange={(e) => updateContent(e.target.value)}
         placeholder="Enter notes here..."

@@ -4,6 +4,7 @@ import type { NodeProps } from '@xyflow/react';
 import type { LEDWallNodeData, NodeData } from '../../types';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
+import EditableTitle from '../EditableTitle';
 
 type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
@@ -78,7 +79,7 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header" style={{ backgroundColor: data.color || '#ff6600' }}>
-        <span className="node-title light">{data.label || 'LED Wall Name'}</span>
+        <EditableTitle value={data.label} placeholder="LED Wall Name" onChange={updateLabel} className="node-title light" />
         <PresetMenu
           nodeType="ledWall"
           currentData={data}

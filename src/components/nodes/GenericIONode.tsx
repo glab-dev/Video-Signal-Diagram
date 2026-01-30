@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
 import { CascadeLockContext } from '../../App';
+import EditableTitle from '../EditableTitle';
 
 type GenericIONodeProps = NodeProps & {
   data: GenericIONodeData;
@@ -153,7 +154,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
       )}
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: nodeColor }}>
-        <span className="node-title light">{data.label || 'Device Name'}</span>
+        <EditableTitle value={data.label} placeholder="Device Name" onChange={updateLabel} className="node-title light" />
         <PresetMenu
           nodeType="genericIO"
           currentData={data}
@@ -181,7 +182,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
         ))}
       </div>
 
-      <div className="generic-io-content">
+      <div className="generic-io-content nodrag">
         <div className="io-section">
           <div className="section-header">
             <span>INPUTS</span>

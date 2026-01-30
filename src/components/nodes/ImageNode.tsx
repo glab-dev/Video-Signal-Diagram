@@ -4,6 +4,7 @@ import type { NodeProps } from '@xyflow/react';
 import type { ImageNodeData, NodeData } from '../../types';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
+import EditableTitle from '../EditableTitle';
 
 type ImageNodeProps = NodeProps & {
   data: ImageNodeData;
@@ -67,7 +68,7 @@ function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
       <div ref={contentRef} style={scaleStyle}>
       <div className={`node-image ${selected ? 'selected' : ''}`}>
         <div className="image-label">
-          <span className="image-label-text">{data.label || 'Image Label'}</span>
+          <EditableTitle value={data.label} placeholder="Image Label" onChange={updateLabel} className="image-label-text" />
           <PresetMenu
             nodeType="image"
             currentData={data}

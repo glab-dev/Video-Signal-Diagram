@@ -6,6 +6,8 @@ import { useNodeScale } from '../../hooks/useNodeScale';
 import type { RouterNodeData, RouterRow, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
+import EditableTitle from '../EditableTitle';
+import EditableSelect from '../EditableSelect';
 
 type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
@@ -105,7 +107,7 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header">
-        <span className="node-title">{data.label || 'Router Name'}</span>
+        <EditableTitle value={data.label} placeholder="Router Name" onChange={updateLabel} className="node-title" />
         <PresetMenu
           nodeType="router"
           currentData={data}
@@ -115,7 +117,7 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
         />
       </div>
 
-      <table className="router-table">
+      <table className="router-table nodrag">
         <thead>
           <tr>
             <th>SOURCE</th>
@@ -128,41 +130,12 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
           {data.rows.map((row) => (
             <tr key={row.id}>
               <td>
-                <select
-                  value={sourceNames.includes(row.source) ? row.source : (row.source ? row.source : '')}
-                  onChange={(e) => {
-                    if (e.target.value === '__custom__') {
-                      const customName = prompt('Enter custom source name:');
-                      if (customName) {
-                        updateRow(row.id, 'source', customName);
-                      }
-                    } else {
-                      updateRow(row.id, 'source', e.target.value);
-                    }
-                  }}
-                  style={{
-                    backgroundColor: sourcesWithColors.find(s => s.label === row.source)?.color || undefined,
-                    color: sourcesWithColors.find(s => s.label === row.source)?.color ? '#fff' : undefined,
-                  }}
-                >
-                  <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
-                  {row.source && !sourceNames.includes(row.source) && (
-                    <option value={row.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{row.source}</option>
-                  )}
-                  {sourcesWithColors.map((source) => (
-                    <option
-                      key={source.label}
-                      value={source.label}
-                      style={{
-                        backgroundColor: source.color || '#2a2a2a',
-                        color: '#fff',
-                      }}
-                    >
-                      {source.label}
-                    </option>
-                  ))}
-                  <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                </select>
+                <EditableSelect
+                  value={row.source || ''}
+                  options={sourcesWithColors}
+                  onChange={(value) => updateRow(row.id, 'source', value)}
+                  placeholder="Select Source"
+                />
               </td>
               <td>
                 <input
@@ -173,41 +146,12 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
                 />
               </td>
               <td>
-                <select
-                  value={destinationNames.includes(row.destination) ? row.destination : (row.destination ? row.destination : '')}
-                  onChange={(e) => {
-                    if (e.target.value === '__custom__') {
-                      const customName = prompt('Enter custom destination name:');
-                      if (customName) {
-                        updateRow(row.id, 'destination', customName);
-                      }
-                    } else {
-                      updateRow(row.id, 'destination', e.target.value);
-                    }
-                  }}
-                  style={{
-                    backgroundColor: destinationsWithColors.find(d => d.label === row.destination)?.color || undefined,
-                    color: destinationsWithColors.find(d => d.label === row.destination)?.color ? '#fff' : undefined,
-                  }}
-                >
-                  <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
-                  {row.destination && !destinationNames.includes(row.destination) && (
-                    <option value={row.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{row.destination}</option>
-                  )}
-                  {destinationsWithColors.map((dest) => (
-                    <option
-                      key={dest.label}
-                      value={dest.label}
-                      style={{
-                        backgroundColor: dest.color || '#2a2a2a',
-                        color: '#fff',
-                      }}
-                    >
-                      {dest.label}
-                    </option>
-                  ))}
-                  <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                </select>
+                <EditableSelect
+                  value={row.destination || ''}
+                  options={destinationsWithColors}
+                  onChange={(value) => updateRow(row.id, 'destination', value)}
+                  placeholder="Select Destination"
+                />
               </td>
               <td>
                 <button

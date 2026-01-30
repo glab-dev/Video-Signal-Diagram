@@ -6,6 +6,8 @@ import { useNodeScale } from '../../hooks/useNodeScale';
 import type { BarcoE3NodeData, BarcoCard, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
+import EditableTitle from '../EditableTitle';
+import EditableSelect from '../EditableSelect';
 
 // Top 15 video resolutions plus Custom option
 const VIDEO_RESOLUTIONS = [
@@ -415,33 +417,13 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                           top: `${calculateHandlePosition(card.id, connectorIndex, allCards, cardType, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn)}px`
                         }}
                       />
-                      <select
-                        value={sourceNames.includes(connector.source || '') ? connector.source : (connector.source ? connector.source : '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__custom__') {
-                            const customName = prompt('Enter custom source name:');
-                            if (customName) {
-                              updateConnector(card.id, connector.id, 'source', customName);
-                            }
-                          } else {
-                            updateConnector(card.id, connector.id, 'source', e.target.value);
-                          }
-                        }}
+                      <EditableSelect
+                        value={connector.source || ''}
+                        options={sourcesWithColors}
+                        onChange={(value) => updateConnector(card.id, connector.id, 'source', value)}
+                        placeholder="Select Source"
                         className="card-field source"
-                        style={{
-                          backgroundColor: sourcesWithColors.find(s => s.label === connector.source)?.color || undefined,
-                          color: sourcesWithColors.find(s => s.label === connector.source)?.color ? '#fff' : undefined,
-                        }}
-                      >
-                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
-                        {connector.source && !sourceNames.includes(connector.source) && (
-                          <option value={connector.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.source}</option>
-                        )}
-                        {sourcesWithColors.map((source) => (
-                          <option key={source.label} value={source.label} style={{ backgroundColor: source.color || '#2a2a2a', color: '#fff' }}>{source.label}</option>
-                        ))}
-                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                      </select>
+                      />
                       <select
                         value={connector.type}
                         onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
@@ -503,33 +485,13 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                         <option value="HDMI 2.0">HDMI 2.0</option>
                         <option value="12G SDI">12G SDI</option>
                       </select>
-                      <select
-                        value={sourceNames.includes(connector.source || '') ? connector.source : (connector.source ? connector.source : '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__custom__') {
-                            const customName = prompt('Enter custom source name:');
-                            if (customName) {
-                              updateConnector(card.id, connector.id, 'source', customName);
-                            }
-                          } else {
-                            updateConnector(card.id, connector.id, 'source', e.target.value);
-                          }
-                        }}
+                      <EditableSelect
+                        value={connector.source || ''}
+                        options={sourcesWithColors}
+                        onChange={(value) => updateConnector(card.id, connector.id, 'source', value)}
+                        placeholder="Select Source"
                         className="card-field source"
-                        style={{
-                          backgroundColor: sourcesWithColors.find(s => s.label === connector.source)?.color || undefined,
-                          color: sourcesWithColors.find(s => s.label === connector.source)?.color ? '#fff' : undefined,
-                        }}
-                      >
-                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
-                        {connector.source && !sourceNames.includes(connector.source) && (
-                          <option value={connector.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.source}</option>
-                        )}
-                        {sourcesWithColors.map((source) => (
-                          <option key={source.label} value={source.label} style={{ backgroundColor: source.color || '#2a2a2a', color: '#fff' }}>{source.label}</option>
-                        ))}
-                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                      </select>
+                      />
                       <Handle
                         key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                         type="target"
@@ -556,33 +518,13 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                           top: `${calculateHandlePosition(card.id, connectorIndex, allCards, cardType, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn)}px`
                         }}
                       />
-                      <select
-                        value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__custom__') {
-                            const customName = prompt('Enter custom destination name:');
-                            if (customName) {
-                              updateConnector(card.id, connector.id, 'destination', customName);
-                            }
-                          } else {
-                            updateConnector(card.id, connector.id, 'destination', e.target.value);
-                          }
-                        }}
+                      <EditableSelect
+                        value={connector.destination || ''}
+                        options={destinationsWithColors}
+                        onChange={(value) => updateConnector(card.id, connector.id, 'destination', value)}
+                        placeholder="Select Destination"
                         className="card-field destination"
-                        style={{
-                          backgroundColor: destinationsWithColors.find(d => d.label === connector.destination)?.color || undefined,
-                          color: destinationsWithColors.find(d => d.label === connector.destination)?.color ? '#fff' : undefined,
-                        }}
-                      >
-                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
-                        {connector.destination && !destinationNames.includes(connector.destination) && (
-                          <option value={connector.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.destination}</option>
-                        )}
-                        {destinationsWithColors.map((dest) => (
-                          <option key={dest.label} value={dest.label} style={{ backgroundColor: dest.color || '#2a2a2a', color: '#fff' }}>{dest.label}</option>
-                        ))}
-                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                      </select>
+                      />
                       <select
                         value={connector.type}
                         onChange={(e) => updateConnector(card.id, connector.id, 'type', e.target.value as any)}
@@ -644,33 +586,13 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                         <option value="HDMI 2.0">HDMI 2.0</option>
                         <option value="12G SDI">12G SDI</option>
                       </select>
-                      <select
-                        value={destinationNames.includes(connector.destination || '') ? connector.destination : (connector.destination ? connector.destination : '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__custom__') {
-                            const customName = prompt('Enter custom destination name:');
-                            if (customName) {
-                              updateConnector(card.id, connector.id, 'destination', customName);
-                            }
-                          } else {
-                            updateConnector(card.id, connector.id, 'destination', e.target.value);
-                          }
-                        }}
+                      <EditableSelect
+                        value={connector.destination || ''}
+                        options={destinationsWithColors}
+                        onChange={(value) => updateConnector(card.id, connector.id, 'destination', value)}
+                        placeholder="Select Destination"
                         className="card-field destination"
-                        style={{
-                          backgroundColor: destinationsWithColors.find(d => d.label === connector.destination)?.color || undefined,
-                          color: destinationsWithColors.find(d => d.label === connector.destination)?.color ? '#fff' : undefined,
-                        }}
-                      >
-                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
-                        {connector.destination && !destinationNames.includes(connector.destination) && (
-                          <option value={connector.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.destination}</option>
-                        )}
-                        {destinationsWithColors.map((dest) => (
-                          <option key={dest.label} value={dest.label} style={{ backgroundColor: dest.color || '#2a2a2a', color: '#fff' }}>{dest.label}</option>
-                        ))}
-                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-                      </select>
+                      />
                       <Handle
                         key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
                         type="source"
@@ -770,7 +692,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
       />
       <div ref={scaleRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#006400' }}>
-        <span className="node-title light">{data.label || 'Barco E3'}</span>
+        <EditableTitle value={data.label} placeholder="Barco E3" onChange={updateLabel} className="node-title light" />
         <PresetMenu
           nodeType="barcoE3"
           currentData={data}
@@ -797,7 +719,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         />
       </div>
 
-      <div className="barco-e3-content">
+      <div className="barco-e3-content nodrag">
         {layout === 'stacked' ? (
           <>
             {/* STACKED MODE - vertical layout with SYSTEM at top or bottom */}

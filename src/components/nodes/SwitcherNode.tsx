@@ -6,6 +6,8 @@ import { useNodeScale } from '../../hooks/useNodeScale';
 import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
+import EditableTitle from '../EditableTitle';
+import EditableSelect from '../EditableSelect';
 
 // Top 15 video resolutions plus Custom option
 const VIDEO_RESOLUTIONS = [
@@ -59,9 +61,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     const unique = sources.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id]);
-
-  // For backwards compatibility, also get just the names
-  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
 
   // Lock at 20x20 or 40x40 for Blackmagic switchers
   const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
@@ -316,50 +315,16 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
 
     switch (fieldName) {
       case 'connection':
-        // Check if current value is a custom value (not in sourceNames and not empty)
-        const isCustomSource = port.connection && !sourceNames.includes(port.connection);
-        // Build options list - include current custom value if it exists
-        const sourceOptions = isCustomSource
-          ? [{ label: port.connection, color: '' }, ...sourcesWithColors.filter(s => s.label !== port.connection)]
-          : sourcesWithColors;
-        // Get color for current selection
-        const currentSourceColor = sourcesWithColors.find(s => s.label === port.connection)?.color || '';
         return (
-          <select
+          <EditableSelect
             key={fieldName}
             value={port.connection || ''}
-            onChange={(e) => {
-              if (e.target.value === '__custom__') {
-                const customName = prompt('Enter custom source name:');
-                if (customName) {
-                  updateInput(port.id, 'connection', customName);
-                }
-              } else {
-                updateInput(port.id, 'connection', e.target.value);
-              }
-            }}
+            options={sourcesWithColors}
+            onChange={(value) => updateInput(port.id, 'connection', value)}
+            placeholder="Select Source"
             className={`port-field ${config.className}`}
-            style={{
-              ...style,
-              backgroundColor: currentSourceColor || undefined,
-              color: currentSourceColor ? '#fff' : undefined,
-            }}
-          >
-            <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
-            {sourceOptions.map((source) => (
-              <option
-                key={source.label}
-                value={source.label}
-                style={{
-                  backgroundColor: source.color || '#2a2a2a',
-                  color: '#fff',
-                }}
-              >
-                {source.label}
-              </option>
-            ))}
-            <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-          </select>
+            style={style}
+          />
         );
       case 'name':
         return (
@@ -410,7 +375,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           />
         );
     }
-  }, [updateInput, sourceNames, sourcesWithColors, setAllInputResolutions]);
+  }, [updateInput, sourcesWithColors, setAllInputResolutions]);
 
   const renderOutputField = useCallback((port: ProcessorPort, fieldName: OutputFieldType) => {
     const config = OUTPUT_FIELD_CONFIG[fieldName];
@@ -418,50 +383,16 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
 
     switch (fieldName) {
       case 'destination':
-        // Check if current value is a custom value (not in sourceNames and not empty)
-        const isCustomDest = port.destination && !sourceNames.includes(port.destination);
-        // Build options list - include current custom value if it exists
-        const destOptions = isCustomDest
-          ? [{ label: port.destination, color: '' }, ...sourcesWithColors.filter(s => s.label !== port.destination)]
-          : sourcesWithColors;
-        // Get color for current selection
-        const currentDestColor = sourcesWithColors.find(s => s.label === port.destination)?.color || '';
         return (
-          <select
+          <EditableSelect
             key={fieldName}
             value={port.destination || ''}
-            onChange={(e) => {
-              if (e.target.value === '__custom__') {
-                const customName = prompt('Enter custom source name:');
-                if (customName) {
-                  updateOutput(port.id, 'destination', customName);
-                }
-              } else {
-                updateOutput(port.id, 'destination', e.target.value);
-              }
-            }}
+            options={sourcesWithColors}
+            onChange={(value) => updateOutput(port.id, 'destination', value)}
+            placeholder="Select Source"
             className={`port-field ${config.className}`}
-            style={{
-              ...style,
-              backgroundColor: currentDestColor || undefined,
-              color: currentDestColor ? '#fff' : undefined,
-            }}
-          >
-            <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
-            {destOptions.map((source) => (
-              <option
-                key={source.label}
-                value={source.label}
-                style={{
-                  backgroundColor: source.color || '#2a2a2a',
-                  color: '#fff',
-                }}
-              >
-                {source.label}
-              </option>
-            ))}
-            <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
-          </select>
+            style={style}
+          />
         );
       case 'name':
         return (
@@ -512,7 +443,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           />
         );
     }
-  }, [updateOutput, sourceNames, sourcesWithColors, setAllOutputResolutions]);
+  }, [updateOutput, sourcesWithColors, setAllOutputResolutions]);
 
   const layout = data.layout || 'sideBySide';
   const nodeWidth = width || undefined;
@@ -538,7 +469,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
       />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#4a148c' }}>
-        <span className="node-title light">{data.label || 'Switcher Name'}</span>
+        <EditableTitle value={data.label} placeholder="Switcher Name" onChange={updateLabel} className="node-title light" />
         <button
           className="layout-toggle-btn nodrag"
           onClick={toggleLayout}
@@ -565,7 +496,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
         />
       </div>
 
-      <div className="switcher-content">
+      <div className="switcher-content nodrag">
         {/* Inputs Column */}
         <div className="switcher-column inputs">
           <div className="column-header">
