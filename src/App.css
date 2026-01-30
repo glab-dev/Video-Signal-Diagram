@@ -1606,6 +1606,12 @@
   cursor: se-resize;
 }
 
+/* Scaled node content uses pointer-events: none (via useNodeScale) so the
+   transform stacking context cannot block NodeResizer handles.
+   Re-enable pointer-events on all interactive descendants. */
+.react-flow__node [style*="pointer-events"] * {
+  pointer-events: auto;
+}
 
 .react-flow__resize-control.handle {
   width: 10px !important;
