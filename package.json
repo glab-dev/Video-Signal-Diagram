@@ -1,7 +1,7 @@
 {
   "name": "video-signal-flow",
   "private": true,
-  "version": "1.0.17",
+  "version": "1.0.18",
   "type": "module",
   "description": "Video Signal Flow Diagram PWA - Node-based video routing visualization",
   "scripts": {

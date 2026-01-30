@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.18': [
+    'Merge duplicate whats-new-popup CSS rules and prevent flex collapse',
+  ],
   '1.0.17': [
     'Group resize, viewport-aware node placement, and cumulative changelog',
   ],
