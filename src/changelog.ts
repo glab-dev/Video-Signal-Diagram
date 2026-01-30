@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.29': [
+    'Improve edge selection with proper interaction zone',
+  ],
   '1.0.28': [
     'Add wider interaction zone for edge selection',
   ],
