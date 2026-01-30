@@ -1,14 +1,15 @@
-import { useRef, type RefObject, type CSSProperties } from 'react';
+import { useRef, useLayoutEffect, useState, type RefObject, type CSSProperties } from 'react';
 
 /**
  * Hook that enables uniform proportional scaling of node content.
  *
- * Captures the node's initial auto-sized dimensions as "natural size",
- * then applies a single CSS transform: scale() factor when the node
+ * Measures the content element's natural (unconstrained) dimensions
+ * on mount, then applies a CSS transform: scale() factor when the node
  * is resized via NodeResizer (with keepAspectRatio).
  *
- * The content div is pinned to its natural width/height so it doesn't
- * stretch to match the parent container.
+ * This correctly handles nodes loaded from saved files where explicit
+ * width/height from a previous resize would otherwise be misinterpreted
+ * as the content's natural size.
  */
 export function useNodeScale(
   measuredWidth?: number,
@@ -16,11 +17,44 @@ export function useNodeScale(
 ): { contentRef: RefObject<HTMLDivElement | null>; scaleStyle: CSSProperties } {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const naturalSize = useRef<{ w: number; h: number } | null>(null);
+  const [, setTick] = useState(0);
 
-  // Capture natural size from the first measured values (the node's auto-sized dimensions)
-  if (measuredWidth && measuredHeight && !naturalSize.current) {
-    naturalSize.current = { w: measuredWidth, h: measuredHeight };
-  }
+  // Measure the content element's actual intrinsic dimensions on mount.
+  // We temporarily remove sizing constraints so the content renders at
+  // its natural size, then capture scrollWidth/scrollHeight.
+  useLayoutEffect(() => {
+    if (!naturalSize.current && contentRef.current) {
+      const el = contentRef.current;
+
+      // Save current inline styles
+      const saved = {
+        position: el.style.position,
+        width: el.style.width,
+        height: el.style.height,
+        transform: el.style.transform,
+      };
+
+      // Remove constraints to measure intrinsic content size
+      el.style.position = 'absolute';
+      el.style.width = 'max-content';
+      el.style.height = 'max-content';
+      el.style.transform = 'none';
+
+      naturalSize.current = {
+        w: el.scrollWidth,
+        h: el.scrollHeight,
+      };
+
+      // Restore original inline styles
+      el.style.position = saved.position;
+      el.style.width = saved.width;
+      el.style.height = saved.height;
+      el.style.transform = saved.transform;
+
+      // Trigger re-render to apply correct scaleStyle
+      setTick(t => t + 1);
+    }
+  }, []);
 
   const nw = naturalSize.current?.w ?? 0;
   const nh = naturalSize.current?.h ?? 0;
