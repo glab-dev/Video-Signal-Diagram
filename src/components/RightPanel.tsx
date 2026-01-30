@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import type { PaperSize, Orientation } from '../types';
 import { PAPER_SIZES } from '../types';
+import { getNewChangelog, markVersionSeen } from '../changelog';
 
 interface RightPanelProps {
   paperSize: PaperSize;
@@ -20,6 +22,23 @@ export default function RightPanel({
   onOrientationChange,
   onCustomSizeChange,
 }: RightPanelProps) {
+  // What's New popup state
+  const [whatsNew, setWhatsNew] = useState<{ version: string; changes: string[] } | null>(null);
+
+  useEffect(() => {
+    const changelog = getNewChangelog(__APP_VERSION__);
+    if (changelog) {
+      setWhatsNew(changelog);
+    }
+  }, []);
+
+  const handleDismissWhatsNew = () => {
+    if (whatsNew) {
+      markVersionSeen(whatsNew.version);
+    }
+    setWhatsNew(null);
+  };
+
   // Get current canvas dimensions
   const getCurrentDimensions = () => {
     let dims = PAPER_SIZES[paperSize];
@@ -47,6 +66,23 @@ export default function RightPanel({
       <div className="sidebar-header">
         <h2>Canvas Settings</h2>
       </div>
+
+      {/* What's New Popup */}
+      {whatsNew && (
+        <div className="whats-new-popup">
+          <div className="whats-new-header">
+            <span className="whats-new-title">What's New in v{whatsNew.version}</span>
+            <button className="whats-new-close" onClick={handleDismissWhatsNew} title="Close">
+              ×
+            </button>
+          </div>
+          <ul className="whats-new-list">
+            {whatsNew.changes.map((change, i) => (
+              <li key={i}>{change}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Paper Size Selection */}
       <div className="sidebar-section">

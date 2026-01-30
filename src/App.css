@@ -2101,6 +2101,62 @@
   line-height: 1.4;
 }
 
+/* What's New Popup */
+.whats-new-popup {
+  margin: 10px;
+  padding: 10px 12px;
+  background: #fff9c4;
+  border: 1px solid #f0e68c;
+  border-radius: 6px;
+  color: #333;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.whats-new-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.whats-new-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: #5d4037;
+}
+
+.whats-new-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #8d6e63;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.whats-new-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #3e2723;
+}
+
+.whats-new-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  color: #4e342e;
+}
+
+.whats-new-list li {
+  margin-bottom: 3px;
+}
+
+.whats-new-list li:last-child {
+  margin-bottom: 0;
+}
+
 /* Flow Wrapper Canvas Styling */
 .flow-wrapper {
   flex: 1;
