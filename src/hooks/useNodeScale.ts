@@ -80,6 +80,12 @@ export function useNodeScale(
       height: nh,
       transformOrigin: '0 0',
       transform: `scale(${scale})`,
+      // Collapse the extra layout space so the parent node element
+      // matches the visual (post-transform) size. Without this,
+      // the layout box at natural dimensions extends beyond the node
+      // and blocks resize handles on neighboring nodes.
+      marginRight: -(nw - measuredWidth),
+      marginBottom: -(nh - measuredHeight),
     },
   };
 }
