@@ -1,10 +1,11 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useContext } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
+import { CascadeLockContext } from '../../App';
 
 type GenericIONodeProps = NodeProps & {
   data: GenericIONodeData;
@@ -117,6 +118,12 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const nodeHeight = height || undefined;
   const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
+  // Cascade lock functionality
+  const cascadeLockContext = useContext(CascadeLockContext);
+  const cascadeInfo = cascadeLockContext?.getCascadeGroup(id);
+  const showLockToggle = cascadeInfo && cascadeInfo.isFirstInGroup && cascadeInfo.groupNodes.length >= 2;
+  const isLocked = cascadeInfo?.isLocked || false;
+
   return (
     <div
       className={`node-generic-io ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
@@ -134,6 +141,15 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      {showLockToggle && (
+        <button
+          className={`cascade-lock-toggle nodrag ${isLocked ? 'locked' : ''}`}
+          onClick={() => cascadeLockContext?.toggleCascadeLock(id)}
+          title={isLocked ? `Unlock cascade (${cascadeInfo.groupNodes.length} nodes)` : `Lock cascade (${cascadeInfo.groupNodes.length} nodes)`}
+        >
+          {isLocked ? '🔒' : '🔓'}
+        </button>
+      )}
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: nodeColor }}>
         <input

@@ -70,6 +70,7 @@ export interface GenericIONodeData extends BaseNodeData {
   inputs: Port[];
   outputs: Port[];
   layout?: 'stacked' | 'sideBySide';
+  cascadeLockId?: string; // ID linking nodes that move together when locked
 }
 
 // Image node - for imported raster images

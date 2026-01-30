@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef, useEffect, createContext } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -13,7 +13,7 @@ import {
   getViewportForBounds,
   SelectionMode,
 } from '@xyflow/react';
-import type { Connection, Edge, Node } from '@xyflow/react';
+import type { Connection, Edge, Node, NodeChange, NodePositionChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { toPng } from 'html-to-image';
@@ -27,9 +27,17 @@ import { PageOverlay } from './components/PageOverlay';
 import { usePageGrid } from './hooks/usePageGrid';
 import { useNodeSummaries, NodeSummariesContext } from './hooks/useNodeSummaries';
 import type { EdgeData } from './components/EdgeLabelEditor';
-import type { ProjectData } from './types';
+import type { ProjectData, GenericIONodeData } from './types';
 import { PAPER_SIZES, type PaperSize, type Orientation } from './types';
 import './App.css';
+
+// Cascade Lock Context - for sharing cascade lock functionality with nodes
+export interface CascadeLockContextType {
+  getCascadeGroup: (nodeId: string) => { isLocked: boolean; isFirstInGroup: boolean; groupNodes: string[] };
+  toggleCascadeLock: (nodeId: string) => void;
+}
+
+export const CascadeLockContext = createContext<CascadeLockContextType | null>(null);
 
 interface HistoryState {
   nodes: Node[];
@@ -180,6 +188,199 @@ function Flow() {
   useEffect(() => {
     cascadeDirectionRef.current = cascadeDirection;
   }, [cascadeDirection]);
+
+  // Helper to extract number from end of label (e.g., "Camera 1" -> 1)
+  const extractLabelNumber = useCallback((label: string): number => {
+    const match = label.match(/(\d+)\s*$/);
+    return match ? parseInt(match[1]) : 0;
+  }, []);
+
+  // Helper to get base label without number (e.g., "Camera 1" -> "Camera")
+  const getBaseLabel = useCallback((label: string): string => {
+    return label.replace(/\s*\d+\s*$/, '').trim();
+  }, []);
+
+  // Helper to safely cast node data
+  const getGenericIOData = useCallback((node: Node): GenericIONodeData | null => {
+    if (node.type !== 'genericIO') return null;
+    return node.data as unknown as GenericIONodeData;
+  }, []);
+
+  // Detect cascade groups - GenericIO nodes with same base label, arranged vertically
+  const detectCascadeGroup = useCallback((nodeId: string): string[] => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return [];
+
+    const nodeData = getGenericIOData(node);
+    if (!nodeData) return [];
+
+    const baseLabel = getBaseLabel(nodeData.label || '');
+    if (!baseLabel) return [];
+
+    // Find all GenericIO nodes with the same base label
+    const sameLabelNodes = nodes.filter(n => {
+      const data = getGenericIOData(n);
+      if (!data) return false;
+      return getBaseLabel(data.label || '') === baseLabel;
+    });
+
+    // Need at least 2 nodes with the same base label
+    if (sameLabelNodes.length < 2) return [];
+
+    // Check if the x positions span a reasonable range (allows staircase arrangements)
+    const xPositions = sameLabelNodes.map(n => n.position.x);
+    const minX = Math.min(...xPositions);
+    const maxX = Math.max(...xPositions);
+    const MAX_SPREAD = 300;
+
+    if (maxX - minX > MAX_SPREAD) return [];
+
+    // Sort by label number, then by y position
+    return sameLabelNodes
+      .sort((a, b) => {
+        const dataA = getGenericIOData(a);
+        const dataB = getGenericIOData(b);
+        const numA = extractLabelNumber(dataA?.label || '');
+        const numB = extractLabelNumber(dataB?.label || '');
+        if (numA !== numB) return numA - numB;
+        return a.position.y - b.position.y;
+      })
+      .map(n => n.id);
+  }, [nodes, getBaseLabel, extractLabelNumber, getGenericIOData]);
+
+  // Get cascade group info for a node
+  const getCascadeGroup = useCallback((nodeId: string): { isLocked: boolean; isFirstInGroup: boolean; groupNodes: string[] } => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return { isLocked: false, isFirstInGroup: false, groupNodes: [] };
+
+    const nodeData = getGenericIOData(node);
+    if (!nodeData) return { isLocked: false, isFirstInGroup: false, groupNodes: [] };
+
+    // Check if this node is part of a locked cascade
+    const cascadeLockId = nodeData.cascadeLockId;
+    if (cascadeLockId) {
+      const groupNodes = nodes
+        .filter(n => {
+          const data = getGenericIOData(n);
+          return data?.cascadeLockId === cascadeLockId;
+        })
+        .sort((a, b) => {
+          const dataA = getGenericIOData(a);
+          const dataB = getGenericIOData(b);
+          const numA = extractLabelNumber(dataA?.label || '');
+          const numB = extractLabelNumber(dataB?.label || '');
+          if (numA !== numB) return numA - numB;
+          return a.position.y - b.position.y;
+        })
+        .map(n => n.id);
+      const isFirstInGroup = groupNodes[0] === nodeId;
+      return { isLocked: true, isFirstInGroup, groupNodes };
+    }
+
+    // Not locked - detect potential cascade group
+    const potentialGroup = detectCascadeGroup(nodeId);
+    if (potentialGroup.length >= 2) {
+      const isFirstInGroup = potentialGroup[0] === nodeId;
+      return { isLocked: false, isFirstInGroup, groupNodes: potentialGroup };
+    }
+
+    return { isLocked: false, isFirstInGroup: false, groupNodes: [] };
+  }, [nodes, getGenericIOData, extractLabelNumber, detectCascadeGroup]);
+
+  // Toggle cascade lock for a group
+  const toggleCascadeLock = useCallback((nodeId: string) => {
+    const cascadeInfo = getCascadeGroup(nodeId);
+    if (cascadeInfo.groupNodes.length < 2) return;
+
+    if (cascadeInfo.isLocked) {
+      // Unlock - remove cascadeLockId from all nodes in group
+      setNodes(nds => nds.map(n => {
+        if (cascadeInfo.groupNodes.includes(n.id)) {
+          const { cascadeLockId: _, ...restData } = n.data as unknown as GenericIONodeData;
+          void _;
+          return { ...n, data: restData };
+        }
+        return n;
+      }));
+    } else {
+      // Lock - add same cascadeLockId to all nodes in group
+      const newLockId = uuidv4();
+      setNodes(nds => nds.map(n => {
+        if (cascadeInfo.groupNodes.includes(n.id)) {
+          return {
+            ...n,
+            data: { ...n.data, cascadeLockId: newLockId }
+          };
+        }
+        return n;
+      }));
+    }
+  }, [getCascadeGroup, setNodes]);
+
+  // Cascade lock context value
+  const cascadeLockContext: CascadeLockContextType = {
+    getCascadeGroup,
+    toggleCascadeLock,
+  };
+
+  // Custom nodes change handler that handles locked cascade movement
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // Check for position changes on locked cascade nodes
+    const positionChanges = changes.filter(
+      (c): c is NodePositionChange => c.type === 'position' && c.dragging === true
+    );
+
+    if (positionChanges.length > 0) {
+      // Find all locked groups being moved
+      const processedGroups = new Set<string>();
+      const additionalChanges: NodePositionChange[] = [];
+
+      for (const change of positionChanges) {
+        const node = nodes.find(n => n.id === change.id);
+        if (!node) continue;
+
+        const nodeData = getGenericIOData(node);
+        const lockId = nodeData?.cascadeLockId;
+        if (!lockId || processedGroups.has(lockId)) continue;
+
+        processedGroups.add(lockId);
+
+        // Get all nodes in this locked group
+        const groupNodes = nodes.filter(n => {
+          const data = getGenericIOData(n);
+          return data?.cascadeLockId === lockId;
+        });
+
+        // Calculate the delta from the dragged node
+        if (change.position) {
+          const deltaX = change.position.x - node.position.x;
+          const deltaY = change.position.y - node.position.y;
+
+          // Add position changes for all other nodes in the group
+          for (const groupNode of groupNodes) {
+            if (groupNode.id !== change.id) {
+              additionalChanges.push({
+                id: groupNode.id,
+                type: 'position',
+                position: {
+                  x: groupNode.position.x + deltaX,
+                  y: groupNode.position.y + deltaY,
+                },
+                dragging: true,
+              });
+            }
+          }
+        }
+      }
+
+      if (additionalChanges.length > 0) {
+        onNodesChange([...changes, ...additionalChanges]);
+        return;
+      }
+    }
+
+    onNodesChange(changes);
+  }, [nodes, getGenericIOData, onNodesChange]);
 
   // History tracking for undo/redo
   const [history, setHistory] = useState<HistoryState[]>([{ nodes: [], edges: [] }]);
@@ -1072,11 +1273,12 @@ function Flow() {
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>
+        <CascadeLockContext.Provider value={cascadeLockContext}>
         <NodeSummariesContext.Provider value={nodeSummaries}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
+          onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onNodesDelete={onNodesDelete}
@@ -1133,6 +1335,7 @@ function Flow() {
           </Panel>
         </ReactFlow>
         </NodeSummariesContext.Provider>
+        </CascadeLockContext.Provider>
       </div>
 
       <RightPanel
