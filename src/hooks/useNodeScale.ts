@@ -7,10 +7,12 @@ import { useRef, useLayoutEffect, useState, type RefObject, type CSSProperties }
  * on mount, then applies a CSS transform: scale() factor when the node
  * is resized via NodeResizer (with keepAspectRatio).
  *
- * The content div is positioned with z-index: 1 so that NodeResizer
- * handles (z-index: 20) reliably paint on top and receive pointer
- * events. Negative margins collapse the layout overflow caused by
- * the untransformed dimensions so the parent node element matches
+ * The content div uses pointer-events: none so the transform stacking
+ * context cannot intercept events meant for NodeResizer handles.
+ * A companion CSS rule re-enables pointer-events on all descendants
+ * so interactive content (inputs, buttons, etc.) remains usable.
+ * Negative margins collapse the layout overflow caused by the
+ * untransformed dimensions so the parent node element matches
  * the visual size.
  *
  * This correctly handles nodes loaded from saved files where explicit
@@ -85,9 +87,10 @@ export function useNodeScale(
       height: nh,
       transformOrigin: '0 0',
       transform: `scale(${scale})`,
-      // Position with z-index so resize handles (z-index: 20) stay on top
-      position: 'relative' as const,
-      zIndex: 1,
+      // Prevent the transform stacking context from intercepting
+      // pointer events meant for NodeResizer handles.
+      // A CSS rule re-enables pointer-events on all descendants.
+      pointerEvents: 'none' as const,
       // Collapse the extra layout space so the parent node element
       // matches the visual (post-transform) size
       marginRight: -(nw - measuredWidth),
