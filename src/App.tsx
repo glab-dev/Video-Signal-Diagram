@@ -1680,8 +1680,8 @@ function Flow() {
           edgesReconnectable={false}
           selectNodesOnDrag
           panOnDrag={[1]}
-          minZoom={0.1}
-          maxZoom={2}
+          minZoom={0.02}
+          maxZoom={4}
           proOptions={{ hideAttribution: true }}
         >
           <PageOverlay pages={pages} />
