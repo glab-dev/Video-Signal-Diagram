@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useViewport } from '@xyflow/react';
 import type { PageDescriptor } from '../hooks/usePageGrid';
 
@@ -5,7 +6,7 @@ interface PageOverlayProps {
   pages: PageDescriptor[];
 }
 
-export function PageOverlay({ pages }: PageOverlayProps) {
+function PageOverlayInner({ pages }: PageOverlayProps) {
   const { x, y, zoom } = useViewport();
 
   const patternSize = 20;
@@ -75,3 +76,5 @@ export function PageOverlay({ pages }: PageOverlayProps) {
     </svg>
   );
 }
+
+export const PageOverlay = memo(PageOverlayInner);

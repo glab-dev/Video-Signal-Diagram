@@ -1,6 +1,8 @@
 import { memo, useCallback, useState, useRef, useMemo } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useNodes, useUpdateNodeInternals } from '@xyflow/react';
-import type { NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { useNodeScale } from '../../hooks/useNodeScale';
 import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -41,33 +43,21 @@ const OUTPUT_FIELD_CONFIG: Record<OutputFieldType, { label: string; className: s
 
 type SwitcherNodeProps = NodeProps & {
   data: ProcessorNodeData;
-  measured?: { width: number; height: number };
 };
 
-function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
+function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
-  const allNodes = useNodes();
+  const nodeSummaries = useNodeSummariesContext();
 
   // Get all source node names (only pure source nodes, not switchers/processors)
   const sourceNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Skip processor and switcher nodes - only include pure sources
-      if (node.type === 'processor' || node.type === 'switcher') return;
-      // Include nodes that have outputs (they can be sources)
-      const nodeData = node.data as { label?: string; outputs?: unknown[] };
-      if (nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && n.type !== 'processor' && n.type !== 'switcher' && n.hasOutputs && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
   // Lock at 20x20 or 40x40 for Blackmagic switchers
   const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
@@ -491,23 +481,28 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
   }, [updateOutput, sourceNames, setAllOutputResolutions]);
 
   const layout = data.layout || 'sideBySide';
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
   return (
     <div
       className={`node-switcher ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: data.color || '#4a148c',
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={280}
         minHeight={120}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#4a148c' }}>
         <input
           className="node-title-input light"
@@ -735,6 +730,7 @@ function SwitcherNode({ id, data, selected, measured }: SwitcherNodeProps) {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

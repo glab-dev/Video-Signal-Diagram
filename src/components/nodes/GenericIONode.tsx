@@ -4,10 +4,10 @@ import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
+import { useNodeScale } from '../../hooks/useNodeScale';
 
 type GenericIONodeProps = NodeProps & {
   data: GenericIONodeData;
-  measured?: { width: number; height: number };
 };
 
 const NODE_COLORS = [
@@ -21,7 +21,7 @@ const NODE_COLORS = [
   '#8800ff', // Purple
 ];
 
-function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
+function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
 
@@ -113,23 +113,28 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
 
   const nodeColor = data.color || '#0088cc';
   const layout = data.layout || 'sideBySide';
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
   return (
     <div
       className={`node-generic-io ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: nodeColor,
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={160}
         minHeight={100}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: nodeColor }}>
         <input
           className="node-title-input light"
@@ -214,6 +219,7 @@ function GenericIONode({ id, data, selected, measured }: GenericIONodeProps) {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

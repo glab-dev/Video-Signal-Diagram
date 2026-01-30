@@ -1,6 +1,8 @@
 import { memo, useCallback, useState, useRef, useMemo } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals, useNodes } from '@xyflow/react';
-import type { NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { useNodeScale } from '../../hooks/useNodeScale';
 import type { BarcoE3NodeData, BarcoCard, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
@@ -27,58 +29,31 @@ const VIDEO_RESOLUTIONS = [
 
 type BarcoE3NodeProps = NodeProps & {
   data: BarcoE3NodeData;
-  measured?: { width: number; height: number };
 };
 
-function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
+function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
-  const allNodes = useNodes();
+  const nodeSummaries = useNodeSummariesContext();
   const [_draggedCard, setDraggedCard] = useState<string | null>(null);
   const dragStartY = useRef<number>(0);
   const dragStartSpacing = useRef<number>(0);
 
-  // Get all source node names (nodes that have outputs - they can be sources)
   const sourceNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have outputs (they can be sources)
-      const nodeData = node.data as { label?: string; outputs?: unknown[]; cards?: Array<{ cardType?: string }> };
-      const hasOutputs = nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0;
-      const hasOutputCards = nodeData?.cards && Array.isArray(nodeData.cards) &&
-        nodeData.cards.some(c => c.cardType === 'output' || c.cardType === 'system');
-      if (hasOutputs || hasOutputCards) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && (n.hasOutputs || n.hasOutputCards) && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
-  // Get all destination node names (nodes that have inputs - they can be destinations)
   const destinationNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have inputs (they can be destinations)
-      const nodeData = node.data as { label?: string; inputs?: unknown[]; cards?: Array<{ cardType?: string }> };
-      const hasInputs = nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0;
-      const hasInputCards = nodeData?.cards && Array.isArray(nodeData.cards) &&
-        nodeData.cards.some(c => c.cardType === 'input');
-      if (hasInputs || hasInputCards) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && (n.hasInputs || n.hasInputCards) && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -750,22 +725,28 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
     );
   };
 
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef: scaleRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+
   return (
     <div
       className={`node-barco-e3 ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: data.color || '#006400',
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={600}
         minHeight={300}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={scaleRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#006400' }}>
         <input
           className="node-title-input light"
@@ -823,6 +804,7 @@ function BarcoE3Node({ id, data, selected, measured }: BarcoE3NodeProps) {
             )}
           </>
         )}
+      </div>
       </div>
     </div>
   );

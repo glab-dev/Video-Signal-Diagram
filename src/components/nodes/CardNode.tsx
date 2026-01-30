@@ -1,62 +1,35 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
-import type { NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { useNodeScale } from '../../hooks/useNodeScale';
 import type { CardNodeData, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 
 type CardNodeProps = NodeProps & {
   data: CardNodeData;
-  measured?: { width: number; height: number };
 };
 
-function CardNode({ id, data, selected, measured }: CardNodeProps) {
+function CardNode({ id, data, selected, width, height }: CardNodeProps) {
   const { updateNodeData } = useReactFlow();
-  const allNodes = useNodes();
+  const nodeSummaries = useNodeSummariesContext();
 
-  // Get all source node names (nodes that have outputs - they can be sources)
   const sourceNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have outputs (they can be sources)
-      const nodeData = node.data as { label?: string; outputs?: unknown[]; connectors?: Array<{ destination?: string }> };
-      // Check for outputs array or output connectors
-      const hasOutputs = nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0;
-      const hasOutputConnectors = nodeData?.connectors && Array.isArray(nodeData.connectors) &&
-        nodeData.connectors.some(c => c.destination !== undefined);
-      if (hasOutputs || hasOutputConnectors) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && (n.hasOutputs || n.hasOutputConnectors) && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
-  // Get all destination node names (nodes that have inputs - they can be destinations)
   const destinationNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have inputs (they can be destinations)
-      const nodeData = node.data as { label?: string; inputs?: unknown[]; connectors?: Array<{ source?: string }> };
-      // Check for inputs array or input connectors
-      const hasInputs = nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0;
-      const hasInputConnectors = nodeData?.connectors && Array.isArray(nodeData.connectors) &&
-        nodeData.connectors.some(c => c.source !== undefined);
-      if (hasInputs || hasInputConnectors) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && (n.hasInputs || n.hasInputConnectors) && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -113,24 +86,29 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
 
   const handlePosition = data.cardType === 'input' ? Position.Left : Position.Right;
   const handleType = data.cardType === 'input' ? 'target' : 'source';
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
   return (
     <div
       className={`node-card ${selected ? 'selected' : ''} ${data.cardType === 'input' ? 'card-input' : 'card-output'}`}
       style={{
         borderColor: data.color || (data.cardType === 'input' ? '#4a9eff' : '#50e3c2'),
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={280}
         minHeight={150}
         maxWidth={500}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || (data.cardType === 'input' ? '#4a9eff' : '#50e3c2') }}>
         <input
           className="node-title-input light"
@@ -266,6 +244,7 @@ function CardNode({ id, data, selected, measured }: CardNodeProps) {
           ))}
         </div>
         <button className="add-connector-btn" onClick={addConnector}>+ Add Connector</button>
+      </div>
       </div>
     </div>
   );

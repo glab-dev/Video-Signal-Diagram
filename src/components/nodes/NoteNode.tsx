@@ -3,10 +3,10 @@ import { useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NoteNodeData, NodeData } from '../../types';
 import PresetMenu from '../PresetMenu';
+import { useNodeScale } from '../../hooks/useNodeScale';
 
 type NoteNodeProps = NodeProps & {
   data: NoteNodeData;
-  measured?: { width: number; height: number };
 };
 
 
@@ -19,7 +19,7 @@ const NOTE_COLORS = [
   '#9c27b0', // Purple
 ];
 
-function NoteNode({ id, data, selected, measured }: NoteNodeProps) {
+function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
   const { updateNodeData } = useReactFlow();
 
   const updateLabel = useCallback(
@@ -56,23 +56,28 @@ function NoteNode({ id, data, selected, measured }: NoteNodeProps) {
   );
 
   const bgColor = data.backgroundColor || '#ffeb3b';
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
   return (
     <div
       className={`node-note ${selected ? 'selected' : ''}`}
       style={{
         backgroundColor: bgColor,
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={160}
         minHeight={80}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#333' }}
         handleStyle={{ backgroundColor: '#333', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <div className="note-header">
         <input
           className="note-title-input"
@@ -102,6 +107,7 @@ function NoteNode({ id, data, selected, measured }: NoteNodeProps) {
         onChange={(e) => updateContent(e.target.value)}
         placeholder="Enter notes here..."
       />
+      </div>
     </div>
   );
 }

@@ -1,58 +1,35 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
-import type { NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { useNodeScale } from '../../hooks/useNodeScale';
 import type { RouterNodeData, RouterRow, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 
 type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
-  measured?: { width: number; height: number };
 };
 
-function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
+function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
   const { updateNodeData } = useReactFlow();
-  const allNodes = useNodes();
+  const nodeSummaries = useNodeSummariesContext();
 
-  // Get all source node names (nodes that have outputs - they can be sources)
   const sourceNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have outputs (they can be sources)
-      const nodeData = node.data as { label?: string; outputs?: unknown[]; rows?: unknown[] };
-      const hasOutputs = nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0;
-      const hasRows = nodeData?.rows && Array.isArray(nodeData.rows) && nodeData.rows.length > 0;
-      if (hasOutputs || hasRows) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && (n.hasOutputs || n.hasRows) && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
-  // Get all destination node names (nodes that have inputs - they can be destinations)
   const destinationNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have inputs (they can be destinations)
-      const nodeData = node.data as { label?: string; inputs?: unknown[]; rows?: unknown[] };
-      const hasInputs = nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0;
-      const hasRows = nodeData?.rows && Array.isArray(nodeData.rows) && nodeData.rows.length > 0;
-      if (hasInputs || hasRows) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && (n.hasInputs || n.hasRows) && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
   const updateRow = useCallback(
     (rowId: string, field: keyof RouterRow, value: string) => {
@@ -97,22 +74,28 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
     [id, updateNodeData]
   );
 
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+
   return (
     <div
       className={`node-router ${selected ? 'selected' : ''}`}
       style={{
         borderColor: data.color || '#444',
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={220}
         minHeight={120}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header">
@@ -216,6 +199,7 @@ function RouterNode({ id, data, selected, measured }: RouterNodeProps) {
       </button>
 
       <Handle type="source" position={Position.Right} id="output" />
+      </div>
     </div>
   );
 }

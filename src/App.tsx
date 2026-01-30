@@ -25,6 +25,7 @@ import UpdateNotification from './components/UpdateNotification';
 import EdgeLabelEditor from './components/EdgeLabelEditor';
 import { PageOverlay } from './components/PageOverlay';
 import { usePageGrid } from './hooks/usePageGrid';
+import { useNodeSummaries, NodeSummariesContext } from './hooks/useNodeSummaries';
 import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
 import { PAPER_SIZES, type PaperSize, type Orientation } from './types';
@@ -131,6 +132,9 @@ function Flow() {
   }, [paperSize, orientation, customWidth, customHeight]);
 
   const canvasDimensions = getCanvasDimensions();
+
+  // Single store subscription for node summaries - shared via context to all nodes
+  const nodeSummaries = useNodeSummaries();
 
   // Calculate occupied pages based on node positions
   const pages = usePageGrid({
@@ -1068,6 +1072,7 @@ function Flow() {
       />
 
       <div className="flow-wrapper" ref={reactFlowWrapper}>
+        <NodeSummariesContext.Provider value={nodeSummaries}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -1127,6 +1132,7 @@ function Flow() {
             </button>
           </Panel>
         </ReactFlow>
+        </NodeSummariesContext.Provider>
       </div>
 
       <RightPanel

@@ -3,12 +3,13 @@ import { useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { ImageNodeData, NodeData } from '../../types';
 import PresetMenu from '../PresetMenu';
+import { useNodeScale } from '../../hooks/useNodeScale';
 
 type ImageNodeProps = NodeProps & {
   data: ImageNodeData;
 };
 
-function ImageNode({ id, data, selected }: ImageNodeProps) {
+function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
   const { updateNodeData } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,13 +52,19 @@ function ImageNode({ id, data, selected }: ImageNodeProps) {
     fileInputRef.current?.click();
   }, []);
 
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+
   return (
     <>
       <NodeResizer
         isVisible={selected}
         minWidth={100}
         minHeight={100}
+        keepAspectRatio
       />
+      <div ref={contentRef} style={scaleStyle}>
       <div className={`node-image ${selected ? 'selected' : ''}`}>
         <div className="image-label">
           <input
@@ -88,6 +95,7 @@ function ImageNode({ id, data, selected }: ImageNodeProps) {
           onChange={handleImageUpload}
           style={{ display: 'none' }}
         />
+      </div>
       </div>
     </>
   );

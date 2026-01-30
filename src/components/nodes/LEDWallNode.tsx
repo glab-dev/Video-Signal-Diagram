@@ -3,13 +3,13 @@ import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { LEDWallNodeData, NodeData } from '../../types';
 import PresetMenu from '../PresetMenu';
+import { useNodeScale } from '../../hooks/useNodeScale';
 
 type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
-  measured?: { width: number; height: number };
 };
 
-function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
+function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
   const { updateNodeData } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,22 +53,28 @@ function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
     fileInputRef.current?.click();
   }, []);
 
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+
   return (
     <div
       className={`node-led-wall ${selected ? 'selected' : ''}`}
       style={{
         borderColor: data.color || '#ff6600',
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={160}
         minHeight={120}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <Handle type="target" position={Position.Left} id="input" />
 
       <div className="node-header" style={{ backgroundColor: data.color || '#ff6600' }}>
@@ -109,6 +115,7 @@ function LEDWallNode({ id, data, selected, measured }: LEDWallNodeProps) {
       </div>
 
       <Handle type="source" position={Position.Right} id="output" />
+      </div>
     </div>
   );
 }

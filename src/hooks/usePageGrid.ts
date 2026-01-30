@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type { Node } from '@xyflow/react';
 
 export interface PageDescriptor {
@@ -17,7 +17,17 @@ interface UsePageGridOptions {
   pageHeight: number;
 }
 
+function pagesEqual(a: PageDescriptor[], b: PageDescriptor[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].col !== b[i].col || a[i].row !== b[i].row) return false;
+  }
+  return true;
+}
+
 export function usePageGrid({ nodes, pageWidth, pageHeight }: UsePageGridOptions): PageDescriptor[] {
+  const prevRef = useRef<PageDescriptor[]>([]);
+
   return useMemo(() => {
     const occupied = new Set<string>();
 
@@ -68,6 +78,12 @@ export function usePageGrid({ nodes, pageWidth, pageHeight }: UsePageGridOptions
       p.label = `Page ${i + 1}`;
     });
 
+    // Return previous reference if pages haven't changed
+    if (pagesEqual(prevRef.current, pages)) {
+      return prevRef.current;
+    }
+
+    prevRef.current = pages;
     return pages;
   }, [nodes, pageWidth, pageHeight]);
 }

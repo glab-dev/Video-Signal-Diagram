@@ -1,54 +1,35 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useNodes } from '@xyflow/react';
-import type { NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
+import { useNodeScale } from '../../hooks/useNodeScale';
 import type { ProcessorNodeData, ProcessorPort, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 
 type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
-  measured?: { width: number; height: number };
 };
 
-function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
+function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps) {
   const { updateNodeData } = useReactFlow();
-  const allNodes = useNodes();
+  const nodeSummaries = useNodeSummariesContext();
 
-  // Get all source node names (nodes that have outputs - they can be sources)
   const sourceNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have outputs (they can be sources)
-      const nodeData = node.data as { label?: string; outputs?: unknown[] };
-      if (nodeData?.outputs && Array.isArray(nodeData.outputs) && nodeData.outputs.length > 0) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && n.hasOutputs && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
-  // Get all destination node names (nodes that have inputs - they can be destinations)
   const destinationNames = useMemo(() => {
-    const names: string[] = [];
-    allNodes.forEach((node: Node) => {
-      // Skip this node itself
-      if (node.id === id) return;
-      // Include nodes that have inputs (they can be destinations)
-      const nodeData = node.data as { label?: string; inputs?: unknown[] };
-      if (nodeData?.inputs && Array.isArray(nodeData.inputs) && nodeData.inputs.length > 0) {
-        const label = nodeData.label;
-        if (label && typeof label === 'string' && !names.includes(label)) {
-          names.push(label);
-        }
-      }
-    });
-    return names.sort();
-  }, [allNodes, id]);
+    return nodeSummaries
+      .filter(n => n.id !== id && n.hasInputs && n.label)
+      .map(n => n.label)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+  }, [nodeSummaries, id]);
 
   const updateInput = useCallback(
     (portId: string, field: keyof ProcessorPort, value: string) => {
@@ -150,23 +131,28 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
   const layout = data.layout || 'stacked';
   const visibleInputFields = data.visibleInputFields || ['name'];
   const visibleOutputFields = data.visibleOutputFields || ['destination'];
+  const nodeWidth = width || undefined;
+  const nodeHeight = height || undefined;
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
   return (
     <div
       className={`node-processor ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: data.color || '#0088cc',
-        width: measured?.width,
-        height: measured?.height,
+        width: nodeWidth,
+        height: nodeHeight,
       }}
     >
       <NodeResizer
         minWidth={300}
         minHeight={150}
+        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
       />
+      <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#0088cc' }}>
         <input
           className="node-title-input light"
@@ -460,6 +446,7 @@ function ProcessorNode({ id, data, selected, measured }: ProcessorNodeProps) {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
