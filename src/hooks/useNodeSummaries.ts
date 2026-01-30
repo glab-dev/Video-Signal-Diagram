@@ -13,6 +13,7 @@ export interface NodeSummary {
   id: string;
   type: string;
   label: string;
+  color: string;
   hasOutputs: boolean;
   hasInputs: boolean;
   hasRows: boolean;
@@ -30,6 +31,7 @@ function summariesEqual(a: NodeSummary[], b: NodeSummary[]): boolean {
       sa.id !== sb.id ||
       sa.type !== sb.type ||
       sa.label !== sb.label ||
+      sa.color !== sb.color ||
       sa.hasOutputs !== sb.hasOutputs ||
       sa.hasInputs !== sb.hasInputs ||
       sa.hasRows !== sb.hasRows ||
@@ -59,6 +61,7 @@ export function useNodeSummaries(): NodeSummary[] {
           id: node.id,
           type: node.type || '',
           label: (data.label as string) || '',
+          color: (data.color as string) || '',
           hasOutputs: Array.isArray(data.outputs) && data.outputs.length > 0,
           hasInputs: Array.isArray(data.inputs) && data.inputs.length > 0,
           hasRows: Array.isArray(data.rows) && data.rows.length > 0,

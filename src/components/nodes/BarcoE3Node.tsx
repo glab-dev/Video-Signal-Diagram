@@ -39,21 +39,27 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
   const dragStartY = useRef<number>(0);
   const dragStartSpacing = useRef<number>(0);
 
-  const sourceNames = useMemo(() => {
-    return nodeSummaries
+  // Get sources with colors
+  const sourcesWithColors = useMemo(() => {
+    const sources = nodeSummaries
       .filter(n => n.id !== id && (n.hasOutputs || n.hasOutputCards) && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
+      .map(n => ({ label: n.label, color: n.color }));
+    const unique = sources.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+    return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id]);
 
-  const destinationNames = useMemo(() => {
-    return nodeSummaries
+  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
+
+  // Get destinations with colors
+  const destinationsWithColors = useMemo(() => {
+    const dests = nodeSummaries
       .filter(n => n.id !== id && (n.hasInputs || n.hasInputCards) && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
+      .map(n => ({ label: n.label, color: n.color }));
+    const unique = dests.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+    return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id]);
+
+  const destinationNames = useMemo(() => destinationsWithColors.map(d => d.label), [destinationsWithColors]);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -422,15 +428,19 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                           }
                         }}
                         className="card-field source"
+                        style={{
+                          backgroundColor: sourcesWithColors.find(s => s.label === connector.source)?.color || undefined,
+                          color: sourcesWithColors.find(s => s.label === connector.source)?.color ? '#fff' : undefined,
+                        }}
                       >
-                        <option value="">Select Source</option>
+                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
                         {connector.source && !sourceNames.includes(connector.source) && (
-                          <option value={connector.source}>{connector.source}</option>
+                          <option value={connector.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.source}</option>
                         )}
-                        {sourceNames.map((name) => (
-                          <option key={name} value={name}>{name}</option>
+                        {sourcesWithColors.map((source) => (
+                          <option key={source.label} value={source.label} style={{ backgroundColor: source.color || '#2a2a2a', color: '#fff' }}>{source.label}</option>
                         ))}
-                        <option value="__custom__">Custom...</option>
+                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
                       </select>
                       <select
                         value={connector.type}
@@ -506,15 +516,19 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                           }
                         }}
                         className="card-field source"
+                        style={{
+                          backgroundColor: sourcesWithColors.find(s => s.label === connector.source)?.color || undefined,
+                          color: sourcesWithColors.find(s => s.label === connector.source)?.color ? '#fff' : undefined,
+                        }}
                       >
-                        <option value="">Select Source</option>
+                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
                         {connector.source && !sourceNames.includes(connector.source) && (
-                          <option value={connector.source}>{connector.source}</option>
+                          <option value={connector.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.source}</option>
                         )}
-                        {sourceNames.map((name) => (
-                          <option key={name} value={name}>{name}</option>
+                        {sourcesWithColors.map((source) => (
+                          <option key={source.label} value={source.label} style={{ backgroundColor: source.color || '#2a2a2a', color: '#fff' }}>{source.label}</option>
                         ))}
-                        <option value="__custom__">Custom...</option>
+                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
                       </select>
                       <Handle
                         key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
@@ -555,15 +569,19 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                           }
                         }}
                         className="card-field destination"
+                        style={{
+                          backgroundColor: destinationsWithColors.find(d => d.label === connector.destination)?.color || undefined,
+                          color: destinationsWithColors.find(d => d.label === connector.destination)?.color ? '#fff' : undefined,
+                        }}
                       >
-                        <option value="">Select Destination</option>
+                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
                         {connector.destination && !destinationNames.includes(connector.destination) && (
-                          <option value={connector.destination}>{connector.destination}</option>
+                          <option value={connector.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.destination}</option>
                         )}
-                        {destinationNames.map((name) => (
-                          <option key={name} value={name}>{name}</option>
+                        {destinationsWithColors.map((dest) => (
+                          <option key={dest.label} value={dest.label} style={{ backgroundColor: dest.color || '#2a2a2a', color: '#fff' }}>{dest.label}</option>
                         ))}
-                        <option value="__custom__">Custom...</option>
+                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
                       </select>
                       <select
                         value={connector.type}
@@ -639,15 +657,19 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                           }
                         }}
                         className="card-field destination"
+                        style={{
+                          backgroundColor: destinationsWithColors.find(d => d.label === connector.destination)?.color || undefined,
+                          color: destinationsWithColors.find(d => d.label === connector.destination)?.color ? '#fff' : undefined,
+                        }}
                       >
-                        <option value="">Select Destination</option>
+                        <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
                         {connector.destination && !destinationNames.includes(connector.destination) && (
-                          <option value={connector.destination}>{connector.destination}</option>
+                          <option value={connector.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{connector.destination}</option>
                         )}
-                        {destinationNames.map((name) => (
-                          <option key={name} value={name}>{name}</option>
+                        {destinationsWithColors.map((dest) => (
+                          <option key={dest.label} value={dest.label} style={{ backgroundColor: dest.color || '#2a2a2a', color: '#fff' }}>{dest.label}</option>
                         ))}
-                        <option value="__custom__">Custom...</option>
+                        <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
                       </select>
                       <Handle
                         key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
@@ -669,7 +691,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         </div>
       </div>
     );
-  }, [sourceNames, destinationNames, updateCardLabel, handleSpacingMouseDown, toggleCardSide, removeCard, updateConnector, removeConnector, addConnector, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn, isDraggingSystem]);
+  }, [sourceNames, destinationNames, sourcesWithColors, destinationsWithColors, updateCardLabel, handleSpacingMouseDown, toggleCardSide, removeCard, updateConnector, removeConnector, addConnector, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn, isDraggingSystem]);
 
   // Render SYSTEM subsection (draggable header + cards)
   const renderSystemSubsection = () => {

@@ -50,14 +50,18 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeSummaries = useNodeSummariesContext();
 
-  // Get all source node names (only pure source nodes, not switchers/processors)
-  const sourceNames = useMemo(() => {
-    return nodeSummaries
+  // Get all source nodes with their colors (only pure source nodes, not switchers/processors)
+  const sourcesWithColors = useMemo(() => {
+    const sources = nodeSummaries
       .filter(n => n.id !== id && n.type !== 'processor' && n.type !== 'switcher' && n.hasOutputs && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
+      .map(n => ({ label: n.label, color: n.color }));
+    // Remove duplicates by label, keeping first occurrence
+    const unique = sources.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+    return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id]);
+
+  // For backwards compatibility, also get just the names
+  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
 
   // Lock at 20x20 or 40x40 for Blackmagic switchers
   const isLocked = (data.inputs.length === 20 && data.outputs.length === 20) ||
@@ -316,8 +320,10 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
         const isCustomSource = port.connection && !sourceNames.includes(port.connection);
         // Build options list - include current custom value if it exists
         const sourceOptions = isCustomSource
-          ? [port.connection, ...sourceNames.filter(n => n !== port.connection)]
-          : sourceNames;
+          ? [{ label: port.connection, color: '' }, ...sourcesWithColors.filter(s => s.label !== port.connection)]
+          : sourcesWithColors;
+        // Get color for current selection
+        const currentSourceColor = sourcesWithColors.find(s => s.label === port.connection)?.color || '';
         return (
           <select
             key={fieldName}
@@ -333,13 +339,26 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
               }
             }}
             className={`port-field ${config.className}`}
-            style={style}
+            style={{
+              ...style,
+              backgroundColor: currentSourceColor || undefined,
+              color: currentSourceColor ? '#fff' : undefined,
+            }}
           >
-            <option value="">Select Source</option>
-            {sourceOptions.map((name) => (
-              <option key={name} value={name}>{name}</option>
+            <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
+            {sourceOptions.map((source) => (
+              <option
+                key={source.label}
+                value={source.label}
+                style={{
+                  backgroundColor: source.color || '#2a2a2a',
+                  color: '#fff',
+                }}
+              >
+                {source.label}
+              </option>
             ))}
-            <option value="__custom__">Custom...</option>
+            <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
           </select>
         );
       case 'name':
@@ -391,7 +410,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           />
         );
     }
-  }, [updateInput, sourceNames, setAllInputResolutions]);
+  }, [updateInput, sourceNames, sourcesWithColors, setAllInputResolutions]);
 
   const renderOutputField = useCallback((port: ProcessorPort, fieldName: OutputFieldType) => {
     const config = OUTPUT_FIELD_CONFIG[fieldName];
@@ -400,11 +419,13 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     switch (fieldName) {
       case 'destination':
         // Check if current value is a custom value (not in sourceNames and not empty)
-        const isCustomSource = port.destination && !sourceNames.includes(port.destination);
+        const isCustomDest = port.destination && !sourceNames.includes(port.destination);
         // Build options list - include current custom value if it exists
-        const sourceOptions = isCustomSource
-          ? [port.destination, ...sourceNames.filter(n => n !== port.destination)]
-          : sourceNames;
+        const destOptions = isCustomDest
+          ? [{ label: port.destination, color: '' }, ...sourcesWithColors.filter(s => s.label !== port.destination)]
+          : sourcesWithColors;
+        // Get color for current selection
+        const currentDestColor = sourcesWithColors.find(s => s.label === port.destination)?.color || '';
         return (
           <select
             key={fieldName}
@@ -420,13 +441,26 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
               }
             }}
             className={`port-field ${config.className}`}
-            style={style}
+            style={{
+              ...style,
+              backgroundColor: currentDestColor || undefined,
+              color: currentDestColor ? '#fff' : undefined,
+            }}
           >
-            <option value="">Select Source</option>
-            {sourceOptions.map((name) => (
-              <option key={name} value={name}>{name}</option>
+            <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
+            {destOptions.map((source) => (
+              <option
+                key={source.label}
+                value={source.label}
+                style={{
+                  backgroundColor: source.color || '#2a2a2a',
+                  color: '#fff',
+                }}
+              >
+                {source.label}
+              </option>
             ))}
-            <option value="__custom__">Custom...</option>
+            <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
           </select>
         );
       case 'name':
@@ -478,7 +512,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           />
         );
     }
-  }, [updateOutput, sourceNames, setAllOutputResolutions]);
+  }, [updateOutput, sourceNames, sourcesWithColors, setAllOutputResolutions]);
 
   const layout = data.layout || 'sideBySide';
   const nodeWidth = width || undefined;

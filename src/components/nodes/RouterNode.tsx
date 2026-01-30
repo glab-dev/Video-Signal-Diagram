@@ -15,21 +15,27 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
   const { updateNodeData } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
 
-  const sourceNames = useMemo(() => {
-    return nodeSummaries
+  // Get sources with colors
+  const sourcesWithColors = useMemo(() => {
+    const sources = nodeSummaries
       .filter(n => n.id !== id && (n.hasOutputs || n.hasRows) && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
+      .map(n => ({ label: n.label, color: n.color }));
+    const unique = sources.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+    return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id]);
 
-  const destinationNames = useMemo(() => {
-    return nodeSummaries
+  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
+
+  // Get destinations with colors
+  const destinationsWithColors = useMemo(() => {
+    const dests = nodeSummaries
       .filter(n => n.id !== id && (n.hasInputs || n.hasRows) && n.label)
-      .map(n => n.label)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
+      .map(n => ({ label: n.label, color: n.color }));
+    const unique = dests.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
+    return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id]);
+
+  const destinationNames = useMemo(() => destinationsWithColors.map(d => d.label), [destinationsWithColors]);
 
   const updateRow = useCallback(
     (rowId: string, field: keyof RouterRow, value: string) => {
@@ -137,15 +143,28 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
                       updateRow(row.id, 'source', e.target.value);
                     }
                   }}
+                  style={{
+                    backgroundColor: sourcesWithColors.find(s => s.label === row.source)?.color || undefined,
+                    color: sourcesWithColors.find(s => s.label === row.source)?.color ? '#fff' : undefined,
+                  }}
                 >
-                  <option value="">Select Source</option>
+                  <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Source</option>
                   {row.source && !sourceNames.includes(row.source) && (
-                    <option value={row.source}>{row.source}</option>
+                    <option value={row.source} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{row.source}</option>
                   )}
-                  {sourceNames.map((name) => (
-                    <option key={name} value={name}>{name}</option>
+                  {sourcesWithColors.map((source) => (
+                    <option
+                      key={source.label}
+                      value={source.label}
+                      style={{
+                        backgroundColor: source.color || '#2a2a2a',
+                        color: '#fff',
+                      }}
+                    >
+                      {source.label}
+                    </option>
                   ))}
-                  <option value="__custom__">Custom...</option>
+                  <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
                 </select>
               </td>
               <td>
@@ -169,15 +188,28 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
                       updateRow(row.id, 'destination', e.target.value);
                     }
                   }}
+                  style={{
+                    backgroundColor: destinationsWithColors.find(d => d.label === row.destination)?.color || undefined,
+                    color: destinationsWithColors.find(d => d.label === row.destination)?.color ? '#fff' : undefined,
+                  }}
                 >
-                  <option value="">Select Destination</option>
+                  <option value="" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Select Destination</option>
                   {row.destination && !destinationNames.includes(row.destination) && (
-                    <option value={row.destination}>{row.destination}</option>
+                    <option value={row.destination} style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>{row.destination}</option>
                   )}
-                  {destinationNames.map((name) => (
-                    <option key={name} value={name}>{name}</option>
+                  {destinationsWithColors.map((dest) => (
+                    <option
+                      key={dest.label}
+                      value={dest.label}
+                      style={{
+                        backgroundColor: dest.color || '#2a2a2a',
+                        color: '#fff',
+                      }}
+                    >
+                      {dest.label}
+                    </option>
                   ))}
-                  <option value="__custom__">Custom...</option>
+                  <option value="__custom__" style={{ backgroundColor: '#2a2a2a', color: '#fff' }}>Custom...</option>
                 </select>
               </td>
               <td>
