@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.21': [
+    'Improve resize handle interactivity on small nodes',
+  ],
   '1.0.20': [
     'Use setNodes for group resize to properly update edge paths',
   ],
