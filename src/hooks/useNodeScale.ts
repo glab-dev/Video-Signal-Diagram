@@ -4,8 +4,13 @@ import { useRef, useLayoutEffect, useState, type RefObject, type CSSProperties }
  * Hook that enables uniform proportional scaling of node content.
  *
  * Measures the content element's natural (unconstrained) dimensions
- * on mount, then applies a CSS transform: scale() factor when the node
- * is resized via NodeResizer (with keepAspectRatio).
+ * on mount, then applies CSS zoom when the node is resized via
+ * NodeResizer (with keepAspectRatio).
+ *
+ * Uses `zoom` instead of `transform: scale()` because:
+ * - zoom adjusts layout dimensions to match visual size (no overflow)
+ * - zoom does NOT create a stacking context, so it won't block
+ *   NodeResizer handles from receiving pointer events
  *
  * This correctly handles nodes loaded from saved files where explicit
  * width/height from a previous resize would otherwise be misinterpreted
@@ -31,14 +36,14 @@ export function useNodeScale(
         position: el.style.position,
         width: el.style.width,
         height: el.style.height,
-        transform: el.style.transform,
+        zoom: el.style.zoom,
       };
 
       // Remove constraints to measure intrinsic content size
       el.style.position = 'absolute';
       el.style.width = 'max-content';
       el.style.height = 'max-content';
-      el.style.transform = 'none';
+      el.style.zoom = '1';
 
       naturalSize.current = {
         w: el.scrollWidth,
@@ -49,7 +54,7 @@ export function useNodeScale(
       el.style.position = saved.position;
       el.style.width = saved.width;
       el.style.height = saved.height;
-      el.style.transform = saved.transform;
+      el.style.zoom = saved.zoom;
 
       // Trigger re-render to apply correct scaleStyle
       setTick(t => t + 1);
@@ -67,25 +72,19 @@ export function useNodeScale(
   const sy = measuredHeight / nh;
   const scale = Math.min(sx, sy);
 
-  // Always pin width and height to natural dimensions so the content
-  // div doesn't inherit the parent's (resized) dimensions
+  // At or near 1:1, pin to natural dimensions without zoom
   if (Math.abs(scale - 1) < 0.005) {
     return { contentRef, scaleStyle: { width: nw, height: nh } };
   }
 
+  // Use CSS zoom: content lays out at natural dimensions, then
+  // zoom shrinks both visual and layout size to match the node.
   return {
     contentRef,
     scaleStyle: {
       width: nw,
       height: nh,
-      transformOrigin: '0 0',
-      transform: `scale(${scale})`,
-      // Collapse the extra layout space so the parent node element
-      // matches the visual (post-transform) size. Without this,
-      // the layout box at natural dimensions extends beyond the node
-      // and blocks resize handles on neighboring nodes.
-      marginRight: -(nw - measuredWidth),
-      marginBottom: -(nh - measuredHeight),
+      zoom: scale,
     },
   };
 }
