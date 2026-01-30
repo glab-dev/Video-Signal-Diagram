@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext } from 'react';
+import { useCallback, useContext } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData } from '../../types';
@@ -124,6 +124,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const showLockToggle = cascadeInfo && cascadeInfo.isFirstInGroup && cascadeInfo.groupNodes.length >= 2;
   const isLocked = cascadeInfo?.isLocked || false;
 
+
   return (
     <div
       className={`node-generic-io ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
@@ -152,16 +153,13 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
       )}
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: nodeColor }}>
-        <input
-          className="node-title-input light"
-          value={data.label}
-          onChange={(e) => updateLabel(e.target.value)}
-          placeholder="Device Name"
-        />
+        <span className="node-title light">{data.label || 'Device Name'}</span>
         <PresetMenu
           nodeType="genericIO"
           currentData={data}
+          currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
+          onRename={updateLabel}
         />
         <button
           className="layout-toggle-btn nodrag"
@@ -241,4 +239,5 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   );
 }
 
-export default memo(GenericIONode);
+// Note: memo() removed because context changes need to trigger re-renders for cascade lock
+export default GenericIONode;
