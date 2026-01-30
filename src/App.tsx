@@ -581,7 +581,9 @@ function Flow() {
         // Process the original resize changes for the dragged node
         onNodesChange(changes);
 
-        // Directly update other selected nodes' dimensions and positions
+        // Directly update other selected nodes' dimensions, positions, and style
+        // Setting style.width/height alongside width/height ensures React Flow's
+        // NodeResizer correctly positions handles for subsequent resize operations.
         setNodes(nds => nds.map(n => {
           if (!otherIds.has(n.id)) return n;
           const ow = n.measured?.width ?? n.width;
@@ -590,11 +592,14 @@ function Flow() {
 
           const dx = n.position.x - anchorX;
           const dy = n.position.y - anchorY;
+          const newW = ow * scaleX;
+          const newH = oh * scaleY;
 
           return {
             ...n,
-            width: ow * scaleX,
-            height: oh * scaleY,
+            width: newW,
+            height: newH,
+            style: { ...n.style, width: newW, height: newH },
             position: {
               x: anchorX + dx * scaleX,
               y: anchorY + dy * scaleY,

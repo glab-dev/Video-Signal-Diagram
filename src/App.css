@@ -1612,42 +1612,48 @@
   background: #00aaff !important;
   border: none !important;
   border-radius: 2px !important;
+  z-index: 20 !important;
+  pointer-events: all !important;
 }
 
 /* Invisible expanded hit area around resize handles */
 .react-flow__resize-control.handle::before {
   content: '';
   position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
+  top: -12px;
+  left: -12px;
+  right: -12px;
+  bottom: -12px;
+  pointer-events: all;
 }
 
 .react-flow__resize-control.line {
   border-color: #00aaff !important;
+  z-index: 20 !important;
+  pointer-events: all !important;
 }
 
 /* Invisible expanded hit area on resize lines */
 .react-flow__resize-control.line::before {
   content: '';
   position: absolute;
+  pointer-events: all;
 }
 
 .react-flow__resize-control.line.left::before,
 .react-flow__resize-control.line.right::before {
   top: 0;
   bottom: 0;
-  left: -6px;
-  right: -6px;
+  left: -8px;
+  right: -8px;
 }
 
 .react-flow__resize-control.line.top::before,
 .react-flow__resize-control.line.bottom::before {
   left: 0;
   right: 0;
-  top: -6px;
-  bottom: -6px;
+  top: -8px;
+  bottom: -8px;
 }
 
 /* Update Notification */
