@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.25': [
+    'Render NodeResizer after content div for reliable handle interaction, widen zoom range',
+  ],
   '1.0.24': [
     'Revert to transform scaling with explicit z-index stacking, widen zoom range',
   ],
