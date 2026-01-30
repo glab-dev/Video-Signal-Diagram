@@ -13,7 +13,7 @@ import {
   getViewportForBounds,
   SelectionMode,
 } from '@xyflow/react';
-import type { Connection, Edge, Node, NodeChange, NodePositionChange } from '@xyflow/react';
+import type { Connection, Edge, Node, NodeChange, NodePositionChange, NodeDimensionChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { toPng } from 'html-to-image';
@@ -111,13 +111,34 @@ function Flow() {
     localStorage.setItem('customHeight', height.toString());
   }, []);
 
+  // Get the center of the current viewport in flow coordinates
+  const getViewportCenter = useCallback(() => {
+    const wrapper = reactFlowWrapper.current;
+    if (!wrapper) return { x: 100, y: 100 };
+    const rect = wrapper.getBoundingClientRect();
+    return screenToFlowPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    });
+  }, [screenToFlowPosition]);
+
+  // Stagger counter for gear builder node placement
+  const gearPlacementCounter = useRef(0);
+  const gearPlacementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Gear Builder handlers
   const handleAddGearNode = useCallback((config: GearConfig) => {
-    // Create a new node from the gear config
+    const basePos = getViewportCenter();
+    const offset = gearPlacementCounter.current * 30;
+    const position = { x: basePos.x + offset, y: basePos.y + offset };
+    gearPlacementCounter.current += 1;
+    if (gearPlacementTimer.current) clearTimeout(gearPlacementTimer.current);
+    gearPlacementTimer.current = setTimeout(() => { gearPlacementCounter.current = 0; }, 2000);
+
     const newNode: Node = {
       id: uuidv4(),
       type: config.nodeType,
-      position: { x: 400, y: 300 }, // Center of typical viewport
+      position,
       data: {
         label: config.label,
         color: config.color,
@@ -136,7 +157,7 @@ function Flow() {
       },
     };
     setNodes(nds => [...nds, newNode]);
-  }, [setNodes]);
+  }, [setNodes, getViewportCenter]);
 
   const handleSaveGearPreset = useCallback(async (config: GearConfig) => {
     const presetName = prompt('Enter a name for this preset:', config.label);
@@ -527,6 +548,50 @@ function Flow() {
         return needsZUpdate ? updatedNodes : nds;
       });
       return;
+    }
+
+    // Handle group resize: when one selected node is resized, scale all other selected nodes
+    const dimensionChanges = changes.filter(
+      (c): c is NodeDimensionChange => c.type === 'dimensions' && c.resizing === true
+    );
+
+    if (dimensionChanges.length > 0) {
+      const additionalChanges: NodeDimensionChange[] = [];
+
+      for (const change of dimensionChanges) {
+        const node = nodes.find(n => n.id === change.id);
+        if (!node || !node.selected) continue;
+
+        const oldW = node.measured?.width ?? node.width;
+        const oldH = node.measured?.height ?? node.height;
+        if (!oldW || !oldH || !change.dimensions?.width || !change.dimensions?.height) continue;
+
+        const scaleX = change.dimensions.width / oldW;
+        const scaleY = change.dimensions.height / oldH;
+
+        const otherSelected = nodes.filter(n => n.selected && n.id !== change.id);
+        for (const other of otherSelected) {
+          const ow = other.measured?.width ?? other.width;
+          const oh = other.measured?.height ?? other.height;
+          if (!ow || !oh) continue;
+          if (dimensionChanges.some(dc => dc.id === other.id)) continue;
+
+          additionalChanges.push({
+            id: other.id,
+            type: 'dimensions',
+            resizing: true,
+            dimensions: {
+              width: ow * scaleX,
+              height: oh * scaleY,
+            },
+          });
+        }
+      }
+
+      if (additionalChanges.length > 0) {
+        onNodesChange([...changes, ...additionalChanges]);
+        return;
+      }
     }
 
     onNodesChange(changes);
@@ -1564,6 +1629,7 @@ function Flow() {
     <div className="app">
       <Sidebar
         onAddNode={onAddNode}
+        getViewportCenter={getViewportCenter}
         projectData={projectData}
         onLoadProject={onLoadProject}
         onNewProject={onNewProject}

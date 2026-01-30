@@ -38,6 +38,7 @@ const addToRecentFiles = (name: string, path: string) => {
 
 interface SidebarProps {
   onAddNode: (node: Node) => void;
+  getViewportCenter: () => { x: number; y: number };
   projectData: ProjectData;
   onLoadProject: (project: ProjectData) => void;
   onNewProject: () => void;
@@ -447,9 +448,11 @@ type PresetItem = {
   cardType?: string;
 };
 
-export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG, cascadeDirection, onCascadeDirectionChange }: SidebarProps) {
+export default function Sidebar({ onAddNode, getViewportCenter, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG, cascadeDirection, onCascadeDirectionChange }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const placementCounter = useRef(0);
+  const placementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     sources: true,
     processors: true,
@@ -507,15 +510,21 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
   };
 
   const addSavedPresetNode = useCallback((preset: NodePreset) => {
-    // Create a new node from saved preset data
+    const basePos = getViewportCenter();
+    const offset = placementCounter.current * 30;
+    const pos = { x: basePos.x + offset, y: basePos.y + offset };
+    placementCounter.current += 1;
+    if (placementTimer.current) clearTimeout(placementTimer.current);
+    placementTimer.current = setTimeout(() => { placementCounter.current = 0; }, 2000);
+
     const node: Node = {
       id: uuidv4(),
       type: preset.nodeType,
-      position: { x: 100, y: 100 },
+      position: pos,
       data: { ...preset.data },
     };
     onAddNode(node);
-  }, [onAddNode]);
+  }, [onAddNode, getViewportCenter]);
 
   const handleDeleteSavedPreset = useCallback(async (presetId: string) => {
     if (confirm('Delete this saved node configuration?')) {
@@ -587,6 +596,14 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
   }, []);
 
   const addPresetNode = useCallback((preset: PresetItem) => {
+    // Compute viewport-centered position with stagger offset
+    const basePos = getViewportCenter();
+    const offset = placementCounter.current * 30;
+    const position = { x: basePos.x + offset, y: basePos.y + offset };
+    placementCounter.current += 1;
+    if (placementTimer.current) clearTimeout(placementTimer.current);
+    placementTimer.current = setTimeout(() => { placementCounter.current = 0; }, 2000);
+
     let node: Node;
 
     if (preset.type === 'processor' || preset.type === 'switcher') {
@@ -607,7 +624,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: preset.type,
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: preset.name,
           color: preset.color,
@@ -627,7 +644,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'router',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: preset.name,
           color: preset.color,
@@ -638,7 +655,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'ledWall',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: preset.name,
           color: preset.color,
@@ -648,7 +665,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'barcoE3',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: preset.name,
           color: preset.color,
@@ -681,7 +698,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'card',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: preset.name,
           color: preset.color,
@@ -701,7 +718,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'note',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: 'NOTES',
           content: '',
@@ -713,7 +730,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'note',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: 'Use Image button to import',
           content: '',
@@ -736,7 +753,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       node = {
         id: uuidv4(),
         type: 'genericIO',
-        position: { x: 100, y: 100 },
+        position,
         data: {
           label: preset.name,
           color: preset.color,
@@ -747,7 +764,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
     }
 
     onAddNode(node);
-  }, [onAddNode]);
+  }, [onAddNode, getViewportCenter]);
 
 
   const handleSave = useCallback(() => {
@@ -878,10 +895,17 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
         const reader = new FileReader();
         reader.onload = (e) => {
           const imageUrl = e.target?.result as string;
+          const basePos = getViewportCenter();
+          const offset = placementCounter.current * 30;
+          const pos = { x: basePos.x + offset, y: basePos.y + offset };
+          placementCounter.current += 1;
+          if (placementTimer.current) clearTimeout(placementTimer.current);
+          placementTimer.current = setTimeout(() => { placementCounter.current = 0; }, 2000);
+
           const node: Node = {
             id: uuidv4(),
             type: 'image',
-            position: { x: 100, y: 100 },
+            position: pos,
             data: {
               label: file.name,
               imageUrl,
@@ -893,7 +917,7 @@ export default function Sidebar({ onAddNode, projectData, onLoadProject, onNewPr
       }
       event.target.value = '';
     },
-    [onAddNode]
+    [onAddNode, getViewportCenter]
   );
 
   const handleDeleteProject = useCallback(async () => {

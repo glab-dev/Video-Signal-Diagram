@@ -51,8 +51,20 @@ export const CHANGELOG: Record<string, string[]> = {
   ],
 };
 
-// Returns the changelog entries for the current version, or null if already seen
-export function getNewChangelog(currentVersion: string): { version: string; changes: string[] } | null {
+// Compare two semver strings; returns negative if a < b, 0 if equal, positive if a > b
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na !== nb) return na - nb;
+  }
+  return 0;
+}
+
+// Returns changelog entries for all versions since the last seen version, or null if already seen
+export function getNewChangelog(currentVersion: string): { version: string; entries: { version: string; changes: string[] }[] } | null {
   const LAST_SEEN_KEY = 'vsf-last-seen-version';
   const lastSeen = localStorage.getItem(LAST_SEEN_KEY);
 
@@ -60,13 +72,19 @@ export function getNewChangelog(currentVersion: string): { version: string; chan
     return null;
   }
 
-  const changes = CHANGELOG[currentVersion];
-  if (changes) {
-    return { version: currentVersion, changes };
+  // Collect all versions newer than lastSeen (or all if no lastSeen)
+  const allVersions = Object.keys(CHANGELOG)
+    .filter(v => !lastSeen || compareVersions(v, lastSeen) > 0)
+    .filter(v => compareVersions(v, currentVersion) <= 0)
+    .sort((a, b) => compareVersions(b, a)); // newest first
+
+  const entries = allVersions.map(v => ({ version: v, changes: CHANGELOG[v] }));
+
+  if (entries.length === 0) {
+    return { version: currentVersion, entries: [{ version: currentVersion, changes: ['App updated — enjoy the latest improvements!'] }] };
   }
 
-  // Always show popup on version change, even without specific entries
-  return { version: currentVersion, changes: ['App updated — enjoy the latest improvements!'] };
+  return { version: currentVersion, entries };
 }
 
 export function markVersionSeen(version: string) {

@@ -45,7 +45,7 @@ export default function RightPanel({
   onApplyToSelected,
 }: RightPanelProps) {
   // What's New popup state
-  const [whatsNew, setWhatsNew] = useState<{ version: string; changes: string[] } | null>(null);
+  const [whatsNew, setWhatsNew] = useState<{ version: string; entries: { version: string; changes: string[] }[] } | null>(null);
 
   // Section collapse and order state
   const [sizingExpanded, setSizingExpanded] = useState(true);
@@ -292,16 +292,21 @@ export default function RightPanel({
       {whatsNew && (
         <div className="whats-new-popup">
           <div className="whats-new-header">
-            <span className="whats-new-title">What's New in v{whatsNew.version}</span>
+            <span className="whats-new-title">What's New</span>
             <button className="whats-new-close" onClick={handleDismissWhatsNew} title="Close">
               ×
             </button>
           </div>
-          <ul className="whats-new-list">
-            {whatsNew.changes.map((change, i) => (
-              <li key={i}>{change}</li>
-            ))}
-          </ul>
+          {whatsNew.entries.map((entry) => (
+            <div key={entry.version} className="whats-new-version">
+              <div className="whats-new-version-label">v{entry.version}</div>
+              <ul className="whats-new-list">
+                {entry.changes.map((change, i) => (
+                  <li key={i}>{change}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       )}
 

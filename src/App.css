@@ -2841,6 +2841,26 @@
   color: #3e2723;
 }
 
+.whats-new-popup {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.whats-new-version {
+  margin-bottom: 8px;
+}
+
+.whats-new-version:last-child {
+  margin-bottom: 0;
+}
+
+.whats-new-version-label {
+  font-weight: 600;
+  font-size: 11px;
+  color: #5d4037;
+  margin-bottom: 2px;
+}
+
 .whats-new-list {
   margin: 0;
   padding: 0 0 0 16px;
