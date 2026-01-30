@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.17': [
+    'Group resize, viewport-aware node placement, and cumulative changelog',
+  ],
   '1.0.16': [
     'Remove unused variables breaking production build',
   ],
