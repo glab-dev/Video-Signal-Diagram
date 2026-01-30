@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.23': [
+    'Switch node scaling from transform to CSS zoom',
+  ],
   '1.0.22': [
     'Collapse scaled content layout overflow blocking resize handles',
   ],
