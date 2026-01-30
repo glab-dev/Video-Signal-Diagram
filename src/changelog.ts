@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.33': [
+    'Prevent crash during drag-select by stabilizing handleNodesChange',
+  ],
   '1.0.32': [
     'Revert CSS zoom to transform: scale() — zoom breaks React Flow coordinates',
   ],
