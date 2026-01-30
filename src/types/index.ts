@@ -178,3 +178,42 @@ export const PAPER_SIZES: Record<string, PaperDimensions> = {
 
 export type PaperSize = keyof typeof PAPER_SIZES;
 export type Orientation = 'portrait' | 'landscape';
+
+// Gear Builder types
+export interface GearConfig {
+  nodeType: CustomNodeType;
+  label: string;
+  color: string;
+  layout: 'stacked' | 'sideBySide';
+
+  // Input/Output configuration
+  inputs: GearPort[];
+  outputs: GearPort[];
+
+  // System settings
+  verticalSpacing?: number;
+  ipAddress?: string;
+
+  // Extensibility - future settings can be added here
+  customSettings?: Record<string, unknown>;
+}
+
+export interface GearPort {
+  id: string;
+  name: string;
+  type?: string;        // e.g., 'HDMI', 'SDI', 'DP'
+  resolution?: string;
+  connection?: string;  // source/destination label
+}
+
+// Cable Tally types
+export interface CableTallyItem {
+  cableType: string;
+  cableLength: string;
+  count: number;
+}
+
+export interface CableTally {
+  items: CableTallyItem[];
+  totalCables: number;
+}

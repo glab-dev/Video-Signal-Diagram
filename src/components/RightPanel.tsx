@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { PaperSize, Orientation } from '../types';
+import type { Edge } from '@xyflow/react';
+import type { PaperSize, Orientation, GearConfig } from '../types';
 import { PAPER_SIZES } from '../types';
 import { getNewChangelog, markVersionSeen } from '../changelog';
+import { GearBuilder } from './GearBuilder';
+import CableTallySection from './CableTallySection';
 
 interface RightPanelProps {
   paperSize: PaperSize;
@@ -11,6 +14,9 @@ interface RightPanelProps {
   onPaperSizeChange: (size: PaperSize) => void;
   onOrientationChange: (orientation: Orientation) => void;
   onCustomSizeChange: (width: number, height: number) => void;
+  edges: Edge[];
+  onAddGearNode: (config: GearConfig) => void;
+  onSaveGearPreset: (config: GearConfig) => void;
 }
 
 export default function RightPanel({
@@ -21,6 +27,9 @@ export default function RightPanel({
   onPaperSizeChange,
   onOrientationChange,
   onCustomSizeChange,
+  edges,
+  onAddGearNode,
+  onSaveGearPreset,
 }: RightPanelProps) {
   // What's New popup state
   const [whatsNew, setWhatsNew] = useState<{ version: string; changes: string[] } | null>(null);
@@ -153,6 +162,15 @@ export default function RightPanel({
           <div>{currentDims.width} × {currentDims.height} px</div>
         </div>
       </div>
+
+      {/* Gear Builder Section */}
+      <GearBuilder
+        onAddToCanvas={onAddGearNode}
+        onSavePreset={onSaveGearPreset}
+      />
+
+      {/* Cable Tally Section */}
+      <CableTallySection edges={edges} />
     </div>
   );
 }

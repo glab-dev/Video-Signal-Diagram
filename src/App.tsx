@@ -27,8 +27,9 @@ import { PageOverlay } from './components/PageOverlay';
 import { usePageGrid } from './hooks/usePageGrid';
 import { useNodeSummaries, NodeSummariesContext } from './hooks/useNodeSummaries';
 import type { EdgeData } from './components/EdgeLabelEditor';
-import type { ProjectData, GenericIONodeData } from './types';
+import type { ProjectData, GenericIONodeData, GearConfig, NodePreset } from './types';
 import { PAPER_SIZES, type PaperSize, type Orientation } from './types';
+import { savePreset } from './store/db';
 import './App.css';
 
 // Cascade Lock Context - for sharing cascade lock functionality with nodes
@@ -107,6 +108,66 @@ function Flow() {
     setCustomHeight(height);
     localStorage.setItem('customWidth', width.toString());
     localStorage.setItem('customHeight', height.toString());
+  }, []);
+
+  // Gear Builder handlers
+  const handleAddGearNode = useCallback((config: GearConfig) => {
+    // Create a new node from the gear config
+    const newNode: Node = {
+      id: uuidv4(),
+      type: config.nodeType,
+      position: { x: 400, y: 300 }, // Center of typical viewport
+      data: {
+        label: config.label,
+        color: config.color,
+        layout: config.layout,
+        ipAddress: config.ipAddress,
+        inputs: config.inputs.map(p => ({
+          id: p.id,
+          name: p.name,
+          type: p.type || 'HDMI',
+        })),
+        outputs: config.outputs.map(p => ({
+          id: p.id,
+          name: p.name,
+          type: p.type || 'HDMI',
+        })),
+      },
+    };
+    setNodes(nds => [...nds, newNode]);
+  }, [setNodes]);
+
+  const handleSaveGearPreset = useCallback(async (config: GearConfig) => {
+    const presetName = prompt('Enter a name for this preset:', config.label);
+    if (!presetName) return;
+
+    const preset: NodePreset = {
+      id: uuidv4(),
+      name: presetName,
+      nodeType: config.nodeType,
+      data: {
+        label: config.label,
+        color: config.color,
+        layout: config.layout,
+        ipAddress: config.ipAddress,
+        inputs: config.inputs.map(p => ({
+          id: p.id,
+          name: p.name,
+          type: p.type || 'HDMI',
+        })),
+        outputs: config.outputs.map(p => ({
+          id: p.id,
+          name: p.name,
+          type: p.type || 'HDMI',
+        })),
+      } as GenericIONodeData,
+      category: 'basic',
+      createdAt: Date.now(),
+    };
+
+    await savePreset(preset);
+    // Dispatch event so sidebar can refresh
+    window.dispatchEvent(new CustomEvent('presetSaved'));
   }, []);
 
   const toggleMiniMap = useCallback(() => {
@@ -325,7 +386,7 @@ function Flow() {
     toggleCascadeLock,
   };
 
-  // Custom nodes change handler that handles locked cascade movement
+  // Custom nodes change handler that handles locked cascade movement and z-order
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
     // Check for position changes on locked cascade nodes
     const positionChanges = changes.filter(
@@ -347,10 +408,16 @@ function Flow() {
 
         processedGroups.add(lockId);
 
-        // Get all nodes in this locked group
+        // Get all nodes in this locked group, sorted by their label number
         const groupNodes = nodes.filter(n => {
           const data = getGenericIOData(n);
           return data?.cascadeLockId === lockId;
+        }).sort((a, b) => {
+          const dataA = getGenericIOData(a);
+          const dataB = getGenericIOData(b);
+          const numA = extractLabelNumber(dataA?.label || '');
+          const numB = extractLabelNumber(dataB?.label || '');
+          return numA - numB;
         });
 
         // Calculate the delta from the dragged node
@@ -381,8 +448,120 @@ function Flow() {
       }
     }
 
+    // Handle selection changes - maintain z-order for cascade groups
+    const selectionChanges = changes.filter(c => c.type === 'select');
+    if (selectionChanges.length > 0) {
+      // After applying changes, ensure cascade groups maintain relative z-order
+      onNodesChange(changes);
+
+      // Set z-indices for cascade groups to maintain stacking order
+      const processedLockIds = new Set<string>();
+      setNodes(nds => {
+        let needsZUpdate = false;
+        const updatedNodes = nds.map(n => n); // Copy array
+
+        for (const node of updatedNodes) {
+          const nodeData = getGenericIOData(node);
+          const lockId = nodeData?.cascadeLockId;
+          if (!lockId || processedLockIds.has(lockId)) continue;
+          processedLockIds.add(lockId);
+
+          // Get all nodes in this group, sorted by label number
+          const groupNodes = updatedNodes
+            .filter(gn => {
+              const data = getGenericIOData(gn);
+              return data?.cascadeLockId === lockId;
+            })
+            .sort((a, b) => {
+              const dataA = getGenericIOData(a);
+              const dataB = getGenericIOData(b);
+              const numA = extractLabelNumber(dataA?.label || '');
+              const numB = extractLabelNumber(dataB?.label || '');
+              return numA - numB;
+            });
+
+          // Assign z-indices: first node gets lowest, last gets highest
+          groupNodes.forEach((gn, index) => {
+            const targetZIndex = 1000 + index;
+            const nodeIndex = updatedNodes.findIndex(un => un.id === gn.id);
+            if (nodeIndex !== -1 && updatedNodes[nodeIndex].zIndex !== targetZIndex) {
+              needsZUpdate = true;
+              updatedNodes[nodeIndex] = { ...updatedNodes[nodeIndex], zIndex: targetZIndex };
+            }
+          });
+        }
+
+        return needsZUpdate ? updatedNodes : nds;
+      });
+      return;
+    }
+
     onNodesChange(changes);
-  }, [nodes, getGenericIOData, onNodesChange]);
+  }, [nodes, getGenericIOData, extractLabelNumber, onNodesChange, setNodes]);
+
+  // Sync settings across cascade-locked groups
+  // The master node (lowest label number, with the lock button) controls settings for the group
+  useEffect(() => {
+    // Build lock groups: lockId -> nodes sorted by label number
+    const lockGroups = new Map<string, Node[]>();
+
+    nodes.forEach(node => {
+      const data = getGenericIOData(node);
+      if (data?.cascadeLockId) {
+        const group = lockGroups.get(data.cascadeLockId) || [];
+        group.push(node);
+        lockGroups.set(data.cascadeLockId, group);
+      }
+    });
+
+    // For each group, sync settings from master (first node) to all others
+    let needsUpdate = false;
+    const updatedNodes = [...nodes];
+
+    lockGroups.forEach((groupNodes) => {
+      if (groupNodes.length < 2) return;
+
+      // Sort by label number - first node is the master
+      const sortedGroup = groupNodes.sort((a, b) => {
+        const dataA = getGenericIOData(a);
+        const dataB = getGenericIOData(b);
+        const numA = extractLabelNumber(dataA?.label || '');
+        const numB = extractLabelNumber(dataB?.label || '');
+        return numA - numB;
+      });
+
+      const masterNode = sortedGroup[0];
+      const masterData = getGenericIOData(masterNode);
+      if (!masterData) return;
+
+      // Apply master's settings to all other nodes in the group
+      for (let i = 1; i < sortedGroup.length; i++) {
+        const followerNode = sortedGroup[i];
+        const followerData = getGenericIOData(followerNode);
+        if (!followerData) continue;
+
+        // Check if settings differ from master
+        if (followerData.color !== masterData.color || followerData.layout !== masterData.layout) {
+          needsUpdate = true;
+          const nodeIndex = updatedNodes.findIndex(n => n.id === followerNode.id);
+          if (nodeIndex !== -1) {
+            updatedNodes[nodeIndex] = {
+              ...updatedNodes[nodeIndex],
+              data: {
+                ...updatedNodes[nodeIndex].data,
+                color: masterData.color,
+                layout: masterData.layout,
+              }
+            };
+          }
+        }
+      }
+    });
+
+    if (needsUpdate) {
+      setNodes(updatedNodes);
+    }
+  }, [nodes, getGenericIOData, extractLabelNumber, setNodes]);
 
   // History tracking for undo/redo
   const [history, setHistory] = useState<HistoryState[]>([{ nodes: [], edges: [] }]);
@@ -1438,6 +1617,9 @@ function Flow() {
         onPaperSizeChange={handlePaperSizeChange}
         onOrientationChange={handleOrientationChange}
         onCustomSizeChange={handleCustomSizeChange}
+        edges={edges}
+        onAddGearNode={handleAddGearNode}
+        onSaveGearPreset={handleSaveGearPreset}
       />
 
       {editingEdge && (
