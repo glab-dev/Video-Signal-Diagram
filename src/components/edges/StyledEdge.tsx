@@ -49,6 +49,27 @@ function StyledEdge({
 
   return (
     <>
+      {/* Invisible interaction zone for easier clicking/selection */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        className="react-flow__edge-interaction"
+      />
+
+      {/* Selection highlight (behind main edge) */}
+      {selected && (
+        <path
+          className="react-flow__edge-path edge-selection-highlight"
+          d={edgePath}
+          strokeWidth={baseStrokeWidth + 8}
+          stroke="rgba(0, 170, 255, 0.4)"
+          strokeLinecap="round"
+          fill="none"
+        />
+      )}
+
       {/* White outline behind the main edge */}
       {showOutline && (
         <path
@@ -74,18 +95,6 @@ function StyledEdge({
         }}
         className={animated ? 'edge-animated' : ''}
       />
-
-      {/* Selection highlight */}
-      {selected && (
-        <path
-          className="react-flow__edge-path edge-selection-highlight"
-          d={edgePath}
-          strokeWidth={baseStrokeWidth + 8}
-          stroke="rgba(0, 170, 255, 0.3)"
-          strokeLinecap="round"
-          fill="none"
-        />
-      )}
 
       {/* Animated flow indicator */}
       {animated && (
