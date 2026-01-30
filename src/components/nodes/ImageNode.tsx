@@ -59,12 +59,6 @@ function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
 
   return (
     <>
-      <NodeResizer
-        isVisible={selected}
-        minWidth={100}
-        minHeight={100}
-        keepAspectRatio
-      />
       <div ref={contentRef} style={scaleStyle}>
       <div className={`node-image ${selected ? 'selected' : ''}`}>
         <div className="image-label">
@@ -95,6 +89,12 @@ function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
         />
       </div>
       </div>
+      <NodeResizer
+        isVisible={selected}
+        minWidth={100}
+        minHeight={100}
+        keepAspectRatio
+      />
     </>
   );
 }

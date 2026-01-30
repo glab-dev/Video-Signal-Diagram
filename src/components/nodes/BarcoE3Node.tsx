@@ -770,14 +770,6 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         height: nodeHeight,
       }}
     >
-      <NodeResizer
-        minWidth={600}
-        minHeight={300}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
-      />
       <div ref={scaleRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#006400' }}>
         <EditableTitle value={data.label} placeholder="Barco E3" onChange={updateLabel} className="node-title light" />
@@ -855,6 +847,14 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         )}
       </div>
       </div>
+      <NodeResizer
+        minWidth={600}
+        minHeight={300}
+        keepAspectRatio
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
     </div>
   );
 }

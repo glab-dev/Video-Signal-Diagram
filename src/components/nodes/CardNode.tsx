@@ -190,15 +190,6 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
         height: nodeHeight,
       }}
     >
-      <NodeResizer
-        minWidth={280}
-        minHeight={150}
-        maxWidth={500}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
-      />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || (data.cardType === 'input' ? '#4a9eff' : '#50e3c2') }}>
         <EditableTitle value={data.label} placeholder="Card Name" onChange={updateLabel} className="node-title light" />
@@ -321,6 +312,15 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
         <button className="add-connector-btn" onClick={addConnector}>+ Add Connector</button>
       </div>
       </div>
+      <NodeResizer
+        minWidth={280}
+        minHeight={150}
+        maxWidth={500}
+        keepAspectRatio
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
     </div>
   );
 }

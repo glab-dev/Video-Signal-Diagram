@@ -518,14 +518,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
         height: nodeHeight,
       }}
     >
-      <NodeResizer
-        minWidth={280}
-        minHeight={120}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
-      />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#4a148c' }}>
         <EditableTitle value={data.label} placeholder="Switcher Name" onChange={updateLabel} className="node-title light" />
@@ -773,6 +765,14 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
         </div>
       </div>
       </div>
+      <NodeResizer
+        minWidth={280}
+        minHeight={120}
+        keepAspectRatio
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
     </div>
   );
 }

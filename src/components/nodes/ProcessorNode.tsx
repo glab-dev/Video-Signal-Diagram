@@ -236,14 +236,6 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
         height: nodeHeight,
       }}
     >
-      <NodeResizer
-        minWidth={300}
-        minHeight={150}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
-      />
       <div ref={contentRef} style={scaleStyle}>
       <div className="node-header" style={{ backgroundColor: data.color || '#0088cc' }}>
         <EditableTitle value={data.label} placeholder="Processor Name" onChange={updateLabel} className="node-title light" />
@@ -492,6 +484,14 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
         </div>
       </div>
       </div>
+      <NodeResizer
+        minWidth={300}
+        minHeight={150}
+        keepAspectRatio
+        isVisible={selected}
+        lineStyle={{ borderColor: '#00aaff' }}
+        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+      />
     </div>
   );
 }

@@ -70,14 +70,6 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
         height: nodeHeight,
       }}
     >
-      <NodeResizer
-        minWidth={160}
-        minHeight={80}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#333' }}
-        handleStyle={{ backgroundColor: '#333', width: 8, height: 8 }}
-      />
       <div ref={contentRef} style={scaleStyle}>
       <div className="note-header">
         <EditableTitle value={data.label} placeholder="Note Title" onChange={updateLabel} className="note-title" />
@@ -106,6 +98,14 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
         placeholder="Enter notes here..."
       />
       </div>
+      <NodeResizer
+        minWidth={160}
+        minHeight={80}
+        keepAspectRatio
+        isVisible={selected}
+        lineStyle={{ borderColor: '#333' }}
+        handleStyle={{ backgroundColor: '#333', width: 8, height: 8 }}
+      />
     </div>
   );
 }
