@@ -2809,6 +2809,9 @@
   color: #333;
   font-size: 11px;
   line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .whats-new-header {
@@ -2839,11 +2842,6 @@
 .whats-new-close:hover {
   background: rgba(0, 0, 0, 0.1);
   color: #3e2723;
-}
-
-.whats-new-popup {
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 .whats-new-version {
