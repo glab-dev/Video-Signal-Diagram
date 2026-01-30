@@ -13,7 +13,7 @@ import {
   getViewportForBounds,
   SelectionMode,
 } from '@xyflow/react';
-import type { Connection, Edge, Node, NodeChange, NodePositionChange, NodeDimensionChange } from '@xyflow/react';
+import type { Connection, Edge, Node, NodeChange, NodePositionChange, NodeDimensionChange, OnSelectionChangeParams } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
 import { toPng } from 'html-to-image';
@@ -1233,6 +1233,29 @@ function Flow() {
     centerPage();
   }, [nodes.length, setNodes, setEdges, centerPage]);
 
+  // Auto-select edges between selected nodes when drag selection ends
+  const onSelectionChange = useCallback(
+    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+      if (selectedNodes.length > 0) {
+        const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
+
+        // Find all edges that connect selected nodes
+        const edgesToSelect = edges.filter(e =>
+          selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
+        );
+
+        if (edgesToSelect.length > 0) {
+          // Select these edges
+          setEdges(eds => eds.map(e => ({
+            ...e,
+            selected: edgesToSelect.some(es => es.id === e.id) ? true : e.selected
+          })));
+        }
+      }
+    },
+    [edges, setEdges]
+  );
+
   const onEdgeDoubleClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
       // Check if multiple edges are selected
@@ -1747,6 +1770,7 @@ function Flow() {
           onDragOver={onDragOver}
           onDrop={onDrop}
           onInit={centerPage}
+          onSelectionChange={onSelectionChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
@@ -1757,6 +1781,7 @@ function Flow() {
           selectionOnDrag
           selectionMode={SelectionMode.Full}
           edgesReconnectable={false}
+          edgesFocusable
           selectNodesOnDrag
           panOnDrag={[1]}
           minZoom={0.005}
