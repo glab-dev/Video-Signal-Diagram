@@ -67,8 +67,6 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id, permanentSources]);
 
-  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
-
   // Get destinations with colors - category overrides + pure destination nodes (input-only)
   const destinationsWithColors = useMemo(() => {
     // Start with category overrides marked as 'destination'
@@ -105,8 +103,6 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
     const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id, permanentSources]);
-
-  const destinationNames = useMemo(() => destinationsWithColors.map(d => d.label), [destinationsWithColors]);
 
   const nodeColor = data.color || '#0088cc';
 

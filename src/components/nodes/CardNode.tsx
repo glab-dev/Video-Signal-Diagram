@@ -67,8 +67,6 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id, permanentSources]);
 
-  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
-
   // Get destinations with colors - category overrides + pure destination nodes (input-only)
   const destinationsWithColors = useMemo(() => {
     // Start with category overrides marked as 'destination'
@@ -105,8 +103,6 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
     const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id, permanentSources]);
-
-  const destinationNames = useMemo(() => destinationsWithColors.map(d => d.label), [destinationsWithColors]);
 
   const updateLabel = useCallback(
     (value: string) => {

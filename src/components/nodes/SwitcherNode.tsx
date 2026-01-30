@@ -102,9 +102,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id, permanentSources]);
 
-  // For backwards compatibility, also get just the names
-  const sourceNames = useMemo(() => sourcesWithColors.map(s => s.label), [sourcesWithColors]);
-
   const nodeColor = data.color || '#0088cc';
 
   // Handle drag start for category override drop zone
