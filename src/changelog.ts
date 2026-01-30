@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.14': [
+    'Add inline editing for node titles and source/destination dropdowns, auto-generate changelog',
+  ],
   '1.0.13': [
     'Collapsible and reorderable sections in right panel',
     'Drag-and-drop section reordering with drag handles',
