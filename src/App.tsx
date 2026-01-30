@@ -453,6 +453,11 @@ function Flow() {
 
   // Custom nodes change handler that handles locked cascade movement and z-order
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // Use ref for current nodes to avoid recreating this callback on every
+    // nodes state change. During drag-select over many nodes, a new callback
+    // on every render causes excessive React Flow prop changes and can crash.
+    const currentNodes = nodesRef.current;
+
     // Check for position changes on locked cascade nodes
     const positionChanges = changes.filter(
       (c): c is NodePositionChange => c.type === 'position' && c.dragging === true
@@ -464,7 +469,7 @@ function Flow() {
       const additionalChanges: NodePositionChange[] = [];
 
       for (const change of positionChanges) {
-        const node = nodes.find(n => n.id === change.id);
+        const node = currentNodes.find(n => n.id === change.id);
         if (!node) continue;
 
         const nodeData = getGenericIOData(node);
@@ -474,7 +479,7 @@ function Flow() {
         processedGroups.add(lockId);
 
         // Get all nodes in this locked group, sorted by their label number
-        const groupNodes = nodes.filter(n => {
+        const groupNodes = currentNodes.filter(n => {
           const data = getGenericIOData(n);
           return data?.cascadeLockId === lockId;
         }).sort((a, b) => {
@@ -520,8 +525,10 @@ function Flow() {
       onNodesChange(changes);
 
       // Set z-indices for cascade groups to maintain stacking order
-      const processedLockIds = new Set<string>();
+      // processedLockIds must be inside the callback for StrictMode compatibility
+      // (StrictMode double-invokes updater functions)
       setNodes(nds => {
+        const processedLockIds = new Set<string>();
         let needsZUpdate = false;
         const updatedNodes = nds.map(n => n); // Copy array
 
@@ -571,7 +578,7 @@ function Flow() {
 
     if (dimensionChanges.length > 0) {
       for (const change of dimensionChanges) {
-        const node = nodes.find(n => n.id === change.id);
+        const node = currentNodes.find(n => n.id === change.id);
         if (!node || !node.selected) continue;
 
         const oldW = node.measured?.width ?? node.width;
@@ -581,7 +588,7 @@ function Flow() {
         const scaleX = change.dimensions.width / oldW;
         const scaleY = change.dimensions.height / oldH;
 
-        const otherSelected = nodes.filter(n => n.selected && n.id !== change.id);
+        const otherSelected = currentNodes.filter(n => n.selected && n.id !== change.id);
         if (otherSelected.length === 0) continue;
 
         // Use the resized node as anchor — other nodes move toward/away from it
@@ -617,7 +624,7 @@ function Flow() {
     }
 
     onNodesChange(changes);
-  }, [nodes, getGenericIOData, extractLabelNumber, onNodesChange, setNodes]);
+  }, [getGenericIOData, extractLabelNumber, onNodesChange, setNodes]);
 
   // Sync settings across cascade-locked groups
   // The master node (lowest label number, with the lock button) controls settings for the group
