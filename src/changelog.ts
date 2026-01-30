@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.31': [
+    'Add edge drag-selection: edges between selected nodes auto-select',
+  ],
   '1.0.30': [
     'Switch from transform: scale() to CSS zoom for node scaling',
   ],
