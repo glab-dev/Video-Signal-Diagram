@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.34': [
+    'Add connector type dropdown to GenericIONode inputs',
+  ],
   '1.0.33': [
     'Prevent crash during drag-select by stabilizing handleNodesChange',
   ],
