@@ -27,7 +27,7 @@ type ProcessorNodeProps = NodeProps & {
 };
 
 function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
@@ -214,6 +214,7 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
             currentLabel={data.label}
             onLoadPreset={handleLoadPreset}
             onRename={updateLabel}
+            onDelete={() => deleteElements({ nodes: [{ id }] })}
           />
           <button
             className="layout-toggle-btn nodrag"

@@ -143,6 +143,7 @@ export type NodeData =
 export type CustomNodeType =
   | 'router'
   | 'processor'
+  | 'switcher'
   | 'ledWall'
   | 'note'
   | 'genericIO'

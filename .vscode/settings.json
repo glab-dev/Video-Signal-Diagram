@@ -1,0 +1,14 @@
+{
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, .gitignore, eslint.config.js, playwright.config.ts, vitest.config.ts, CLAUDE.md",
+    "tsconfig.json": "tsconfig.*.json",
+    "vite.config.ts": "index.html"
+  },
+  "files.exclude": {
+    "dist": true,
+    "test-results": true,
+    "playwright-report": true
+  }
+}

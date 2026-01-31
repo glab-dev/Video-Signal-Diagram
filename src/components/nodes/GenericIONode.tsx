@@ -6,7 +6,7 @@ import { CONNECTOR_GROUPS } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
-import { CascadeLockContext } from '../../App';
+import { CascadeLockContext } from '../../contexts/CascadeLockContext';
 import EditableTitle from '../EditableTitle';
 
 type GenericIONodeProps = NodeProps & {
@@ -34,7 +34,7 @@ const TABLE_HEADER_HEIGHT = 24;
 const ROW_HEIGHT = 32;
 
 function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
 
   // Track which port is temporarily showing dropdown (for switching from Custom to preset)
@@ -380,6 +380,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
             currentLabel={data.label}
             onLoadPreset={handleLoadPreset}
             onRename={updateLabel}
+            onDelete={() => deleteElements({ nodes: [{ id }] })}
           />
           <button
             className="layout-toggle-btn nodrag"

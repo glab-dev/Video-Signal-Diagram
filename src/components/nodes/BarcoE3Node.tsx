@@ -47,7 +47,7 @@ type BarcoE3NodeProps = NodeProps & {
 };
 
 function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
@@ -780,6 +780,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
           onReset={handleReset}
+          onDelete={() => deleteElements({ nodes: [{ id }] })}
         />
         <button
           className="layout-toggle-btn nodrag"

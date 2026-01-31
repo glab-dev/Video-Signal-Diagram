@@ -61,7 +61,7 @@ type SwitcherNodeProps = NodeProps & {
 };
 
 function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
@@ -535,6 +535,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
           onReset={handleReset}
+          onDelete={() => deleteElements({ nodes: [{ id }] })}
         />
         <button
           className="category-drag-btn nodrag"

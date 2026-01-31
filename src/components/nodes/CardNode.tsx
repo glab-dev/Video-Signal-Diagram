@@ -27,7 +27,7 @@ type CardNodeProps = NodeProps & {
 };
 
 function CardNode({ id, data, selected, width, height }: CardNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
@@ -201,6 +201,7 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
           currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
+          onDelete={() => deleteElements({ nodes: [{ id }] })}
         />
         <button
           className="layout-toggle-btn"

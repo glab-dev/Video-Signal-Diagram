@@ -11,7 +11,7 @@ type ImageNodeProps = NodeProps & {
 };
 
 function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateLabel = useCallback(
@@ -69,6 +69,7 @@ function ImageNode({ id, data, selected, width, height }: ImageNodeProps) {
             currentLabel={data.label}
             onLoadPreset={handleLoadPreset}
             onRename={updateLabel}
+            onDelete={() => deleteElements({ nodes: [{ id }] })}
           />
         </div>
         {data.imageUrl ? (

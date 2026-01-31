@@ -10,9 +10,10 @@ interface PresetMenuProps {
   onLoadPreset: (data: NodeData) => void;
   onRename?: (newLabel: string) => void;
   onReset?: () => void;
+  onDelete?: () => void;
 }
 
-export default function PresetMenu({ nodeType, currentData, currentLabel, onLoadPreset, onRename, onReset }: PresetMenuProps) {
+export default function PresetMenu({ nodeType, currentData, currentLabel, onLoadPreset, onRename, onReset, onDelete }: PresetMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [presets, setPresets] = useState<NodePreset[]>([]);
   const [_showPresetList, setShowPresetList] = useState(false);
@@ -231,6 +232,24 @@ export default function PresetMenu({ nodeType, currentData, currentLabel, onLoad
                 }}
               >
                 🔄 Reset to Default
+              </button>
+            </>
+          )}
+
+          {onDelete && (
+            <>
+              <div className="preset-menu-divider"></div>
+              <button
+                className="preset-menu-item preset-delete-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm('Delete this node?')) {
+                    onDelete();
+                    setIsOpen(false);
+                  }
+                }}
+              >
+                🗑️ Delete Node
               </button>
             </>
           )}

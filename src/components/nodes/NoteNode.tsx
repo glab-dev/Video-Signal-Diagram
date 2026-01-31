@@ -21,7 +21,7 @@ const NOTE_COLORS = [
 ];
 
 function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -79,6 +79,7 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
           currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
+          onDelete={() => deleteElements({ nodes: [{ id }] })}
         />
         <div className="note-color-picker nodrag" style={{ pointerEvents: 'auto' }}>
           {NOTE_COLORS.map((color) => (

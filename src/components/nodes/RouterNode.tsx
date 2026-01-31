@@ -27,7 +27,7 @@ type RouterNodeProps = NodeProps & {
 };
 
 function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
@@ -183,6 +183,7 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
             currentLabel={data.label}
             onLoadPreset={handleLoadPreset}
             onRename={updateLabel}
+            onDelete={() => deleteElements({ nodes: [{ id }] })}
           />
           <button
             className="category-drag-btn nodrag"

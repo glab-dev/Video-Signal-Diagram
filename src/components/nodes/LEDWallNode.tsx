@@ -22,7 +22,7 @@ type LEDWallNodeProps = NodeProps & {
 };
 
 function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
-  const { updateNodeData } = useReactFlow();
+  const { updateNodeData, deleteElements } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateLabel = useCallback(
@@ -96,6 +96,7 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
           currentLabel={data.label}
           onLoadPreset={handleLoadPreset}
           onRename={updateLabel}
+          onDelete={() => deleteElements({ nodes: [{ id }] })}
         />
       </div>
 
