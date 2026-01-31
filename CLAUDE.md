@@ -163,7 +163,7 @@ The dev server runs at `http://localhost:5173/Video-Signal-Diagram/`.
    ```
    Do NOT commit if any tests fail. If the dev server is not already running, Playwright will start it automatically.
 
-6. **Manual visual check:**
+6. **Manual visual check (MANDATORY — do NOT skip):**
    ```bash
    npm run test:check
    ```
@@ -173,7 +173,7 @@ The dev server runs at `http://localhost:5173/Video-Signal-Diagram/`.
    - Nodes render at the correct size (not collapsed or oversized)
    - Node labels are readable
 
-   Wait for user confirmation before proceeding to commit.
+   **STOP and WAIT for explicit user confirmation before proceeding.** Do NOT commit until the user has confirmed the app looks correct. This step is NOT optional — even if all automated tests pass, visual regressions can only be caught by a human.
 
 7. **Stage, commit, and push:**
    ```bash
