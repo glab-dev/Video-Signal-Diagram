@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.39': [
+    'Fix node sizing to properly fit content and align NodeResizer',
+  ],
   '1.0.38': [
     'Fix handle positioning by rendering outside scaled content',
   ],
