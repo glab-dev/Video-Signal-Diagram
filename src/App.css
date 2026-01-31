@@ -1427,9 +1427,11 @@
   cursor: grabbing !important;
 }
 
-/* Selection rectangle: default arrow */
+/* Selection rectangle: let events pass through so resize handles on all
+   selected nodes remain interactive. Group-dragging still works by dragging
+   any individual selected node. */
 .react-flow__nodesselection-rect {
-  cursor: default;
+  pointer-events: none !important;
 }
 
 /* Grab cursor limited to node header bars */
@@ -1679,6 +1681,15 @@
 }
 
 
+/* Scale content wrappers use pointer-events: none to prevent their oversized
+   layout boxes (at natural dimensions before CSS transform: scale) from
+   blocking resize handles and node selection clicks. Re-enable on all direct
+   children so buttons, inputs, handles, and other interactive content work.
+   pointer-events is inherited, so grandchildren inherit auto from children. */
+.react-flow__node [style*="pointer-events: none"] > * {
+  pointer-events: auto;
+}
+
 .react-flow__resize-control.handle {
   width: 10px !important;
   height: 10px !important;
@@ -1689,15 +1700,39 @@
   pointer-events: all !important;
 }
 
+/* Explicit cursor rules for each handle corner — ensures the resize cursor
+   always shows even when the parent node sets cursor: default !important */
+.react-flow__resize-control.handle.top.left,
+.react-flow__resize-control.handle.bottom.right {
+  cursor: nwse-resize !important;
+}
+
+.react-flow__resize-control.handle.top.right,
+.react-flow__resize-control.handle.bottom.left {
+  cursor: nesw-resize !important;
+}
+
+.react-flow__resize-control.handle.top:not(.left):not(.right),
+.react-flow__resize-control.handle.bottom:not(.left):not(.right) {
+  cursor: ns-resize !important;
+}
+
+.react-flow__resize-control.handle.left:not(.top):not(.bottom),
+.react-flow__resize-control.handle.right:not(.top):not(.bottom) {
+  cursor: ew-resize !important;
+}
+
 /* Invisible expanded hit area around resize handles */
 .react-flow__resize-control.handle::before {
   content: '';
   position: absolute;
-  top: -12px;
-  left: -12px;
-  right: -12px;
-  bottom: -12px;
+  top: -16px;
+  left: -16px;
+  right: -16px;
+  bottom: -16px;
+  z-index: 20;
   pointer-events: all;
+  cursor: inherit;
 }
 
 .react-flow__resize-control.line {
@@ -1706,11 +1741,23 @@
   pointer-events: all !important;
 }
 
+/* Explicit cursor rules for resize lines */
+.react-flow__resize-control.line.left,
+.react-flow__resize-control.line.right {
+  cursor: ew-resize !important;
+}
+
+.react-flow__resize-control.line.top,
+.react-flow__resize-control.line.bottom {
+  cursor: ns-resize !important;
+}
+
 /* Invisible expanded hit area on resize lines */
 .react-flow__resize-control.line::before {
   content: '';
   position: absolute;
   pointer-events: all;
+  cursor: inherit;
 }
 
 .react-flow__resize-control.line.left::before,

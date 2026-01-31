@@ -110,7 +110,7 @@ function NoteNode({ id, data, selected, width, height }: NoteNodeProps) {
         keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#333' }}
-        handleStyle={{ backgroundColor: '#333', width: 8, height: 8 }}
+        handleStyle={{ backgroundColor: '#333' }}
       />
     </div>
   );

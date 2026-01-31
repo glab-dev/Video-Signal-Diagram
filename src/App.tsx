@@ -298,18 +298,12 @@ function Flow() {
   const edgesRef = useRef<Edge[]>(edges);
   const cascadeDirectionRef = useRef<'right' | 'left'>(cascadeDirection);
 
-  // Keep refs in sync with state
-  useEffect(() => {
-    nodesRef.current = nodes;
-  }, [nodes]);
+  // Keep refs in sync with state — assign during render (not in useEffect)
+  // so they are always current when callbacks read them in the same frame
+  nodesRef.current = nodes;
+  copiedNodesRef.current = copiedNodes;
 
-  useEffect(() => {
-    copiedNodesRef.current = copiedNodes;
-  }, [copiedNodes]);
-
-  useEffect(() => {
-    edgesRef.current = edges;
-  }, [edges]);
+  edgesRef.current = edges;
 
   useEffect(() => {
     cascadeDirectionRef.current = cascadeDirection;
@@ -518,60 +512,10 @@ function Flow() {
       }
     }
 
-    // Handle selection changes - maintain z-order for cascade groups
-    const selectionChanges = changes.filter(c => c.type === 'select');
-    if (selectionChanges.length > 0) {
-      // After applying changes, ensure cascade groups maintain relative z-order
-      onNodesChange(changes);
-
-      // Set z-indices for cascade groups to maintain stacking order
-      // processedLockIds must be inside the callback for StrictMode compatibility
-      // (StrictMode double-invokes updater functions)
-      setNodes(nds => {
-        const processedLockIds = new Set<string>();
-        let needsZUpdate = false;
-        const updatedNodes = nds.map(n => n); // Copy array
-
-        for (const node of updatedNodes) {
-          const nodeData = getGenericIOData(node);
-          const lockId = nodeData?.cascadeLockId;
-          if (!lockId || processedLockIds.has(lockId)) continue;
-          processedLockIds.add(lockId);
-
-          // Get all nodes in this group, sorted by label number
-          const groupNodes = updatedNodes
-            .filter(gn => {
-              const data = getGenericIOData(gn);
-              return data?.cascadeLockId === lockId;
-            })
-            .sort((a, b) => {
-              const dataA = getGenericIOData(a);
-              const dataB = getGenericIOData(b);
-              const numA = extractLabelNumber(dataA?.label || '');
-              const numB = extractLabelNumber(dataB?.label || '');
-              return numA - numB;
-            });
-
-          // Assign z-indices: first node gets lowest, last gets highest
-          groupNodes.forEach((gn, index) => {
-            const targetZIndex = 1000 + index;
-            const nodeIndex = updatedNodes.findIndex(un => un.id === gn.id);
-            if (nodeIndex !== -1 && updatedNodes[nodeIndex].zIndex !== targetZIndex) {
-              needsZUpdate = true;
-              updatedNodes[nodeIndex] = { ...updatedNodes[nodeIndex], zIndex: targetZIndex };
-            }
-          });
-        }
-
-        return needsZUpdate ? updatedNodes : nds;
-      });
-      return;
-    }
-
-    // Handle group resize: when one selected node is resized, scale all other selected nodes
-    // and adjust their positions proportionally so the layout scales uniformly.
-    // Uses setNodes directly (rather than injecting changes) so React Flow properly
-    // updates internal state and recomputes edge paths.
+    // Handle group resize: when one selected node is resized, scale all other
+    // selected nodes by the same factor. Positions scale from the resized
+    // node's center so the entire layout shrinks/grows uniformly — gaps
+    // between nodes stay proportional and nothing overlaps.
     const dimensionChanges = changes.filter(
       (c): c is NodeDimensionChange => c.type === 'dimensions' && c.resizing === true
     );
@@ -591,31 +535,49 @@ function Flow() {
         const otherSelected = currentNodes.filter(n => n.selected && n.id !== change.id);
         if (otherSelected.length === 0) continue;
 
-        // Use the resized node as anchor — other nodes move toward/away from it
-        const anchorX = node.position.x;
-        const anchorY = node.position.y;
+        // Resized node's old center
+        const oldCenterX = node.position.x + oldW / 2;
+        const oldCenterY = node.position.y + oldH / 2;
+
+        // Check if there's a position change for the resized node (happens
+        // when dragging any corner other than bottom-right)
+        const posChange = changes.find(
+          (c): c is NodePositionChange => c.type === 'position' && c.id === change.id
+        );
+        const newPos = posChange?.position ?? node.position;
+        const newCenterX = newPos.x + change.dimensions.width / 2;
+        const newCenterY = newPos.y + change.dimensions.height / 2;
+
         const otherIds = new Set(otherSelected.map(n => n.id));
 
         // Process the original resize changes for the dragged node
         onNodesChange(changes);
 
-        // Directly update other selected nodes' dimensions and positions
+        // Scale other selected nodes uniformly from the resized node's center.
+        // Both dimensions and center-to-center distances scale by the same
+        // factor, so gaps between edges stay proportional.
         setNodes(nds => nds.map(n => {
           if (!otherIds.has(n.id)) return n;
           const ow = n.measured?.width ?? n.width;
           const oh = n.measured?.height ?? n.height;
           if (!ow || !oh) return n;
 
-          const dx = n.position.x - anchorX;
-          const dy = n.position.y - anchorY;
+          const scaledW = ow * scaleX;
+          const scaledH = oh * scaleY;
+
+          // Scale this node's center relative to the anchor's center
+          const myCenterX = n.position.x + ow / 2;
+          const myCenterY = n.position.y + oh / 2;
+          const newMyCenterX = newCenterX + (myCenterX - oldCenterX) * scaleX;
+          const newMyCenterY = newCenterY + (myCenterY - oldCenterY) * scaleY;
 
           return {
             ...n,
-            width: ow * scaleX,
-            height: oh * scaleY,
+            width: scaledW,
+            height: scaledH,
             position: {
-              x: anchorX + dx * scaleX,
-              y: anchorY + dy * scaleY,
+              x: newMyCenterX - scaledW / 2,
+              y: newMyCenterY - scaledH / 2,
             },
           };
         }));
@@ -632,18 +594,20 @@ function Flow() {
     // Build lock groups: lockId -> nodes sorted by label number
     const lockGroups = new Map<string, Node[]>();
 
-    nodes.forEach(node => {
+    for (const node of nodes) {
       const data = getGenericIOData(node);
       if (data?.cascadeLockId) {
         const group = lockGroups.get(data.cascadeLockId) || [];
         group.push(node);
         lockGroups.set(data.cascadeLockId, group);
       }
-    });
+    }
+
+    // Early return if no cascade groups exist
+    if (lockGroups.size === 0) return;
 
     // For each group, sync settings from master (first node) to all others
-    let needsUpdate = false;
-    const updatedNodes = [...nodes];
+    const updates = new Map<string, { color: string; layout: string }>();
 
     lockGroups.forEach((groupNodes) => {
       if (groupNodes.length < 2) return;
@@ -657,36 +621,27 @@ function Flow() {
         return numA - numB;
       });
 
-      const masterNode = sortedGroup[0];
-      const masterData = getGenericIOData(masterNode);
+      const masterData = getGenericIOData(sortedGroup[0]);
       if (!masterData) return;
 
       // Apply master's settings to all other nodes in the group
       for (let i = 1; i < sortedGroup.length; i++) {
-        const followerNode = sortedGroup[i];
-        const followerData = getGenericIOData(followerNode);
+        const followerData = getGenericIOData(sortedGroup[i]);
         if (!followerData) continue;
 
         // Check if settings differ from master
         if (followerData.color !== masterData.color || followerData.layout !== masterData.layout) {
-          needsUpdate = true;
-          const nodeIndex = updatedNodes.findIndex(n => n.id === followerNode.id);
-          if (nodeIndex !== -1) {
-            updatedNodes[nodeIndex] = {
-              ...updatedNodes[nodeIndex],
-              data: {
-                ...updatedNodes[nodeIndex].data,
-                color: masterData.color,
-                layout: masterData.layout,
-              }
-            };
-          }
+          updates.set(sortedGroup[i].id, { color: masterData.color || '', layout: masterData.layout || '' });
         }
       }
     });
 
-    if (needsUpdate) {
-      setNodes(updatedNodes);
+    if (updates.size > 0) {
+      setNodes(nds => nds.map(n => {
+        const upd = updates.get(n.id);
+        if (!upd) return n;
+        return { ...n, data: { ...n.data, color: upd.color, layout: upd.layout } };
+      }));
     }
   }, [nodes, getGenericIOData, extractLabelNumber, setNodes]);
 
@@ -697,6 +652,9 @@ function Flow() {
   const historyTimer = useRef<number | null>(null);
 
   // Track changes to nodes and edges for history with debouncing
+  const historyIndexRef = useRef(historyIndex);
+  historyIndexRef.current = historyIndex;
+
   useEffect(() => {
     if (isUndoRedo.current) {
       isUndoRedo.current = false;
@@ -711,13 +669,14 @@ function Flow() {
     // Debounce history updates to group rapid changes together
     historyTimer.current = setTimeout(() => {
       const newState = { nodes, edges };
+      const currentIndex = historyIndexRef.current;
 
       setHistory((prevHistory) => {
-        const currentState = prevHistory[historyIndex];
+        const currentState = prevHistory[currentIndex];
 
         // Only add to history if something actually changed
         if (JSON.stringify(currentState) !== JSON.stringify(newState)) {
-          const newHistory = prevHistory.slice(0, historyIndex + 1);
+          const newHistory = prevHistory.slice(0, currentIndex + 1);
           newHistory.push(newState);
 
           // Limit history to last 50 states
@@ -725,7 +684,7 @@ function Flow() {
             newHistory.shift();
             return newHistory;
           } else {
-            setHistoryIndex(historyIndex + 1);
+            setHistoryIndex(currentIndex + 1);
             return newHistory;
           }
         }
@@ -738,7 +697,7 @@ function Flow() {
         clearTimeout(historyTimer.current);
       }
     };
-  }, [nodes, edges, historyIndex]);
+  }, [nodes, edges]);
 
   const handleUndo = useCallback(() => {
     if (historyTimer.current) {
@@ -1245,22 +1204,25 @@ function Flow() {
     ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
       if (selectedNodes.length > 0) {
         const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
+        const currentEdges = edgesRef.current;
 
-        // Find all edges that connect selected nodes
-        const edgesToSelect = edges.filter(e =>
-          selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
-        );
+        // Find IDs of edges that should be selected but aren't yet
+        const edgeIdsToSelect = new Set<string>();
+        for (const e of currentEdges) {
+          if (!e.selected && selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)) {
+            edgeIdsToSelect.add(e.id);
+          }
+        }
 
-        if (edgesToSelect.length > 0) {
-          // Select these edges
-          setEdges(eds => eds.map(e => ({
-            ...e,
-            selected: edgesToSelect.some(es => es.id === e.id) ? true : e.selected
-          })));
+        // Only call setEdges if something actually needs to change
+        if (edgeIdsToSelect.size > 0) {
+          setEdges(eds => eds.map(e =>
+            edgeIdsToSelect.has(e.id) ? { ...e, selected: true } : e
+          ));
         }
       }
     },
-    [edges, setEdges]
+    [setEdges]
   );
 
   const onEdgeDoubleClick = useCallback(

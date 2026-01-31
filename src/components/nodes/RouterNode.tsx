@@ -185,7 +185,7 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
         keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+        handleStyle={{ backgroundColor: '#00aaff' }}
       />
       {/* Color picker OUTSIDE scaled content to avoid transform coordinate issues */}
       <div
@@ -303,7 +303,7 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
         keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+        handleStyle={{ backgroundColor: '#00aaff' }}
       />
     </div>
   );

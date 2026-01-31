@@ -90,6 +90,11 @@ export function useNodeScale(
       // matches the visual (post-transform) size
       marginRight: -(nw - measuredWidth),
       marginBottom: -(nh - measuredHeight),
+      // The content div's layout box is nw × nh (larger than the visual
+      // area). Without this, it intercepts pointer events meant for
+      // NodeResizer handles and node selection. pointer-events is
+      // re-enabled on descendants via CSS (.node-scale-content *).
+      pointerEvents: 'none' as const,
     },
   };
 }

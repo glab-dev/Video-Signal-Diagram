@@ -325,7 +325,7 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
         keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff', width: 8, height: 8 }}
+        handleStyle={{ backgroundColor: '#00aaff' }}
       />
     </div>
   );
