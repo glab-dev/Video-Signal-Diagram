@@ -1,4 +1,4 @@
-import { useCallback, useContext } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
@@ -28,6 +28,9 @@ const NODE_COLORS = [
 function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
+
+  // Track which port is temporarily showing dropdown (for switching from Custom to preset)
+  const [showDropdownForPort, setShowDropdownForPort] = useState<string | null>(null);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -76,7 +79,17 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const updateInputType = useCallback(
     (portId: string, type: ConnectionType) => {
       const newInputs = data.inputs.map((port) =>
-        port.id === portId ? { ...port, type } : port
+        port.id === portId ? { ...port, type, customType: type === 'Custom' ? port.customType : undefined } : port
+      );
+      updateNodeData(id, { inputs: newInputs });
+    },
+    [id, data.inputs, updateNodeData]
+  );
+
+  const updateInputCustomType = useCallback(
+    (portId: string, customType: string) => {
+      const newInputs = data.inputs.map((port) =>
+        port.id === portId ? { ...port, customType } : port
       );
       updateNodeData(id, { inputs: newInputs });
     },
@@ -97,7 +110,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
     const newPort: Port = {
       id: uuidv4(),
       name: `Input ${data.inputs.length + 1}`,
-      type: 'Other',
+      type: 'Custom',
     };
     updateNodeData(id, { inputs: [...data.inputs, newPort] });
   }, [id, data.inputs, updateNodeData]);
@@ -106,7 +119,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
     const newPort: Port = {
       id: uuidv4(),
       name: `Output ${data.outputs.length + 1}`,
-      type: 'Other',
+      type: 'Custom',
     };
     updateNodeData(id, { outputs: [...data.outputs, newPort] });
   }, [id, data.outputs, updateNodeData]);
@@ -224,19 +237,45 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
                   id={`input-${port.id}`}
                   className="port-handle left"
                 />
-                <select
-                  value={port.type || 'Other'}
-                  onChange={(e) => updateInputType(port.id, e.target.value as ConnectionType)}
-                  className="port-field type-select"
-                >
-                  {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
-                    <optgroup key={groupName} label={groupName}>
-                      {types.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                {port.type === 'Custom' && showDropdownForPort !== port.id ? (
+                  <>
+                    <input
+                      value={port.customType || ''}
+                      onChange={(e) => updateInputCustomType(port.id, e.target.value)}
+                      className="port-field custom-type"
+                      placeholder="Connector..."
+                    />
+                    <button
+                      className="preset-btn"
+                      onClick={() => setShowDropdownForPort(port.id)}
+                      title="Switch to preset"
+                    >
+                      ▼
+                    </button>
+                  </>
+                ) : (
+                  <select
+                    value={port.type === 'Custom' ? '' : port.type}
+                    onChange={(e) => {
+                      updateInputType(port.id, e.target.value as ConnectionType);
+                      setShowDropdownForPort(null);
+                    }}
+                    onBlur={() => setShowDropdownForPort(null)}
+                    className="port-field type-select"
+                    autoFocus={showDropdownForPort === port.id}
+                  >
+                    {showDropdownForPort === port.id && (
+                      <option value="" disabled>Select connector...</option>
+                    )}
+                    {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
+                      <optgroup key={groupName} label={groupName}>
+                        {types.map((type) => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                )}
                 <input
                   value={port.name}
                   onChange={(e) => updateInput(port.id, e.target.value)}

@@ -811,6 +811,44 @@
   font-weight: 600;
 }
 
+.port-field.custom-type {
+  flex: 0 0 auto;
+  width: 70px;
+  min-width: 60px;
+  max-width: 90px;
+  padding: 4px 4px;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #555;
+  text-align: left;
+}
+
+.port-field.custom-type:focus {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: #00aaff;
+}
+
+.preset-btn {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 22px;
+  padding: 0;
+  margin-left: 2px;
+  font-size: 8px;
+  color: #888;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #444;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.preset-btn:hover {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border-color: #666;
+}
+
 /* Port Handles - positioned OUTSIDE the node box */
 .port-handle {
   position: absolute !important;

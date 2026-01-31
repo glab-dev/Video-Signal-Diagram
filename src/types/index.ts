@@ -9,17 +9,13 @@ export type ConnectionType =
   | 'HDMI'
   | 'DisplayPort'
   | 'DVI'
-  // Network
-  | 'NDI'
-  | 'Fiber'
-  // Other
-  | 'Other';
+  // Custom
+  | 'Custom';
 
 // Grouped connector types for dropdown menus
 export const CONNECTOR_GROUPS = {
   'Source Inputs': ['SDI', '3G SDI', '12G SDI', 'HDMI', 'DisplayPort', 'DVI'] as ConnectionType[],
-  'Network': ['NDI', 'Fiber'] as ConnectionType[],
-  'Other': ['Other'] as ConnectionType[],
+  'Custom': ['Custom'] as ConnectionType[],
 };
 
 // Port definition for inputs/outputs
@@ -27,6 +23,7 @@ export interface Port {
   id: string;
   name: string;
   type: ConnectionType;
+  customType?: string; // Used when type is 'Custom'
 }
 
 // Base node data that all nodes share
