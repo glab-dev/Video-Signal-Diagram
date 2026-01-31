@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.36': [
+    'Improve resize handles, multi-select resize cursors, and group resize scaling',
+  ],
   '1.0.35': [
     'Add grouped connector types and custom connector option',
   ],
