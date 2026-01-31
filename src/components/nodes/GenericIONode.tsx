@@ -1,11 +1,10 @@
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useState, useRef, useLayoutEffect } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData, ConnectionType } from '../../types';
 import { CONNECTOR_GROUPS } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
-import { useNodeScale } from '../../hooks/useNodeScale';
 import { CascadeLockContext } from '../../App';
 import EditableTitle from '../EditableTitle';
 
@@ -24,18 +23,11 @@ const NODE_COLORS = [
   '#8800ff', // Purple
 ];
 
-// Layout measurements for handle positioning
-const HEADER_HEIGHT = 32;
-const COLOR_PICKER_HEIGHT = 28;
-const SYSTEMS_HEADER_HEIGHT = 24;
-const TABLE_SECTION_HEADER_HEIGHT = 26;
-const TABLE_HEADER_ROW_HEIGHT = 24;
-const TABLE_ROW_HEIGHT = 32;
-const CONTENT_PADDING = 8;
-
 function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
 
   // Track which port is temporarily showing dropdown (for switching from Custom to preset)
   const [showDropdownForPort, setShowDropdownForPort] = useState<string | null>(null);
@@ -43,6 +35,16 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   // Safety defaults for arrays
   const inputs = data.inputs || [];
   const outputs = data.outputs || [];
+
+  // Measure natural content size on mount
+  useLayoutEffect(() => {
+    if (contentRef.current && !naturalSize) {
+      setNaturalSize({
+        w: contentRef.current.scrollWidth,
+        h: contentRef.current.scrollHeight,
+      });
+    }
+  }, [naturalSize, inputs.length, outputs.length]);
 
   const updateLabel = useCallback(
     (value: string) => {
@@ -74,6 +76,8 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
+    // Reset natural size so it gets remeasured
+    setNaturalSize(null);
     setTimeout(() => updateNodeInternals(id), 0);
   }, [id, data.layout, updateNodeData, updateNodeInternals]);
 
@@ -150,6 +154,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
       type: 'HDMI',
     };
     updateNodeData(id, { inputs: [...inputs, newPort] });
+    setNaturalSize(null); // Reset to remeasure
   }, [id, inputs, updateNodeData]);
 
   const addOutput = useCallback(() => {
@@ -159,11 +164,13 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
       type: 'HDMI',
     };
     updateNodeData(id, { outputs: [...outputs, newPort] });
+    setNaturalSize(null); // Reset to remeasure
   }, [id, outputs, updateNodeData]);
 
   const removeInput = useCallback(
     (portId: string) => {
       updateNodeData(id, { inputs: inputs.filter((p) => p.id !== portId) });
+      setNaturalSize(null); // Reset to remeasure
     },
     [id, inputs, updateNodeData]
   );
@@ -171,15 +178,13 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const removeOutput = useCallback(
     (portId: string) => {
       updateNodeData(id, { outputs: outputs.filter((p) => p.id !== portId) });
+      setNaturalSize(null); // Reset to remeasure
     },
     [id, outputs, updateNodeData]
   );
 
   const nodeColor = data.color || '#0088cc';
   const layout = data.layout || 'sideBySide';
-  const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
 
   // Cascade lock functionality
   const cascadeLockContext = useContext(CascadeLockContext);
@@ -187,44 +192,62 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const showLockToggle = cascadeInfo && cascadeInfo.isFirstInGroup && cascadeInfo.groupNodes.length >= 2;
   const isLocked = cascadeInfo?.isLocked || false;
 
-  // Calculate handle positions
-  const getScale = () => {
-    if (!nodeWidth || !nodeHeight || !contentRef.current) return 1;
-    const nw = contentRef.current.scrollWidth || 300;
-    const nh = contentRef.current.scrollHeight || 200;
-    const sx = nodeWidth / nw;
-    const sy = nodeHeight / nh;
-    return Math.min(sx, sy);
-  };
+  // Calculate scale for when node has been resized
+  const nw = naturalSize?.w || 0;
+  const nh = naturalSize?.h || 0;
+  const hasExplicitSize = width !== undefined && height !== undefined && nw > 0 && nh > 0;
 
-  const scale = getScale();
+  let scale = 1;
+  let contentStyle: React.CSSProperties = {};
 
-  // Base offset: header + color picker + systems header + content padding
-  const baseOffset = HEADER_HEIGHT + COLOR_PICKER_HEIGHT + SYSTEMS_HEADER_HEIGHT + CONTENT_PADDING;
+  if (hasExplicitSize) {
+    const sx = width / nw;
+    const sy = height / nh;
+    scale = Math.min(sx, sy);
 
-  // Calculate Y position for a handle
+    if (Math.abs(scale - 1) >= 0.005) {
+      contentStyle = {
+        width: nw,
+        height: nh,
+        transformOrigin: '0 0',
+        transform: `scale(${scale})`,
+        marginRight: -(nw - width),
+        marginBottom: -(nh - height),
+      };
+    }
+  }
+
+  // Calculate Y position for handles based on actual row positions
   const getHandleY = (isInput: boolean, rowIndex: number) => {
-    const isSideBySide = layout === 'sideBySide';
+    // These measurements should match the actual CSS
+    const headerHeight = 32;
+    const colorPickerHeight = 28;
+    const systemsHeaderHeight = 24;
+    const contentPadding = 8;
+    const sectionHeaderHeight = 26;
+    const tableHeaderHeight = 24;
+    const rowHeight = 32;
 
-    // Section header + table column header
-    const sectionStart = baseOffset + TABLE_SECTION_HEADER_HEIGHT + TABLE_HEADER_ROW_HEIGHT;
+    const baseOffset = headerHeight + colorPickerHeight + systemsHeaderHeight + contentPadding;
+    const sectionStart = baseOffset + sectionHeaderHeight + tableHeaderHeight;
+
+    const isSideBySide = layout === 'sideBySide';
 
     if (isSideBySide) {
       // In side-by-side, inputs and outputs start at the same Y
-      return (sectionStart + (rowIndex * TABLE_ROW_HEIGHT) + TABLE_ROW_HEIGHT / 2) * scale;
+      return (sectionStart + (rowIndex * rowHeight) + rowHeight / 2) * scale;
     } else {
       // In stacked, outputs come after inputs
       if (isInput) {
-        return (sectionStart + (rowIndex * TABLE_ROW_HEIGHT) + TABLE_ROW_HEIGHT / 2) * scale;
+        return (sectionStart + (rowIndex * rowHeight) + rowHeight / 2) * scale;
       } else {
-        // Output section starts after input section
-        const inputSectionHeight = TABLE_SECTION_HEADER_HEIGHT + TABLE_HEADER_ROW_HEIGHT + (inputs.length * TABLE_ROW_HEIGHT);
-        return (sectionStart + inputSectionHeight + (rowIndex * TABLE_ROW_HEIGHT) + TABLE_ROW_HEIGHT / 2) * scale;
+        const inputSectionHeight = sectionHeaderHeight + tableHeaderHeight + (inputs.length * rowHeight);
+        return (sectionStart + inputSectionHeight + (rowIndex * rowHeight) + rowHeight / 2) * scale;
       }
     }
   };
 
-  // Render a port table section (inputs or outputs) - WITHOUT handles
+  // Render a port table section (inputs or outputs)
   const renderPortTable = (
     ports: Port[],
     isInput: boolean,
@@ -341,8 +364,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
       className={`node-generic-io ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
       style={{
         borderColor: nodeColor,
-        width: nodeWidth,
-        height: nodeHeight,
+        ...(hasExplicitSize ? { width, height } : {}),
       }}
     >
       {showLockToggle && (
@@ -383,7 +405,7 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
         );
       })}
 
-      <div ref={contentRef} style={scaleStyle} className="node-scale-content">
+      <div ref={contentRef} style={contentStyle} className="node-scale-content">
         {/* Node Header */}
         <div className="node-header" style={{ backgroundColor: nodeColor }}>
           <EditableTitle value={data.label} placeholder="Device Name" onChange={updateLabel} className="node-title light" />
