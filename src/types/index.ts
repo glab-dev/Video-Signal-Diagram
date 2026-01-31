@@ -1,7 +1,26 @@
 import type { Node, Edge } from '@xyflow/react';
 
 // Connection types for video signals
-export type ConnectionType = 'SDI' | 'HDMI' | 'DisplayPort' | 'NDI' | 'Fiber' | 'Other';
+export type ConnectionType =
+  // Source Inputs
+  | 'SDI'
+  | '3G SDI'
+  | '12G SDI'
+  | 'HDMI'
+  | 'DisplayPort'
+  | 'DVI'
+  // Network
+  | 'NDI'
+  | 'Fiber'
+  // Other
+  | 'Other';
+
+// Grouped connector types for dropdown menus
+export const CONNECTOR_GROUPS = {
+  'Source Inputs': ['SDI', '3G SDI', '12G SDI', 'HDMI', 'DisplayPort', 'DVI'] as ConnectionType[],
+  'Network': ['NDI', 'Fiber'] as ConnectionType[],
+  'Other': ['Other'] as ConnectionType[],
+};
 
 // Port definition for inputs/outputs
 export interface Port {

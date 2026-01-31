@@ -777,6 +777,40 @@
   color: #888;
 }
 
+.port-field.type-select {
+  flex: 0 0 auto;
+  min-width: 70px;
+  max-width: 90px;
+  padding: 4px 2px;
+  font-size: 11px;
+  color: #ccc;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #444;
+  cursor: pointer;
+  text-align: left;
+}
+
+.port-field.type-select:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: #666;
+}
+
+.port-field.type-select:focus {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: #00aaff;
+}
+
+.port-field.type-select option {
+  background: #2a2a3e;
+  color: #fff;
+}
+
+.port-field.type-select optgroup {
+  background: #1a1a2e;
+  color: #888;
+  font-weight: 600;
+}
+
 /* Port Handles - positioned OUTSIDE the node box */
 .port-handle {
   position: absolute !important;

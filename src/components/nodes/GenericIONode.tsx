@@ -2,7 +2,8 @@ import { useCallback, useContext } from 'react';
 import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { GenericIONodeData, Port, NodeData } from '../../types';
+import type { GenericIONodeData, Port, NodeData, ConnectionType } from '../../types';
+import { CONNECTOR_GROUPS } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import PresetMenu from '../PresetMenu';
 import { useNodeScale } from '../../hooks/useNodeScale';
@@ -66,6 +67,16 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
     (portId: string, name: string) => {
       const newInputs = data.inputs.map((port) =>
         port.id === portId ? { ...port, name } : port
+      );
+      updateNodeData(id, { inputs: newInputs });
+    },
+    [id, data.inputs, updateNodeData]
+  );
+
+  const updateInputType = useCallback(
+    (portId: string, type: ConnectionType) => {
+      const newInputs = data.inputs.map((port) =>
+        port.id === portId ? { ...port, type } : port
       );
       updateNodeData(id, { inputs: newInputs });
     },
@@ -213,6 +224,19 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
                   id={`input-${port.id}`}
                   className="port-handle left"
                 />
+                <select
+                  value={port.type || 'Other'}
+                  onChange={(e) => updateInputType(port.id, e.target.value as ConnectionType)}
+                  className="port-field type-select"
+                >
+                  {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
+                    <optgroup key={groupName} label={groupName}>
+                      {types.map((type) => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
                 <input
                   value={port.name}
                   onChange={(e) => updateInput(port.id, e.target.value)}
