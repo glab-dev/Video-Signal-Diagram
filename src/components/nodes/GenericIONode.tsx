@@ -24,6 +24,15 @@ const NODE_COLORS = [
   '#8800ff', // Purple
 ];
 
+// Layout measurements for handle positioning
+const HEADER_HEIGHT = 32;
+const COLOR_PICKER_HEIGHT = 28;
+const SYSTEMS_HEADER_HEIGHT = 24;
+const TABLE_SECTION_HEADER_HEIGHT = 26;
+const TABLE_HEADER_ROW_HEIGHT = 24;
+const TABLE_ROW_HEIGHT = 32;
+const CONTENT_PADDING = 8;
+
 function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps) {
   const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
@@ -178,7 +187,44 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const showLockToggle = cascadeInfo && cascadeInfo.isFirstInGroup && cascadeInfo.groupNodes.length >= 2;
   const isLocked = cascadeInfo?.isLocked || false;
 
-  // Render a port table section (inputs or outputs)
+  // Calculate handle positions
+  const getScale = () => {
+    if (!nodeWidth || !nodeHeight || !contentRef.current) return 1;
+    const nw = contentRef.current.scrollWidth || 300;
+    const nh = contentRef.current.scrollHeight || 200;
+    const sx = nodeWidth / nw;
+    const sy = nodeHeight / nh;
+    return Math.min(sx, sy);
+  };
+
+  const scale = getScale();
+
+  // Base offset: header + color picker + systems header + content padding
+  const baseOffset = HEADER_HEIGHT + COLOR_PICKER_HEIGHT + SYSTEMS_HEADER_HEIGHT + CONTENT_PADDING;
+
+  // Calculate Y position for a handle
+  const getHandleY = (isInput: boolean, rowIndex: number) => {
+    const isSideBySide = layout === 'sideBySide';
+
+    // Section header + table column header
+    const sectionStart = baseOffset + TABLE_SECTION_HEADER_HEIGHT + TABLE_HEADER_ROW_HEIGHT;
+
+    if (isSideBySide) {
+      // In side-by-side, inputs and outputs start at the same Y
+      return (sectionStart + (rowIndex * TABLE_ROW_HEIGHT) + TABLE_ROW_HEIGHT / 2) * scale;
+    } else {
+      // In stacked, outputs come after inputs
+      if (isInput) {
+        return (sectionStart + (rowIndex * TABLE_ROW_HEIGHT) + TABLE_ROW_HEIGHT / 2) * scale;
+      } else {
+        // Output section starts after input section
+        const inputSectionHeight = TABLE_SECTION_HEADER_HEIGHT + TABLE_HEADER_ROW_HEIGHT + (inputs.length * TABLE_ROW_HEIGHT);
+        return (sectionStart + inputSectionHeight + (rowIndex * TABLE_ROW_HEIGHT) + TABLE_ROW_HEIGHT / 2) * scale;
+      }
+    }
+  };
+
+  // Render a port table section (inputs or outputs) - WITHOUT handles
   const renderPortTable = (
     ports: Port[],
     isInput: boolean,
@@ -207,97 +253,68 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
             const handleOnOpposite = isInput
               ? port.handleSide === 'right'
               : port.handleSide === 'left';
-            const handlePosition = isInput
-              ? (port.handleSide === 'right' ? Position.Right : Position.Left)
-              : (port.handleSide === 'left' ? Position.Left : Position.Right);
-            const handleClass = isInput
-              ? (port.handleSide === 'right' ? 'right' : 'left')
-              : (port.handleSide === 'left' ? 'left' : 'right');
-
-            // Determine if handle should be on left or right
-            const handleOnLeft = isInput ? !handleOnOpposite : handleOnOpposite;
 
             return (
               <tr key={port.id} className={`port-table-row ${handleOnOpposite ? 'handle-opposite' : ''}`}>
                 <td className="col-source">
-                  <div className="cell-with-handle">
-                    {handleOnLeft && (
-                      <Handle
-                        type={isInput ? 'target' : 'source'}
-                        position={handlePosition}
-                        id={`${isInput ? 'input' : 'output'}-${port.id}`}
-                        className={`port-handle ${handleClass}`}
-                      />
-                    )}
-                    {port.type === 'Custom' ? (
-                      <div className="custom-type-wrapper">
-                        <div className="custom-type-row">
-                          <input
-                            value={port.customType || ''}
-                            onChange={(e) => onCustomTypeChange(port.id, e.target.value)}
-                            className="port-field custom-type"
-                            placeholder="Type"
-                          />
-                          <button
-                            className="preset-btn"
-                            onClick={() => {
-                              const key = isInput ? port.id : `out-${port.id}`;
-                              setShowDropdownForPort(showDropdownForPort === key ? null : key);
-                            }}
-                            title="Switch to preset"
-                          >
-                            ▼
-                          </button>
-                        </div>
-                        {showDropdownForPort === (isInput ? port.id : `out-${port.id}`) && (
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              onTypeChange(port.id, e.target.value as ConnectionType);
-                              setShowDropdownForPort(null);
-                            }}
-                            onBlur={() => setTimeout(() => setShowDropdownForPort(null), 150)}
-                            className="port-field type-select dropdown-below"
-                            autoFocus
-                            size={7}
-                          >
-                            {Object.entries(CONNECTOR_GROUPS).map(([_groupName, types]) => (
-                              types.map((type) => (
-                                <option key={type} value={type}>{type}</option>
-                              ))
-                            ))}
-                          </select>
-                        )}
+                  {port.type === 'Custom' ? (
+                    <div className="custom-type-wrapper">
+                      <div className="custom-type-row">
+                        <input
+                          value={port.customType || ''}
+                          onChange={(e) => onCustomTypeChange(port.id, e.target.value)}
+                          className="port-field custom-type"
+                          placeholder="Type"
+                        />
+                        <button
+                          className="preset-btn"
+                          onClick={() => {
+                            const key = isInput ? port.id : `out-${port.id}`;
+                            setShowDropdownForPort(showDropdownForPort === key ? null : key);
+                          }}
+                          title="Switch to preset"
+                        >
+                          ▼
+                        </button>
                       </div>
-                    ) : (
-                      <select
-                        value={port.type}
-                        onChange={(e) => onTypeChange(port.id, e.target.value as ConnectionType)}
-                        className="port-field type-select"
-                      >
-                        {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
-                          <optgroup key={groupName} label={groupName}>
-                            {types.map((type) => (
+                      {showDropdownForPort === (isInput ? port.id : `out-${port.id}`) && (
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            onTypeChange(port.id, e.target.value as ConnectionType);
+                            setShowDropdownForPort(null);
+                          }}
+                          onBlur={() => setTimeout(() => setShowDropdownForPort(null), 150)}
+                          className="port-field type-select dropdown-below"
+                          autoFocus
+                          size={7}
+                        >
+                          {Object.entries(CONNECTOR_GROUPS).map(([_groupName, types]) => (
+                            types.map((type) => (
                               <option key={type} value={type}>{type}</option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                    )}
-                  </div>
+                            ))
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ) : (
+                    <select
+                      value={port.type}
+                      onChange={(e) => onTypeChange(port.id, e.target.value as ConnectionType)}
+                      className="port-field type-select"
+                    >
+                      {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
+                        <optgroup key={groupName} label={groupName}>
+                          {types.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  )}
                 </td>
                 <td className="col-name">
-                  <div className="cell-with-handle">
-                    <span className="name-text">{port.name}</span>
-                    {!handleOnLeft && (
-                      <Handle
-                        type={isInput ? 'target' : 'source'}
-                        position={handlePosition}
-                        id={`${isInput ? 'input' : 'output'}-${port.id}`}
-                        className={`port-handle ${handleClass}`}
-                      />
-                    )}
-                  </div>
+                  <span className="name-text">{port.name}</span>
                 </td>
                 <td className="col-actions">
                   <div className="action-buttons">
@@ -337,7 +354,36 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
           {isLocked ? '🔒' : '🔓'}
         </button>
       )}
-      <div ref={contentRef} style={scaleStyle}>
+
+      {/* Handles rendered OUTSIDE the scaled content so they position at node edge */}
+      {inputs.map((port, index) => {
+        const isOnRight = port.handleSide === 'right';
+        return (
+          <Handle
+            key={`input-${port.id}`}
+            type="target"
+            position={isOnRight ? Position.Right : Position.Left}
+            id={`input-${port.id}`}
+            className="port-handle"
+            style={{ top: getHandleY(true, index) }}
+          />
+        );
+      })}
+      {outputs.map((port, index) => {
+        const isOnLeft = port.handleSide === 'left';
+        return (
+          <Handle
+            key={`output-${port.id}`}
+            type="source"
+            position={isOnLeft ? Position.Left : Position.Right}
+            id={`output-${port.id}`}
+            className="port-handle"
+            style={{ top: getHandleY(false, index) }}
+          />
+        );
+      })}
+
+      <div ref={contentRef} style={scaleStyle} className="node-scale-content">
         {/* Node Header */}
         <div className="node-header" style={{ backgroundColor: nodeColor }}>
           <EditableTitle value={data.label} placeholder="Device Name" onChange={updateLabel} className="node-title light" />

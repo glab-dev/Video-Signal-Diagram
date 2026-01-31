@@ -1166,6 +1166,11 @@
   border-color: #666;
 }
 
+/* Scaled content - re-enable pointer events on descendants */
+.node-scale-content * {
+  pointer-events: auto;
+}
+
 /* Port Handles */
 .port-handle {
   width: 12px !important;
@@ -1175,17 +1180,9 @@
   border-radius: 50% !important;
 }
 
-/* Handles in table rows - position at node edge */
-.port-table-row .port-handle.left {
-  left: 0 !important;
-  right: auto !important;
-  transform: translate(-50%, -50%) !important;
-}
-
-.port-table-row .port-handle.right {
-  left: auto !important;
-  right: 0 !important;
-  transform: translate(50%, -50%) !important;
+/* GenericIONode handles - positioned at node edge via style.top */
+.node-generic-io > .port-handle {
+  transform: translateY(-50%) !important;
 }
 
 /* Router Node */
