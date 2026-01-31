@@ -558,7 +558,7 @@
 
 .node-title {
   color: #fff;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   text-align: center;
   flex: 1;
@@ -577,7 +577,7 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   text-align: center;
   outline: none;
@@ -644,7 +644,7 @@
 }
 
 .section-header span {
-  font-size: 12px;
+  font-size: 14px;
   color: #888;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -694,11 +694,11 @@
   background: #444;
   border: none;
   color: #fff;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -715,26 +715,301 @@
   transform: scale(0.95);
 }
 
-/* Port List and Row - Shared styles for all nodes */
+/* ============================================
+   IO TABLE STYLES - Excel-like table layout
+   ============================================ */
+
+/* SYSTEMS header spanning full width */
+.systems-header {
+  background: linear-gradient(180deg, #2a2a4a 0%, #1a1a3a 100%);
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid #444;
+}
+
+/* IO Table Section container */
+.io-table-section {
+  margin-bottom: 8px;
+}
+
+.io-table-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Section header (INPUT / OUTPUT) */
+.io-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg, #333350 0%, #252540 100%);
+  padding: 6px 12px;
+  border-bottom: 1px solid #444;
+}
+
+.io-table-header span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* The actual table */
+.io-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+/* Table header cells */
+.io-table thead th {
+  background: #1e1e32;
+  color: #888;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+  white-space: nowrap;
+}
+
+.io-table thead th.col-source {
+  width: auto;
+  min-width: 100px;
+}
+
+.io-table thead th.col-name {
+  width: auto;
+  min-width: 80px;
+  border-left: 1px solid #333;
+}
+
+.io-table thead th.col-actions {
+  width: 60px;
+  min-width: 60px;
+}
+
+/* Table body rows */
+.io-table tbody tr {
+  background: #252538;
+}
+
+.io-table tbody tr:nth-child(even) {
+  background: #2a2a42;
+}
+
+.io-table tbody tr:hover {
+  background: #303050;
+}
+
+/* Table data cells */
+.io-table td {
+  padding: 6px 10px;
+  vertical-align: middle;
+}
+
+.io-table td.col-source {
+  white-space: nowrap;
+}
+
+.io-table td.col-name {
+  border-left: 1px solid #333;
+  white-space: nowrap;
+}
+
+.io-table td.col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Cell with handle - NO position: relative so handles position relative to node */
+.cell-with-handle {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Name text in table */
+.name-text {
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Table input fields */
+.table-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #ccc;
+  font-size: 13px;
+  padding: 4px 6px;
+  width: 100%;
+  outline: none;
+}
+
+.table-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #444;
+}
+
+.table-input::placeholder {
+  color: #666;
+}
+
+/* Table select fields */
+.table-select {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #ccc;
+  font-size: 13px;
+  padding: 4px 6px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.table-select:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Additional table columns */
+.io-table thead th.col-connection,
+.io-table thead th.col-resolution,
+.io-table thead th.col-destination,
+.io-table thead th.col-inout {
+  border-left: 1px solid #333;
+}
+
+.io-table td.col-connection,
+.io-table td.col-resolution,
+.io-table td.col-destination,
+.io-table td.col-inout {
+  border-left: 1px solid #333;
+}
+
+/* In/Out column specific styling */
+.io-table thead th.col-inout {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.io-table td.col-inout {
+  text-align: center;
+}
+
+.inout-input {
+  text-align: center;
+  max-width: 50px;
+}
+
+/* Action buttons container */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Legacy port-list styles for other nodes */
 .port-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
+.port-list-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.port-list-header .col-source {
+  flex: 0 0 auto;
+  min-width: 110px;
+  text-align: left;
+  padding-left: 6px;
+}
+
+.port-list-header .col-name {
+  flex: 1 1 auto;
+  text-align: left;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 10px;
+}
+
+.port-list-header .col-actions {
+  flex: 0 0 auto;
+  width: 60px;
+}
+
 .port-row {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 10px;
+  padding: 8px 18px;
   background: #252538;
   border-radius: 3px;
-  min-height: 38px;
+  min-height: 42px;
 }
 
-.port-row.output {
+.port-row > .port-field.type-select,
+.port-row > .custom-type-wrapper {
+  flex: 0 0 auto;
+  min-width: 110px;
+  padding-left: 6px;
+}
+
+.port-row > .port-field.name-label {
+  flex: 1 1 auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 10px;
+  text-align: left;
+}
+
+.port-row > .port-row-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 5px;
+  min-width: 60px;
+}
+
+.handle-switch-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #444;
+  border-radius: 3px;
+  color: #888;
+  font-size: 14px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.handle-switch-btn:hover {
+  background: rgba(0, 170, 255, 0.2);
+  border-color: #00aaff;
+  color: #00aaff;
 }
 
 .port-field {
@@ -742,9 +1017,9 @@
   border: 1px solid transparent;
   border-radius: 3px;
   color: #fff;
-  font-size: 13px;
+  font-size: 17px;
   outline: none;
-  padding: 5px 6px;
+  padding: 6px 8px;
   text-align: center;
 }
 
@@ -757,6 +1032,20 @@
   flex: 0.8;
   min-width: 80px;
   font-weight: 500;
+}
+
+.port-field.name-label {
+  flex: 0 0 auto;
+  min-width: 70px;
+  font-weight: 600;
+  color: #888;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 10px;
+  margin-left: 5px;
+  cursor: default;
+  user-select: none;
 }
 
 .port-field.connection {
@@ -779,10 +1068,10 @@
 
 .port-field.type-select {
   flex: 0 0 auto;
-  min-width: 70px;
-  max-width: 90px;
-  padding: 4px 2px;
-  font-size: 11px;
+  width: auto;
+  min-width: 100px;
+  padding: 6px 6px;
+  font-size: 17px;
   color: #ccc;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid #444;
@@ -811,13 +1100,23 @@
   font-weight: 600;
 }
 
-.port-field.custom-type {
+.custom-type-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
-  width: 70px;
-  min-width: 60px;
-  max-width: 90px;
-  padding: 4px 4px;
-  font-size: 11px;
+}
+
+.custom-type-row {
+  display: flex;
+  align-items: center;
+}
+
+.port-field.custom-type {
+  flex: 1 0 auto;
+  min-width: 100px;
+  padding: 6px 8px;
+  font-size: 17px;
   color: #fff;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid #555;
@@ -829,13 +1128,31 @@
   border-color: #00aaff;
 }
 
+.port-field.type-select.dropdown-below {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 145px;
+  z-index: 100;
+  margin-top: 2px;
+  background: #1a1a2e;
+  border: 1px solid #00aaff;
+  border-radius: 4px;
+  font-size: 16px;
+  overflow: visible;
+}
+
+.port-field.type-select.dropdown-below option {
+  padding: 5px 10px;
+}
+
 .preset-btn {
   flex: 0 0 auto;
-  width: 18px;
-  height: 22px;
+  width: 22px;
+  height: 28px;
   padding: 0;
-  margin-left: 2px;
-  font-size: 8px;
+  margin-left: 3px;
+  font-size: 12px;
   color: #888;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid #444;
@@ -849,19 +1166,26 @@
   border-color: #666;
 }
 
-/* Port Handles - positioned OUTSIDE the node box */
+/* Port Handles */
 .port-handle {
-  position: absolute !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
+  width: 12px !important;
+  height: 12px !important;
+  background: #00aaff !important;
+  border: 2px solid #1a1a1a !important;
+  border-radius: 50% !important;
 }
 
-.port-handle.left {
-  left: -18px !important;
+/* Handles in table rows - position at node edge */
+.port-table-row .port-handle.left {
+  left: 0 !important;
+  right: auto !important;
+  transform: translate(-50%, -50%) !important;
 }
 
-.port-handle.right {
-  right: -18px !important;
+.port-table-row .port-handle.right {
+  left: auto !important;
+  right: 0 !important;
+  transform: translate(50%, -50%) !important;
 }
 
 /* Router Node */
@@ -958,36 +1282,8 @@
   transform: scale(0.95);
 }
 
-.category-drag-btn {
-  background: rgba(0, 170, 255, 0.15);
-  border: 1px solid rgba(0, 170, 255, 0.4);
-  color: #00aaff;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  cursor: grab;
-  font-size: 16px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 4px;
-  transition: all 0.15s;
-}
-
-.category-drag-btn:hover {
-  background: rgba(0, 170, 255, 0.25);
-  border-color: rgba(0, 170, 255, 0.6);
-  transform: scale(1.1);
-}
-
-.category-drag-btn:active {
-  cursor: grabbing;
-  transform: scale(0.95);
-}
-
 .processor-content {
-  padding: 10px;
+  padding: 8px;
 }
 
 .processor-section {
@@ -1001,10 +1297,15 @@
 /* Side-by-side layout */
 .node-processor.side-by-side .processor-content {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .node-processor.side-by-side .processor-section {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.node-processor.side-by-side .io-table-section {
   flex: 1;
   margin-bottom: 0;
 }
@@ -1293,14 +1594,20 @@
 }
 
 .generic-io-content {
-  padding: 10px;
+  padding: 8px;
 }
 
 .node-generic-io.side-by-side .generic-io-content {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
+.node-generic-io.side-by-side .io-table-section {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Legacy io-section for other nodes */
 .io-section {
   margin-bottom: 10px;
 }
@@ -1381,7 +1688,7 @@
   border: none;
   color: #666;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
   padding: 4px 8px;
   line-height: 1;
   flex-shrink: 0;

@@ -136,14 +136,16 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
     [id, updateNodeData]
   );
 
+  const connectors = data.connectors || [];
+
   const updateConnector = useCallback(
     (connectorId: string, field: keyof CardConnector, value: string) => {
-      const newConnectors = data.connectors.map((conn) =>
+      const newConnectors = connectors.map((conn) =>
         conn.id === connectorId ? { ...conn, [field]: value } : conn
       );
       updateNodeData(id, { connectors: newConnectors });
     },
-    [id, data.connectors, updateNodeData]
+    [id, connectors, updateNodeData]
   );
 
   const addConnector = useCallback(() => {
@@ -154,14 +156,14 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
       resolution: '3840x2160@60',
       destination: data.cardType === 'output' ? '' : undefined,
     };
-    updateNodeData(id, { connectors: [...data.connectors, newConnector] });
-  }, [id, data.connectors, data.cardType, updateNodeData]);
+    updateNodeData(id, { connectors: [...connectors, newConnector] });
+  }, [id, connectors, data.cardType, updateNodeData]);
 
   const removeConnector = useCallback(
     (connectorId: string) => {
-      updateNodeData(id, { connectors: data.connectors.filter((c) => c.id !== connectorId) });
+      updateNodeData(id, { connectors: connectors.filter((c) => c.id !== connectorId) });
     },
-    [id, data.connectors, updateNodeData]
+    [id, connectors, updateNodeData]
   );
 
   const handlePosition = data.cardType === 'input' ? Position.Left : Position.Right;
@@ -234,88 +236,125 @@ function CardNode({ id, data, selected, width, height }: CardNodeProps) {
         ))}
       </div>
 
-      <div className="card-content nodrag">
-        <div className="card-header-row">
-          {data.cardType === 'input' ? (
-            <>
-              <span className="card-col-header source">SOURCE</span>
-              <span className="card-col-header connector">CONNECTOR</span>
-              <span className="card-col-header resolution">RESOLUTION</span>
-            </>
-          ) : (
-            <>
-              <span className="card-col-header resolution">RESOLUTION</span>
-              <span className="card-col-header connector">CONNECTOR</span>
-              <span className="card-col-header destination">DESTINATION</span>
-            </>
-          )}
+      {/* SYSTEMS Header */}
+      <div className="systems-header">SYSTEMS</div>
+
+      {/* Connectors Table */}
+      <div className="io-table-section">
+        <div className="io-table-header">
+          <span>{data.cardType === 'input' ? 'INPUT' : 'OUTPUT'}</span>
+          <button className="add-btn" onClick={addConnector}>+</button>
         </div>
-        <div className="card-connectors">
-          {data.connectors.map((connector, index) => (
-            <div key={connector.id} className="card-row">
-              <Handle
-                type={handleType}
-                position={handlePosition}
-                id={`connector-${connector.id}`}
-                className="port-handle"
-                style={{ top: `${60 + index * 32}px` }}
-              />
+        <table className="io-table nodrag">
+          <thead>
+            <tr>
               {data.cardType === 'input' ? (
                 <>
-                  <EditableSelect
-                    value={connector.source || ''}
-                    options={sourcesWithColors}
-                    onChange={(value) => updateConnector(connector.id, 'source', value)}
-                    placeholder="Select Source"
-                    className="card-field source"
-                  />
-                  <select
-                    value={connector.type}
-                    onChange={(e) => updateConnector(connector.id, 'type', e.target.value as any)}
-                    className="card-field connector"
-                  >
-                    <option value="DP 1.2">DP 1.2</option>
-                    <option value="HDMI 2.0">HDMI 2.0</option>
-                    <option value="12G SDI">12G SDI</option>
-                  </select>
-                  <input
-                    value={connector.resolution || ''}
-                    onChange={(e) => updateConnector(connector.id, 'resolution', e.target.value)}
-                    className="card-field resolution"
-                    placeholder="Resolution"
-                  />
+                  <th className="col-source">SOURCE</th>
+                  <th className="col-connection">CONNECTOR</th>
+                  <th className="col-resolution">RESOLUTION</th>
                 </>
               ) : (
                 <>
-                  <input
-                    value={connector.resolution || ''}
-                    onChange={(e) => updateConnector(connector.id, 'resolution', e.target.value)}
-                    className="card-field resolution"
-                    placeholder="Resolution"
-                  />
-                  <select
-                    value={connector.type}
-                    onChange={(e) => updateConnector(connector.id, 'type', e.target.value as any)}
-                    className="card-field connector"
-                  >
-                    <option value="DP 1.2">DP 1.2</option>
-                    <option value="HDMI 2.0">HDMI 2.0</option>
-                    <option value="12G SDI">12G SDI</option>
-                  </select>
-                  <EditableSelect
-                    value={connector.destination || ''}
-                    options={destinationsWithColors}
-                    onChange={(value) => updateConnector(connector.id, 'destination', value)}
-                    placeholder="Select Destination"
-                    className="card-field destination"
-                  />
+                  <th className="col-resolution">RESOLUTION</th>
+                  <th className="col-connection">CONNECTOR</th>
+                  <th className="col-destination">DESTINATION</th>
                 </>
               )}
-              <button className="remove-btn" onClick={() => removeConnector(connector.id)}>×</button>
-            </div>
-          ))}
-        </div>
-        <button className="add-connector-btn" onClick={addConnector}>+ Add Connector</button>
+              <th className="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {connectors.map((connector) => (
+              <tr key={connector.id} className="port-table-row">
+                {data.cardType === 'input' ? (
+                  <>
+                    <td className="col-source">
+                      <div className="cell-with-handle">
+                        <Handle
+                          type={handleType}
+                          position={handlePosition}
+                          id={`connector-${connector.id}`}
+                          className="port-handle left"
+                        />
+                        <EditableSelect
+                          value={connector.source || ''}
+                          options={sourcesWithColors}
+                          onChange={(value) => updateConnector(connector.id, 'source', value)}
+                          placeholder="Select Source"
+                          className="table-select"
+                        />
+                      </div>
+                    </td>
+                    <td className="col-connection">
+                      <select
+                        value={connector.type}
+                        onChange={(e) => updateConnector(connector.id, 'type', e.target.value as any)}
+                        className="table-select"
+                      >
+                        <option value="DP 1.2">DP 1.2</option>
+                        <option value="HDMI 2.0">HDMI 2.0</option>
+                        <option value="12G SDI">12G SDI</option>
+                      </select>
+                    </td>
+                    <td className="col-resolution">
+                      <input
+                        value={connector.resolution || ''}
+                        onChange={(e) => updateConnector(connector.id, 'resolution', e.target.value)}
+                        className="table-input"
+                        placeholder="Resolution"
+                      />
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="col-resolution">
+                      <div className="cell-with-handle">
+                        <input
+                          value={connector.resolution || ''}
+                          onChange={(e) => updateConnector(connector.id, 'resolution', e.target.value)}
+                          className="table-input"
+                          placeholder="Resolution"
+                        />
+                      </div>
+                    </td>
+                    <td className="col-connection">
+                      <select
+                        value={connector.type}
+                        onChange={(e) => updateConnector(connector.id, 'type', e.target.value as any)}
+                        className="table-select"
+                      >
+                        <option value="DP 1.2">DP 1.2</option>
+                        <option value="HDMI 2.0">HDMI 2.0</option>
+                        <option value="12G SDI">12G SDI</option>
+                      </select>
+                    </td>
+                    <td className="col-destination">
+                      <div className="cell-with-handle">
+                        <EditableSelect
+                          value={connector.destination || ''}
+                          options={destinationsWithColors}
+                          onChange={(value) => updateConnector(connector.id, 'destination', value)}
+                          placeholder="Select Destination"
+                          className="table-select"
+                        />
+                        <Handle
+                          type={handleType}
+                          position={handlePosition}
+                          id={`connector-${connector.id}`}
+                          className="port-handle right"
+                        />
+                      </div>
+                    </td>
+                  </>
+                )}
+                <td className="col-actions">
+                  <button className="remove-btn" onClick={() => removeConnector(connector.id)}>×</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       </div>
       <NodeResizer

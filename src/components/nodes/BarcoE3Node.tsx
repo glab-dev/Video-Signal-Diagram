@@ -825,6 +825,9 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         />
       </div>
 
+      {/* SYSTEMS Header */}
+      <div className="systems-header">SYSTEMS</div>
+
       <div className="barco-e3-content nodrag">
         {layout === 'stacked' ? (
           <>

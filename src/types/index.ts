@@ -24,6 +24,7 @@ export interface Port {
   name: string;
   type: ConnectionType;
   customType?: string; // Used when type is 'Custom'
+  handleSide?: 'left' | 'right'; // Which side the handle appears on
 }
 
 // Base node data that all nodes share

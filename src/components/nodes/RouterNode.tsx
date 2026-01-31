@@ -31,50 +31,39 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
-  // Get sources with colors - category overrides + pure source nodes (output-only)
+  // Get sources with colors
   const sourcesWithColors = useMemo(() => {
-    // Start with category overrides marked as 'source'
     const overrides = permanentSources
       .filter(s => s.category === 'source')
       .map(s => ({ label: s.name, color: s.color }));
 
-    // Skip nodes with destination override
     const destinationOverrideNames = new Set(
       permanentSources.filter(s => s.category === 'destination').map(s => s.name)
     );
 
-    // Add dynamic sources from nodes
     const dynamic = nodeSummaries
       .filter(n => {
         if (n.id === id || !n.label) return false;
-        // Skip if has destination override
         if (destinationOverrideNames.has(n.label)) return false;
-        // Pure sources: nodes that output signals but don't receive them
         const isPureSource =
-          // GenericIO with outputs only
           (n.hasOutputs && !n.hasInputs && !n.hasRows) ||
-          // Card configured as output type
           (n.hasOutputConnectors && !n.hasInputConnectors) ||
-          // BarcoE3 with only output cards
           (n.hasOutputCards && !n.hasInputCards);
         return isPureSource;
       })
       .map(n => ({ label: n.label, color: n.color }));
 
-    // Merge and deduplicate (overrides take precedence)
     const all = [...overrides, ...dynamic];
     const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
   }, [nodeSummaries, id, permanentSources]);
 
-  // Get destinations with colors - category overrides + pure destination nodes (input-only)
+  // Get destinations with colors
   const destinationsWithColors = useMemo(() => {
-    // Start with category overrides marked as 'destination'
     const overrides = permanentSources
       .filter(s => s.category === 'destination')
       .map(s => ({ label: s.name, color: s.color }));
 
-    // Skip nodes with source override
     const sourceOverrideNames = new Set(
       permanentSources.filter(s => s.category === 'source').map(s => s.name)
     );
@@ -82,23 +71,16 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
     const dests = nodeSummaries
       .filter(n => {
         if (n.id === id || !n.label) return false;
-        // Skip if has source override
         if (sourceOverrideNames.has(n.label)) return false;
-        // Pure destinations: nodes that receive signals but don't output them
         const isPureDestination =
-          // GenericIO with inputs only
           (n.hasInputs && !n.hasOutputs && !n.hasRows) ||
-          // Card configured as input type
           (n.hasInputConnectors && !n.hasOutputConnectors) ||
-          // BarcoE3 with only input cards
           (n.hasInputCards && !n.hasOutputCards) ||
-          // LEDWall is always a destination
           n.type === 'ledWall';
         return isPureDestination;
       })
       .map(n => ({ label: n.label, color: n.color }));
 
-    // Merge and deduplicate
     const all = [...overrides, ...dests];
     const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
@@ -106,7 +88,9 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
 
   const nodeColor = data.color || '#0088cc';
 
-  // Handle drag start for category override drop zone
+  // Safety default for rows array
+  const rows = data.rows || [];
+
   const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
@@ -118,31 +102,31 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
 
   const updateRow = useCallback(
     (rowId: string, field: keyof RouterRow, value: string) => {
-      const newRows = data.rows.map((row) =>
+      const newRows = rows.map((row) =>
         row.id === rowId ? { ...row, [field]: value } : row
       );
       updateNodeData(id, { rows: newRows });
     },
-    [id, data.rows, updateNodeData]
+    [id, rows, updateNodeData]
   );
 
   const addRow = useCallback(() => {
     const newRow: RouterRow = {
       id: uuidv4(),
       source: '',
-      inOut: String(data.rows.length + 1),
+      inOut: String(rows.length + 1),
       destination: '',
     };
-    updateNodeData(id, { rows: [...data.rows, newRow] });
-  }, [id, data.rows, updateNodeData]);
+    updateNodeData(id, { rows: [...rows, newRow] });
+  }, [id, rows, updateNodeData]);
 
   const removeRow = useCallback(
     (rowId: string) => {
-      if (data.rows.length > 1) {
-        updateNodeData(id, { rows: data.rows.filter((r) => r.id !== rowId) });
+      if (rows.length > 1) {
+        updateNodeData(id, { rows: rows.filter((r) => r.id !== rowId) });
       }
     },
-    [id, data.rows, updateNodeData]
+    [id, rows, updateNodeData]
   );
 
   const updateLabel = useCallback(
@@ -187,124 +171,111 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff' }}
       />
-      {/* Color picker OUTSIDE scaled content to avoid transform coordinate issues */}
-      <div
-        className="color-picker-row nodrag"
-        style={{
-          pointerEvents: 'auto',
-          position: 'absolute',
-          top: 40,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '3px',
-          padding: '6px 10px',
-          background: 'rgba(30, 30, 30, 0.95)',
-          borderBottom: '1px solid #333'
-        }}
-      >
-        {NODE_COLORS.map((color) => (
-          <button
-            type="button"
-            key={color}
-            className={`color-btn nodrag ${(data.color || '#444') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              updateColor(color);
-            }}
-          />
-        ))}
-      </div>
       <div ref={contentRef} style={scaleStyle}>
-      <Handle type="target" position={Position.Left} id="input" />
+        <Handle type="target" position={Position.Left} id="input" />
 
-      <div className="node-header" style={{ backgroundColor: data.color || '#444' }}>
-        <EditableTitle value={data.label} placeholder="Router Name" onChange={updateLabel} className="node-title light" />
-        <PresetMenu
-          nodeType="router"
-          currentData={data}
-          currentLabel={data.label}
-          onLoadPreset={handleLoadPreset}
-          onRename={updateLabel}
-        />
-        <button
-          className="category-drag-btn nodrag"
-          draggable
-          onDragStart={handleCategoryDragStart}
-          title="Drag to Category Overrides to set as source/destination"
-        >
-          ⊕
-        </button>
-      </div>
+        {/* Node Header */}
+        <div className="node-header" style={{ backgroundColor: data.color || '#444' }}>
+          <EditableTitle value={data.label} placeholder="Router Name" onChange={updateLabel} className="node-title light" />
+          <PresetMenu
+            nodeType="router"
+            currentData={data}
+            currentLabel={data.label}
+            onLoadPreset={handleLoadPreset}
+            onRename={updateLabel}
+          />
+          <button
+            className="category-drag-btn nodrag"
+            draggable
+            onDragStart={handleCategoryDragStart}
+            title="Drag to Category Overrides to set as source/destination"
+          >
+            ⊕
+          </button>
+        </div>
 
-      <table className="router-table nodrag">
-        <thead>
-          <tr>
-            <th>SOURCE</th>
-            <th>IN/OUT</th>
-            <th>DESTINATION</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.rows.map((row) => (
-            <tr key={row.id}>
-              <td>
-                <EditableSelect
-                  value={row.source || ''}
-                  options={sourcesWithColors}
-                  onChange={(value) => updateRow(row.id, 'source', value)}
-                  placeholder="Select Source"
-                />
-              </td>
-              <td>
-                <input
-                  value={row.inOut}
-                  onChange={(e) => updateRow(row.id, 'inOut', e.target.value)}
-                  placeholder="#"
-                  className="small-input"
-                />
-              </td>
-              <td>
-                <EditableSelect
-                  value={row.destination || ''}
-                  options={destinationsWithColors}
-                  onChange={(value) => updateRow(row.id, 'destination', value)}
-                  placeholder="Select Destination"
-                />
-              </td>
-              <td>
-                <button
-                  className="remove-btn"
-                  onClick={() => removeRow(row.id)}
-                  title="Remove row"
-                >
-                  ×
-                </button>
-              </td>
-            </tr>
+        {/* Color Picker */}
+        <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
+          {NODE_COLORS.map((color) => (
+            <button
+              type="button"
+              key={color}
+              className={`color-btn nodrag ${(data.color || '#444') === color ? 'active' : ''}`}
+              style={{ backgroundColor: color, pointerEvents: 'auto' }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                updateColor(color);
+              }}
+            />
           ))}
-        </tbody>
-      </table>
+        </div>
 
-      <button className="add-row-btn" onClick={addRow}>
-        + Add Row
-      </button>
+        {/* SYSTEMS Header */}
+        <div className="systems-header">SYSTEMS</div>
 
-      <Handle type="source" position={Position.Right} id="output" />
+        {/* Router Table */}
+        <div className="io-table-section">
+          <div className="io-table-header">
+            <span>ROUTING</span>
+            <button className="add-btn" onClick={addRow}>+</button>
+          </div>
+          <table className="io-table nodrag">
+            <thead>
+              <tr>
+                <th className="col-source">SOURCE</th>
+                <th className="col-inout">IN/OUT</th>
+                <th className="col-destination">DESTINATION</th>
+                <th className="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="port-table-row">
+                  <td className="col-source">
+                    <EditableSelect
+                      value={row.source || ''}
+                      options={sourcesWithColors}
+                      onChange={(value) => updateRow(row.id, 'source', value)}
+                      placeholder="Select Source"
+                      className="table-select"
+                    />
+                  </td>
+                  <td className="col-inout">
+                    <input
+                      value={row.inOut}
+                      onChange={(e) => updateRow(row.id, 'inOut', e.target.value)}
+                      placeholder="#"
+                      className="table-input inout-input"
+                    />
+                  </td>
+                  <td className="col-destination">
+                    <EditableSelect
+                      value={row.destination || ''}
+                      options={destinationsWithColors}
+                      onChange={(value) => updateRow(row.id, 'destination', value)}
+                      placeholder="Select Destination"
+                      className="table-select"
+                    />
+                  </td>
+                  <td className="col-actions">
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeRow(row.id)}
+                      title="Remove row"
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Handle type="source" position={Position.Right} id="output" />
       </div>
-      <NodeResizer
-        minWidth={220}
-        minHeight={120}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff' }}
-      />
     </div>
   );
 }

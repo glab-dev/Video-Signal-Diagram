@@ -1,5 +1,4 @@
 import { useCallback, useContext, useState } from 'react';
-import type { DragEvent } from 'react';
 import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { GenericIONodeData, Port, NodeData, ConnectionType } from '../../types';
@@ -32,6 +31,10 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   // Track which port is temporarily showing dropdown (for switching from Custom to preset)
   const [showDropdownForPort, setShowDropdownForPort] = useState<string | null>(null);
 
+  // Safety defaults for arrays
+  const inputs = data.inputs || [];
+  const outputs = data.outputs || [];
+
   const updateLabel = useCallback(
     (value: string) => {
       updateNodeData(id, { label: value });
@@ -52,8 +55,8 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
       updateNodeData(id, {
         label: genericData.label,
         color: genericData.color,
-        inputs: genericData.inputs,
-        outputs: genericData.outputs
+        inputs: genericData.inputs || [],
+        outputs: genericData.outputs || []
       });
     },
     [id, updateNodeData]
@@ -62,80 +65,105 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
-    // Force React Flow to update handle positions after layout change
     setTimeout(() => updateNodeInternals(id), 0);
   }, [id, data.layout, updateNodeData, updateNodeInternals]);
 
-  const updateInput = useCallback(
-    (portId: string, name: string) => {
-      const newInputs = data.inputs.map((port) =>
-        port.id === portId ? { ...port, name } : port
-      );
-      updateNodeData(id, { inputs: newInputs });
-    },
-    [id, data.inputs, updateNodeData]
-  );
-
   const updateInputType = useCallback(
     (portId: string, type: ConnectionType) => {
-      const newInputs = data.inputs.map((port) =>
+      const newInputs = inputs.map((port) =>
         port.id === portId ? { ...port, type, customType: type === 'Custom' ? port.customType : undefined } : port
       );
       updateNodeData(id, { inputs: newInputs });
     },
-    [id, data.inputs, updateNodeData]
+    [id, inputs, updateNodeData]
   );
 
   const updateInputCustomType = useCallback(
     (portId: string, customType: string) => {
-      const newInputs = data.inputs.map((port) =>
+      const newInputs = inputs.map((port) =>
         port.id === portId ? { ...port, customType } : port
       );
       updateNodeData(id, { inputs: newInputs });
     },
-    [id, data.inputs, updateNodeData]
+    [id, inputs, updateNodeData]
   );
 
-  const updateOutput = useCallback(
-    (portId: string, name: string) => {
-      const newOutputs = data.outputs.map((port) =>
-        port.id === portId ? { ...port, name } : port
+  const toggleInputHandleSide = useCallback(
+    (portId: string) => {
+      const newInputs = inputs.map((port) =>
+        port.id === portId
+          ? { ...port, handleSide: port.handleSide === 'right' ? 'left' : 'right' as 'left' | 'right' }
+          : port
+      );
+      updateNodeData(id, { inputs: newInputs });
+      setTimeout(() => updateNodeInternals(id), 0);
+    },
+    [id, inputs, updateNodeData, updateNodeInternals]
+  );
+
+  const toggleOutputHandleSide = useCallback(
+    (portId: string) => {
+      const newOutputs = outputs.map((port) =>
+        port.id === portId
+          ? { ...port, handleSide: port.handleSide === 'left' ? 'right' : 'left' as 'left' | 'right' }
+          : port
+      );
+      updateNodeData(id, { outputs: newOutputs });
+      setTimeout(() => updateNodeInternals(id), 0);
+    },
+    [id, outputs, updateNodeData, updateNodeInternals]
+  );
+
+  const updateOutputType = useCallback(
+    (portId: string, type: ConnectionType) => {
+      const newOutputs = outputs.map((port) =>
+        port.id === portId ? { ...port, type, customType: type === 'Custom' ? port.customType : undefined } : port
       );
       updateNodeData(id, { outputs: newOutputs });
     },
-    [id, data.outputs, updateNodeData]
+    [id, outputs, updateNodeData]
+  );
+
+  const updateOutputCustomType = useCallback(
+    (portId: string, customType: string) => {
+      const newOutputs = outputs.map((port) =>
+        port.id === portId ? { ...port, customType } : port
+      );
+      updateNodeData(id, { outputs: newOutputs });
+    },
+    [id, outputs, updateNodeData]
   );
 
   const addInput = useCallback(() => {
     const newPort: Port = {
       id: uuidv4(),
-      name: `Input ${data.inputs.length + 1}`,
-      type: 'Custom',
+      name: `Input ${inputs.length + 1}`,
+      type: 'HDMI',
     };
-    updateNodeData(id, { inputs: [...data.inputs, newPort] });
-  }, [id, data.inputs, updateNodeData]);
+    updateNodeData(id, { inputs: [...inputs, newPort] });
+  }, [id, inputs, updateNodeData]);
 
   const addOutput = useCallback(() => {
     const newPort: Port = {
       id: uuidv4(),
-      name: `Output ${data.outputs.length + 1}`,
-      type: 'Custom',
+      name: `Output ${outputs.length + 1}`,
+      type: 'HDMI',
     };
-    updateNodeData(id, { outputs: [...data.outputs, newPort] });
-  }, [id, data.outputs, updateNodeData]);
+    updateNodeData(id, { outputs: [...outputs, newPort] });
+  }, [id, outputs, updateNodeData]);
 
   const removeInput = useCallback(
     (portId: string) => {
-      updateNodeData(id, { inputs: data.inputs.filter((p) => p.id !== portId) });
+      updateNodeData(id, { inputs: inputs.filter((p) => p.id !== portId) });
     },
-    [id, data.inputs, updateNodeData]
+    [id, inputs, updateNodeData]
   );
 
   const removeOutput = useCallback(
     (portId: string) => {
-      updateNodeData(id, { outputs: data.outputs.filter((p) => p.id !== portId) });
+      updateNodeData(id, { outputs: outputs.filter((p) => p.id !== portId) });
     },
-    [id, data.outputs, updateNodeData]
+    [id, outputs, updateNodeData]
   );
 
   const nodeColor = data.color || '#0088cc';
@@ -150,15 +178,146 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
   const showLockToggle = cascadeInfo && cascadeInfo.isFirstInGroup && cascadeInfo.groupNodes.length >= 2;
   const isLocked = cascadeInfo?.isLocked || false;
 
-  // Handle drag start for category override drop zone
-  const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
-      label: data.label,
-      color: nodeColor,
-    }));
-    e.dataTransfer.effectAllowed = 'copy';
-  }, [data.label, nodeColor]);
+  // Render a port table section (inputs or outputs)
+  const renderPortTable = (
+    ports: Port[],
+    isInput: boolean,
+    sectionTitle: string,
+    onAdd: () => void,
+    onRemove: (portId: string) => void,
+    onTypeChange: (portId: string, type: ConnectionType) => void,
+    onCustomTypeChange: (portId: string, customType: string) => void,
+    onToggleHandleSide: (portId: string) => void
+  ) => (
+    <div className="io-table-section">
+      <div className="io-table-header">
+        <span>{sectionTitle}</span>
+        <button className="add-btn" onClick={onAdd}>+</button>
+      </div>
+      <table className="io-table">
+        <thead>
+          <tr>
+            <th className="col-source">SOURCE</th>
+            <th className="col-name">NAME</th>
+            <th className="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {ports.map((port) => {
+            const handleOnOpposite = isInput
+              ? port.handleSide === 'right'
+              : port.handleSide === 'left';
+            const handlePosition = isInput
+              ? (port.handleSide === 'right' ? Position.Right : Position.Left)
+              : (port.handleSide === 'left' ? Position.Left : Position.Right);
+            const handleClass = isInput
+              ? (port.handleSide === 'right' ? 'right' : 'left')
+              : (port.handleSide === 'left' ? 'left' : 'right');
+
+            // Determine if handle should be on left or right
+            const handleOnLeft = isInput ? !handleOnOpposite : handleOnOpposite;
+
+            return (
+              <tr key={port.id} className={`port-table-row ${handleOnOpposite ? 'handle-opposite' : ''}`}>
+                <td className="col-source">
+                  <div className="cell-with-handle">
+                    {handleOnLeft && (
+                      <Handle
+                        type={isInput ? 'target' : 'source'}
+                        position={handlePosition}
+                        id={`${isInput ? 'input' : 'output'}-${port.id}`}
+                        className={`port-handle ${handleClass}`}
+                      />
+                    )}
+                    {port.type === 'Custom' ? (
+                      <div className="custom-type-wrapper">
+                        <div className="custom-type-row">
+                          <input
+                            value={port.customType || ''}
+                            onChange={(e) => onCustomTypeChange(port.id, e.target.value)}
+                            className="port-field custom-type"
+                            placeholder="Type"
+                          />
+                          <button
+                            className="preset-btn"
+                            onClick={() => {
+                              const key = isInput ? port.id : `out-${port.id}`;
+                              setShowDropdownForPort(showDropdownForPort === key ? null : key);
+                            }}
+                            title="Switch to preset"
+                          >
+                            ▼
+                          </button>
+                        </div>
+                        {showDropdownForPort === (isInput ? port.id : `out-${port.id}`) && (
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              onTypeChange(port.id, e.target.value as ConnectionType);
+                              setShowDropdownForPort(null);
+                            }}
+                            onBlur={() => setTimeout(() => setShowDropdownForPort(null), 150)}
+                            className="port-field type-select dropdown-below"
+                            autoFocus
+                            size={7}
+                          >
+                            {Object.entries(CONNECTOR_GROUPS).map(([_groupName, types]) => (
+                              types.map((type) => (
+                                <option key={type} value={type}>{type}</option>
+                              ))
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    ) : (
+                      <select
+                        value={port.type}
+                        onChange={(e) => onTypeChange(port.id, e.target.value as ConnectionType)}
+                        className="port-field type-select"
+                      >
+                        {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
+                          <optgroup key={groupName} label={groupName}>
+                            {types.map((type) => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </td>
+                <td className="col-name">
+                  <div className="cell-with-handle">
+                    <span className="name-text">{port.name}</span>
+                    {!handleOnLeft && (
+                      <Handle
+                        type={isInput ? 'target' : 'source'}
+                        position={handlePosition}
+                        id={`${isInput ? 'input' : 'output'}-${port.id}`}
+                        className={`port-handle ${handleClass}`}
+                      />
+                    )}
+                  </div>
+                </td>
+                <td className="col-actions">
+                  <div className="action-buttons">
+                    <button
+                      className="handle-switch-btn"
+                      onClick={() => onToggleHandleSide(port.id)}
+                      title={handleOnOpposite ? 'Move handle to default side' : 'Move handle to opposite side'}
+                    >
+                      {isInput ? (handleOnOpposite ? '←' : '→') : (handleOnOpposite ? '→' : '←')}
+                    </button>
+                    <button className="remove-btn" onClick={() => onRemove(port.id)}>×</button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
     <div
@@ -179,141 +338,69 @@ function GenericIONode({ id, data, selected, width, height }: GenericIONodeProps
         </button>
       )}
       <div ref={contentRef} style={scaleStyle}>
-      <div className="node-header" style={{ backgroundColor: nodeColor }}>
-        <EditableTitle value={data.label} placeholder="Device Name" onChange={updateLabel} className="node-title light" />
-        <PresetMenu
-          nodeType="genericIO"
-          currentData={data}
-          currentLabel={data.label}
-          onLoadPreset={handleLoadPreset}
-          onRename={updateLabel}
-        />
-        <button
-          className="layout-toggle-btn nodrag"
-          onClick={toggleLayout}
-          title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
-        >
-          {layout === 'stacked' ? '⇄' : '⇅'}
-        </button>
-        <button
-          className="category-drag-btn nodrag"
-          draggable
-          onDragStart={handleCategoryDragStart}
-          title="Drag to Category Overrides to set as source/destination"
-        >
-          ⊕
-        </button>
-      </div>
-
-      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
-        {NODE_COLORS.map((color) => (
-          <button
-            type="button"
-            key={color}
-            className={`color-btn ${nodeColor === color ? 'active' : ''}`}
-            style={{ backgroundColor: color, pointerEvents: 'auto' }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              updateColor(color);
-            }}
+        {/* Node Header */}
+        <div className="node-header" style={{ backgroundColor: nodeColor }}>
+          <EditableTitle value={data.label} placeholder="Device Name" onChange={updateLabel} className="node-title light" />
+          <PresetMenu
+            nodeType="genericIO"
+            currentData={data}
+            currentLabel={data.label}
+            onLoadPreset={handleLoadPreset}
+            onRename={updateLabel}
           />
-        ))}
-      </div>
-
-      <div className="generic-io-content nodrag">
-        <div className="io-section">
-          <div className="section-header">
-            <span>INPUTS</span>
-            <button className="add-btn" onClick={addInput}>+</button>
-          </div>
-          <div className="port-list">
-            {data.inputs.map((port) => (
-              <div key={port.id} className="port-row">
-                <Handle
-                  type="target"
-                  position={Position.Left}
-                  id={`input-${port.id}`}
-                  className="port-handle left"
-                />
-                {port.type === 'Custom' && showDropdownForPort !== port.id ? (
-                  <>
-                    <input
-                      value={port.customType || ''}
-                      onChange={(e) => updateInputCustomType(port.id, e.target.value)}
-                      className="port-field custom-type"
-                      placeholder="Connector..."
-                    />
-                    <button
-                      className="preset-btn"
-                      onClick={() => setShowDropdownForPort(port.id)}
-                      title="Switch to preset"
-                    >
-                      ▼
-                    </button>
-                  </>
-                ) : (
-                  <select
-                    value={port.type === 'Custom' ? '' : port.type}
-                    onChange={(e) => {
-                      updateInputType(port.id, e.target.value as ConnectionType);
-                      setShowDropdownForPort(null);
-                    }}
-                    onBlur={() => setShowDropdownForPort(null)}
-                    className="port-field type-select"
-                    autoFocus={showDropdownForPort === port.id}
-                  >
-                    {showDropdownForPort === port.id && (
-                      <option value="" disabled>Select connector...</option>
-                    )}
-                    {Object.entries(CONNECTOR_GROUPS).map(([groupName, types]) => (
-                      <optgroup key={groupName} label={groupName}>
-                        {types.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                )}
-                <input
-                  value={port.name}
-                  onChange={(e) => updateInput(port.id, e.target.value)}
-                  className="port-field name"
-                  placeholder="Input name"
-                />
-                <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
-              </div>
-            ))}
-          </div>
+          <button
+            className="layout-toggle-btn nodrag"
+            onClick={toggleLayout}
+            title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
+          >
+            {layout === 'stacked' ? '⇄' : '⇅'}
+          </button>
         </div>
 
-        <div className="io-section">
-          <div className="section-header">
-            <span>OUTPUTS</span>
-            <button className="add-btn" onClick={addOutput}>+</button>
-          </div>
-          <div className="port-list">
-            {data.outputs.map((port) => (
-              <div key={port.id} className="port-row output">
-                <input
-                  value={port.name}
-                  onChange={(e) => updateOutput(port.id, e.target.value)}
-                  className="port-field name"
-                  placeholder="Output name"
-                />
-                <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={`output-${port.id}`}
-                  className="port-handle right"
-                />
-              </div>
-            ))}
-          </div>
+        {/* Color Picker */}
+        <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
+          {NODE_COLORS.map((color) => (
+            <button
+              type="button"
+              key={color}
+              className={`color-btn ${nodeColor === color ? 'active' : ''}`}
+              style={{ backgroundColor: color, pointerEvents: 'auto' }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                updateColor(color);
+              }}
+            />
+          ))}
         </div>
-      </div>
+
+        {/* SYSTEMS Header */}
+        <div className="systems-header">SYSTEMS</div>
+
+        {/* Input/Output Tables */}
+        <div className="generic-io-content nodrag">
+          {renderPortTable(
+            inputs,
+            true,
+            'INPUT',
+            addInput,
+            removeInput,
+            updateInputType,
+            updateInputCustomType,
+            toggleInputHandleSide
+          )}
+          {renderPortTable(
+            outputs,
+            false,
+            'OUTPUT',
+            addOutput,
+            removeOutput,
+            updateOutputType,
+            updateOutputCustomType,
+            toggleOutputHandleSide
+          )}
+        </div>
       </div>
       <NodeResizer
         minWidth={160}
