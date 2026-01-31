@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.40': [
+    'Fix node sizing regression - restore useNodeScale hook',
+  ],
   '1.0.39': [
     'Fix node sizing to properly fit content and align NodeResizer',
   ],
