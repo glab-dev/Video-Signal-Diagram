@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.41': [
+    'Add testing infrastructure and refactor hooks into modules',
+  ],
   '1.0.40': [
     'Fix node sizing regression - restore useNodeScale hook',
   ],
