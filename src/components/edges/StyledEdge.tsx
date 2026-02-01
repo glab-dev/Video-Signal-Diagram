@@ -6,6 +6,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 import type { EdgeData } from '../EdgeLabelEditor';
+import { useTheme, themeEdgeColors } from '../../themes';
 
 interface StyledEdgeData extends EdgeData {
   showOutline?: boolean;
@@ -39,16 +40,47 @@ function StyledEdge({
     targetPosition,
   });
 
+  const { theme } = useTheme();
+  const edgeColors = themeEdgeColors[theme];
+
   const edgeData = data as StyledEdgeData | undefined;
   const showOutline = edgeData?.showOutline ?? false;
   const dashPattern = edgeData?.dashPattern ?? '';
   const animated = edgeData?.animated ?? false;
 
-  const baseStroke = style?.stroke ?? '#888';
+  // Use edge color from style if provided, otherwise use theme color
+  const baseStroke = style?.stroke ?? edgeColors.stroke;
   const baseStrokeWidth = (style?.strokeWidth as number) ?? 2;
+
+  // Generate unique gradient ID for holographic theme
+  const gradientId = `holo-gradient-${id}`;
 
   return (
     <>
+      {/* SVG Defs for holographic gradient */}
+      {theme === 'holographic' && (
+        <defs>
+          <linearGradient id={gradientId} gradientUnits="userSpaceOnUse" x1={sourceX} y1={sourceY} x2={targetX} y2={targetY}>
+            <stop offset="0%" stopColor="#00d4ff">
+              <animate attributeName="stop-color" values="#00d4ff;#9d00ff;#ff00aa;#00d4ff" dur="3s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="50%" stopColor="#9d00ff">
+              <animate attributeName="stop-color" values="#9d00ff;#ff00aa;#00d4ff;#9d00ff" dur="3s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor="#ff00aa">
+              <animate attributeName="stop-color" values="#ff00aa;#00d4ff;#9d00ff;#ff00aa" dur="3s" repeatCount="indefinite" />
+            </stop>
+          </linearGradient>
+          <filter id={`${gradientId}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      )}
+
       {/* Invisible interaction zone for easier clicking/selection */}
       <path
         d={edgePath}
@@ -66,7 +98,7 @@ function StyledEdge({
           className="react-flow__edge-path edge-selection-highlight"
           d={edgePath}
           strokeWidth={baseStrokeWidth + 8}
-          stroke="rgba(0, 170, 255, 0.4)"
+          stroke={edgeColors.glow}
           strokeLinecap="round"
           fill="none"
         />
@@ -93,14 +125,16 @@ function StyledEdge({
         markerEnd={markerEnd}
         style={{
           ...style,
+          stroke: theme === 'holographic' ? `url(#${gradientId})` : baseStroke,
           strokeDasharray: dashPattern || undefined,
+          filter: theme === 'holographic' ? `url(#${gradientId}-glow)` : undefined,
         }}
         className={animated ? 'edge-animated' : ''}
       />
 
       {/* Animated flow indicator */}
       {animated && (
-        <circle r="4" fill={baseStroke as string} className="edge-flow-dot">
+        <circle r="4" fill={edgeColors.stroke} className="edge-flow-dot">
           <animateMotion dur="2s" repeatCount="indefinite" path={edgePath} />
         </circle>
       )}

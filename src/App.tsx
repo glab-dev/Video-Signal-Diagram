@@ -37,6 +37,36 @@ import { CascadeLockContext } from './contexts/CascadeLockContext';
 import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
 import './App.css';
+import { ThemeProvider, useTheme, themeNames } from './themes';
+import type { ThemeId } from './themes';
+
+// Theme Switcher Component - floating dock at bottom center
+function ThemeSwitcher() {
+  const { theme, setTheme } = useTheme();
+  const themes: ThemeId[] = ['neonVapor', 'circuitBoard', 'holographic'];
+
+  return (
+    <Panel position="bottom-center">
+      <div className="theme-switcher">
+        {themes.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTheme(t)}
+            className={`theme-btn ${theme === t ? 'active' : ''}`}
+            title={themeNames[t]}
+          >
+            <span className="theme-icon">
+              {t === 'neonVapor' && '✦'}
+              {t === 'circuitBoard' && '⬡'}
+              {t === 'holographic' && '◈'}
+            </span>
+            <span className="theme-label">{themeNames[t]}</span>
+          </button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
 
 // Custom edge types
 const edgeTypes = {
@@ -912,6 +942,7 @@ function Flow() {
               {showMiniMap ? '🗺️ Hide Map' : '🗺️ Show Map'}
             </button>
           </Panel>
+          <ThemeSwitcher />
         </ReactFlow>
         </NodeSummariesContext.Provider>
         </PermanentSourcesContext.Provider>
@@ -994,10 +1025,12 @@ function Flow() {
 
 function App() {
   return (
-    <ReactFlowProvider>
-      <Flow />
-      <UpdateNotification />
-    </ReactFlowProvider>
+    <ThemeProvider>
+      <ReactFlowProvider>
+        <Flow />
+        <UpdateNotification />
+      </ReactFlowProvider>
+    </ThemeProvider>
   );
 }
 

@@ -104,6 +104,37 @@ export function createNodeFromPreset(
     };
   }
 
+  if (preset.type === 'super') {
+    return {
+      id: uuidv4(),
+      type: 'super',
+      position,
+      data: {
+        label: preset.name,
+        color: preset.color,
+        inputSection: {
+          ports: [],
+          columnName: 'INPUTS',
+        },
+        outputSection: {
+          ports: [],
+          columnName: 'OUTPUTS',
+        },
+        system: {
+          platform: 'MacBook Pro',
+          software: 'none',
+          captureCard: 'none',
+        },
+        layout: {
+          rows: [['system'], ['input'], ['output']],
+          inputAnchorSide: 'left',
+          outputAnchorSide: 'right',
+          systemCollapsed: false,
+        },
+      },
+    };
+  }
+
   if (preset.type === 'card') {
     const isInput = preset.cardType === 'input';
     return {

@@ -187,6 +187,11 @@ export const NODE_CATEGORIES = {
         color: '#006400',
       },
       {
+        name: 'SuperNode',
+        type: 'super',
+        color: '#0088cc',
+      },
+      {
         name: 'Barco E2',
         type: 'switcher',
         color: '#006400',

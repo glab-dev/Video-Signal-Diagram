@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useViewport } from '@xyflow/react';
 import type { PageDescriptor } from '../hooks/usePageGrid';
 import type { PaperSize } from '../types';
+import { useTheme, themeBackgrounds } from '../themes';
 
 interface PageOverlayProps {
   pages: PageDescriptor[];
@@ -11,6 +12,8 @@ interface PageOverlayProps {
 
 function PageOverlayInner({ pages, showRatioOverlay, paperSize }: PageOverlayProps) {
   const { x, y, zoom } = useViewport();
+  const { theme } = useTheme();
+  const colors = themeBackgrounds[theme];
 
   const patternSize = 20;
   const dotSize = 1;
@@ -87,7 +90,7 @@ function PageOverlayInner({ pages, showRatioOverlay, paperSize }: PageOverlayPro
           height={patternSize}
           patternUnits="userSpaceOnUse"
         >
-          <circle cx={patternSize / 2} cy={patternSize / 2} r={dotSize} fill="#333" />
+          <circle cx={patternSize / 2} cy={patternSize / 2} r={dotSize} fill={colors.dot} />
         </pattern>
       </defs>
 
@@ -100,8 +103,8 @@ function PageOverlayInner({ pages, showRatioOverlay, paperSize }: PageOverlayPro
               y={page.y}
               width={page.width}
               height={page.height}
-              fill="#0a0a14"
-              stroke="#555"
+              fill={colors.page}
+              stroke={colors.grid}
               strokeWidth={borderWidth}
             />
             {/* Dot pattern clipped to page */}
@@ -116,9 +119,10 @@ function PageOverlayInner({ pages, showRatioOverlay, paperSize }: PageOverlayPro
             <text
               x={page.x + 10 / zoom}
               y={page.y + 24 / zoom}
-              fill="#666"
+              fill={colors.dot}
               fontSize={fontSize}
-              fontFamily="sans-serif"
+              fontFamily="monospace"
+              opacity={0.6}
             >
               {page.label}
             </text>

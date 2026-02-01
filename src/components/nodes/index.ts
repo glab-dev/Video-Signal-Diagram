@@ -7,6 +7,7 @@ import GenericIONode from './GenericIONode';
 import ImageNode from './ImageNode';
 import CardNode from './CardNode';
 import BarcoE3Node from './BarcoE3Node';
+import SuperNode from './SuperNode';
 
 export const nodeTypes = {
   router: RouterNode,
@@ -18,6 +19,7 @@ export const nodeTypes = {
   image: ImageNode,
   card: CardNode,
   barcoE3: BarcoE3Node,
+  super: SuperNode,
 };
 
 export {
@@ -30,4 +32,5 @@ export {
   ImageNode,
   CardNode,
   BarcoE3Node,
+  SuperNode,
 };

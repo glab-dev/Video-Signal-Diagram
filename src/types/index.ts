@@ -137,7 +137,9 @@ export type NodeData =
   | GenericIONodeData
   | ImageNodeData
   | CardNodeData
-  | BarcoE3NodeData;
+  | BarcoE3NodeData
+  | SuperNodeData
+  | ExcelNodeData;
 
 // Custom node types
 export type CustomNodeType =
@@ -149,7 +151,9 @@ export type CustomNodeType =
   | 'genericIO'
   | 'image'
   | 'card'
-  | 'barcoE3';
+  | 'barcoE3'
+  | 'super'
+  | 'excelNode';
 
 // Project save data
 export interface ProjectData {
@@ -234,4 +238,59 @@ export interface CableTallyItem {
 export interface CableTally {
   items: CableTallyItem[];
   totalCables: number;
+}
+
+// Excel node types (for spreadsheet-like nodes)
+export interface ExcelRow {
+  id: string;
+  cells: {
+    source: string;
+    in: string;
+    out: string;
+  };
+  handleSide?: 'left' | 'right' | 'both';
+}
+
+export interface ExcelNodeData extends BaseNodeData {
+  rows: ExcelRow[];
+  columns?: string[];
+}
+
+// SuperNode types - ported from nexus-x
+export type SectionId = 'input' | 'output' | 'system';
+export type LayoutRow = SectionId[];
+
+export interface SuperNodePort {
+  id: string;
+  number: number;
+  connector: string;
+  resolution: string;
+  refreshRate: string;
+}
+
+export interface SuperNodeSection {
+  ports: SuperNodePort[];
+  columnName: string;
+  columnOrder?: string[];
+}
+
+export interface SuperNodeSystem {
+  platform: string;
+  software: string;
+  captureCard: string;
+}
+
+export interface SuperNodeLayout {
+  rows: LayoutRow[];
+  inputAnchorSide?: 'left' | 'right';
+  outputAnchorSide?: 'left' | 'right';
+  systemCollapsed?: boolean;
+}
+
+export interface SuperNodeData extends BaseNodeData {
+  inputSection: SuperNodeSection;
+  outputSection: SuperNodeSection;
+  system: SuperNodeSystem;
+  layout: SuperNodeLayout;
+  signalColor?: string;
 }
