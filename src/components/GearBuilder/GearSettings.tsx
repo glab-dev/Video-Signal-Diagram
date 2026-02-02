@@ -1,8 +1,8 @@
 import type { GearConfig, CustomNodeType } from '../../types';
 
 const NODE_TYPES: { value: CustomNodeType; label: string }[] = [
-  { value: 'genericIO', label: 'Generic I/O' },
-  { value: 'processor', label: 'Processor' },
+  { value: 'barcoE3', label: 'Barco E3' },
+  { value: 'supernode', label: 'Supernode' },
 ];
 
 interface GearSettingsProps {

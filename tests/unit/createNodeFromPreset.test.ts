@@ -8,122 +8,6 @@ const position = { x: 100, y: 200 };
 // so we cast to any for runtime assertions in tests.
 
 describe('createNodeFromPreset', () => {
-  it('creates a genericIO node with correct structure', () => {
-    const preset: PresetItem = {
-      name: 'Test Source',
-      type: 'genericIO',
-      color: '#00aa44',
-      inputs: [],
-      outputs: [{ name: 'HDMI', type: 'HDMI' }],
-    };
-
-    const node = createNodeFromPreset(preset, position);
-    const data = node.data as any;
-
-    expect(node.type).toBe('genericIO');
-    expect(node.position).toEqual(position);
-    expect(node.id).toBeTruthy();
-    expect(data.label).toBe('Test Source');
-    expect(data.color).toBe('#00aa44');
-    expect(data.outputs).toHaveLength(1);
-    expect(data.outputs[0].name).toBe('HDMI');
-    expect(data.outputs[0].type).toBe('HDMI');
-    expect(data.outputs[0].id).toBeTruthy();
-    expect(data.inputs).toHaveLength(0);
-  });
-
-  it('creates a processor node with inputs and outputs', () => {
-    const preset: PresetItem = {
-      name: 'Brompton SX40',
-      type: 'processor',
-      color: '#8B0000',
-      inputs: [
-        { name: '12G SDI A', connection: '12G SDI', resolution: '3840x2160@60' },
-      ],
-      outputs: [
-        { name: 'A', connection: 'Ethernet', resolution: 'LED Data' },
-      ],
-    };
-
-    const node = createNodeFromPreset(preset, position);
-    const data = node.data as any;
-
-    expect(node.type).toBe('processor');
-    expect(data.inputs).toHaveLength(1);
-    expect(data.inputs[0].name).toBe('12G SDI A');
-    expect(data.inputs[0].connection).toBe('12G SDI');
-    expect(data.inputs[0].resolution).toBe('3840x2160@60');
-    expect(data.outputs).toHaveLength(1);
-    expect(data.outputs[0].destination).toBe('');
-  });
-
-  it('creates a switcher node (same structure as processor)', () => {
-    const preset: PresetItem = {
-      name: 'ATEM Mini Pro',
-      type: 'switcher',
-      color: '#1a1a1a',
-      inputs: [
-        { name: 'HDMI 1', connection: 'HDMI', resolution: '1920x1080@60' },
-      ],
-      outputs: [
-        { name: 'HDMI Out', connection: 'HDMI', resolution: '1920x1080@60' },
-      ],
-    };
-
-    const node = createNodeFromPreset(preset, position);
-    const data = node.data as any;
-
-    expect(node.type).toBe('switcher');
-    expect(data.inputs).toHaveLength(1);
-    expect(data.outputs).toHaveLength(1);
-    expect(data.outputs[0].destination).toBe('');
-  });
-
-  it('creates a router node with correct row count', () => {
-    const preset: PresetItem = {
-      name: 'BMD Router 20x20',
-      type: 'router',
-      color: '#1a1a1a',
-      size: 20,
-    };
-
-    const node = createNodeFromPreset(preset, position);
-    const data = node.data as any;
-
-    expect(node.type).toBe('router');
-    expect(data.rows).toHaveLength(20);
-    expect(data.rows[0].inOut).toBe('1');
-    expect(data.rows[19].inOut).toBe('20');
-  });
-
-  it('creates a router with default size 8 when size omitted', () => {
-    const preset: PresetItem = {
-      name: 'Custom Router',
-      type: 'router',
-      color: '#444',
-    };
-
-    const node = createNodeFromPreset(preset, position);
-    const data = node.data as any;
-
-    expect(data.rows).toHaveLength(8);
-  });
-
-  it('creates a ledWall node', () => {
-    const preset: PresetItem = {
-      name: 'LED Wall',
-      type: 'ledWall',
-      color: '#ff6600',
-    };
-
-    const node = createNodeFromPreset(preset, position);
-    const data = node.data as any;
-
-    expect(node.type).toBe('ledWall');
-    expect(data.label).toBe('LED Wall');
-    expect(data.color).toBe('#ff6600');
-  });
-
   it('creates a barcoE3 node with default cards', () => {
     const preset: PresetItem = {
       name: 'Barco E3',
@@ -135,6 +19,10 @@ describe('createNodeFromPreset', () => {
     const data = node.data as any;
 
     expect(node.type).toBe('barcoE3');
+    expect(node.position).toEqual(position);
+    expect(node.id).toBeTruthy();
+    expect(data.label).toBe('Barco E3');
+    expect(data.color).toBe('#006400');
     expect(data.cards).toHaveLength(2);
     expect(data.cards[0].cardType).toBe('input');
     expect(data.cards[1].cardType).toBe('output');
@@ -142,28 +30,49 @@ describe('createNodeFromPreset', () => {
     expect(data.cards[1].connectors).toHaveLength(3);
   });
 
-  it('creates a note node', () => {
+  it('creates a supernode with default inputs and outputs', () => {
     const preset: PresetItem = {
-      name: 'Note',
-      type: 'note',
-      color: '#ffeb3b',
+      name: 'Supernode',
+      type: 'supernode',
+      color: '#8800ff',
     };
 
     const node = createNodeFromPreset(preset, position);
     const data = node.data as any;
 
-    expect(node.type).toBe('note');
-    expect(data.label).toBe('NOTES');
-    expect(data.content).toBe('');
-    expect(data.backgroundColor).toBe('#ffeb3b');
+    expect(node.type).toBe('supernode');
+    expect(node.position).toEqual(position);
+    expect(node.id).toBeTruthy();
+    expect(data.label).toBe('Supernode');
+    expect(data.color).toBe('#8800ff');
+    expect(data.inputs).toHaveLength(1);
+    expect(data.outputs).toHaveLength(1);
+    expect(data.inputs[0].name).toBe('IN 1');
+    expect(data.outputs[0].name).toBe('OUT 1');
+    expect(data.software).toBe('None');
+    expect(data.captureCard).toBe('None');
+  });
+
+  it('creates a fallback node for unknown types', () => {
+    const preset: PresetItem = {
+      name: 'Unknown Device',
+      type: 'someFutureType',
+      color: '#ff0000',
+    };
+
+    const node = createNodeFromPreset(preset, position);
+    const data = node.data as any;
+
+    expect(node.type).toBe('someFutureType');
+    expect(data.label).toBe('Unknown Device');
+    expect(data.color).toBe('#ff0000');
   });
 
   it('generates unique IDs for each call', () => {
     const preset: PresetItem = {
-      name: 'Test',
-      type: 'genericIO',
-      color: '#000',
-      outputs: [{ name: 'Out', type: 'HDMI' }],
+      name: 'Barco E3',
+      type: 'barcoE3',
+      color: '#006400',
     };
 
     const node1 = createNodeFromPreset(preset, position);

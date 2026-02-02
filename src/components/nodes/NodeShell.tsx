@@ -11,7 +11,6 @@ export interface NodeShellProps {
   id: string;
   selected?: boolean;
   width?: number;
-  height?: number;
   nodeType: CustomNodeType;
   nodeClassName: string;
   defaultColor: string;
@@ -39,7 +38,6 @@ export default function NodeShell({
   id,
   selected,
   width,
-  height,
   nodeType,
   nodeClassName,
   defaultColor,
@@ -66,8 +64,8 @@ export default function NodeShell({
 
   const nodeColor = data.color || defaultColor;
   const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+  // Don't constrain height — let nodes auto-expand vertically when content changes
+  const { contentRef, scaleStyle } = useNodeScale(nodeWidth);
 
   const updateLabel = useCallback(
     (value: string) => updateNodeData(id, { label: value }),
@@ -93,7 +91,6 @@ export default function NodeShell({
       style={{
         borderColor: nodeColor,
         width: nodeWidth,
-        height: nodeHeight,
       }}
     >
       {outsideContentBefore}
@@ -164,7 +161,6 @@ export default function NodeShell({
         minWidth={minWidth}
         minHeight={minHeight}
         maxWidth={maxWidth}
-        keepAspectRatio
         isVisible={selected}
         lineStyle={{ borderColor: '#00aaff' }}
         handleStyle={{ backgroundColor: '#00aaff' }}

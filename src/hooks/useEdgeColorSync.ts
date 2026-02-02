@@ -18,8 +18,8 @@ export function useEdgeColorSync({ nodes, edges, setNodes, setEdges }: UseEdgeCo
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return '#888';
 
-    // Check if this is a pass-through node (routing matrix, routers, or converters)
-    const isPassThrough = node.type === 'switcher' || node.type === 'router';
+    // Check if this is a pass-through node (routing matrix or converters)
+    const isPassThrough = node.type === 'switcher';
     const label = (node.data?.label as string) || '';
     const labelLower = label.toLowerCase();
 

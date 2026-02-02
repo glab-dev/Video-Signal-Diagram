@@ -1,0 +1,345 @@
+/* Edge Label Editor Modal */
+/* Edge Label Editor Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.edge-editor-modal {
+  background: linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.edge-editor-modal h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.edge-editor-field {
+  margin-bottom: 12px;
+}
+
+.edge-editor-field label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.edge-editor-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.edge-editor-row .edge-editor-field {
+  flex: 1;
+}
+
+.edge-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.edge-select:focus {
+  outline: none;
+  border-color: #00aaff;
+  box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.1);
+}
+
+.edge-select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.edge-label-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.edge-label-input:focus {
+  outline: none;
+  border-color: #00aaff;
+  box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.1);
+}
+
+.edge-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.edge-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edge-btn-primary {
+  background: #00aaff;
+  color: #fff;
+}
+
+.edge-btn-primary:hover {
+  background: #0099ee;
+  box-shadow: 0 2px 8px rgba(0, 170, 255, 0.3);
+}
+
+.edge-btn-secondary {
+  background: #3a3a5a;
+  color: #fff;
+}
+
+.edge-btn-secondary:hover {
+  background: #4a4a6a;
+}
+
+.edge-editor-divider {
+  height: 1px;
+  background: #333;
+  margin: 20px 0 16px;
+}
+
+.edge-editor-danger-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edge-btn-warning {
+  flex: 1;
+  background: rgba(255, 165, 0, 0.15);
+  color: #ffaa00;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.edge-btn-warning:hover {
+  background: rgba(255, 165, 0, 0.25);
+  border-color: rgba(255, 165, 0, 0.5);
+  color: #ffbb33;
+}
+
+.edge-btn-danger {
+  flex: 1;
+  background: rgba(255, 50, 50, 0.15);
+  color: #ff6666;
+  border: 1px solid rgba(255, 50, 50, 0.3);
+}
+
+.edge-btn-danger:hover {
+  background: rgba(255, 50, 50, 0.25);
+  border-color: rgba(255, 50, 50, 0.5);
+  color: #ff8888;
+}
+
+/* Edge Style Editor Modal */
+/* ================================
+   Edge Style Editor Modal
+   ================================ */
+
+.edge-style-modal {
+  background: linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.edge-style-modal h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.edge-style-count {
+  margin: 0 0 20px;
+  font-size: 12px;
+  color: #888;
+}
+
+.edge-style-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.edge-style-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.edge-style-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #444;
+}
+
+.edge-style-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  cursor: pointer;
+  accent-color: #00aaff;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.toggle-desc {
+  font-size: 11px;
+  color: #888;
+}
+
+.edge-style-field {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.edge-style-field .field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.edge-style-field .field-desc {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+}
+
+.edge-style-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.edge-style-select:focus {
+  outline: none;
+  border-color: #00aaff;
+}
+
+.edge-style-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+
+/* Styled Edge Styles */
+/* ================================
+   Styled Edge Styles
+   ================================ */
+
+.edge-outline {
+  pointer-events: none;
+}
+
+.edge-selection-highlight {
+  pointer-events: none;
+}
+
+.edge-animated {
+  animation: edge-dash-flow 1s linear infinite;
+}
+
+@keyframes edge-dash-flow {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge-flow-dot {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.edge-label-container {
+  z-index: 1001;
+}
+
+.edge-label-bg {
+  border-radius: 4px;
+}
+
+/* Edge interaction zone for easier selection */
+.react-flow__edge-interaction {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* Selected edge highlight */
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3px;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px;
+}

@@ -34,18 +34,6 @@ export interface BaseNodeData {
   ipAddress?: string;  // IP address for network devices
 }
 
-// Router node - like BMD 20x20 in the screenshot
-export interface RouterNodeData extends BaseNodeData {
-  rows: RouterRow[];
-}
-
-export interface RouterRow {
-  id: string;
-  source: string;
-  inOut: string;
-  destination: string;
-}
-
 // Signal Processor node - like Barco E2, Brompton
 export interface ProcessorNodeData extends BaseNodeData {
   inputs: ProcessorPort[];
@@ -90,19 +78,6 @@ export interface GenericIONodeData extends BaseNodeData {
   cascadeLockId?: string; // ID linking nodes that move together when locked
 }
 
-// Image node - for imported raster images
-export interface ImageNodeData extends BaseNodeData {
-  imageUrl: string;
-  width?: number;
-  height?: number;
-}
-
-// Card node - for Barco TRI COMBO cards
-export interface CardNodeData extends BaseNodeData {
-  cardType: 'input' | 'output';
-  connectors: CardConnector[];
-}
-
 export interface CardConnector {
   id: string;
   type: 'DP 1.2' | 'HDMI 2.0' | '12G SDI';
@@ -128,28 +103,38 @@ export interface BarcoCard {
   spacing?: number;
 }
 
+// Supernode - flexible source/destination with system info
+export interface SupernodePort {
+  id: string;
+  name: string;          // "IN 1", "OUT 1"
+  connector: string;     // "HDMI", "SDI", "DP", etc.
+  resolution: string;    // "1920x1080", "3840x2160", etc.
+  rate: string;          // "59.94", "60", "30", etc.
+  checked?: boolean;     // checkbox state
+  handleSide?: 'left' | 'right';
+}
+
+export interface SupernodeData extends BaseNodeData {
+  platform?: string;     // "MacBook Pro", etc.
+  software?: string;     // "None", etc.
+  captureCard?: string;  // "None", etc.
+  inputs: SupernodePort[];
+  outputs: SupernodePort[];
+  layout?: 'stacked' | 'sideBySide';
+  sysCollapsed?: boolean;
+}
+
 // Union type for all node data
 export type NodeData =
-  | RouterNodeData
   | ProcessorNodeData
   | LEDWallNodeData
   | NoteNodeData
   | GenericIONodeData
-  | ImageNodeData
-  | CardNodeData
-  | BarcoE3NodeData;
+  | BarcoE3NodeData
+  | SupernodeData;
 
-// Custom node types
-export type CustomNodeType =
-  | 'router'
-  | 'processor'
-  | 'switcher'
-  | 'ledWall'
-  | 'note'
-  | 'genericIO'
-  | 'image'
-  | 'card'
-  | 'barcoE3';
+// Custom node types (add back as node types are rebuilt)
+export type CustomNodeType = 'barcoE3' | 'supernode';
 
 // Project save data
 export interface ProjectData {

@@ -3,19 +3,12 @@ import { nodeTypes } from '../../src/components/nodes';
 
 describe('nodeTypes registry', () => {
   const expectedTypes = [
-    'router',
-    'processor',
-    'switcher',
-    'ledWall',
-    'note',
-    'genericIO',
-    'image',
-    'card',
     'barcoE3',
+    'supernode',
   ];
 
-  it('has exactly 9 registered node types', () => {
-    expect(Object.keys(nodeTypes)).toHaveLength(9);
+  it('has exactly 2 registered node types', () => {
+    expect(Object.keys(nodeTypes)).toHaveLength(2);
   });
 
   it('contains all expected node types', () => {

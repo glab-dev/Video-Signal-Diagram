@@ -1,100 +1,21 @@
-import { useRef, useLayoutEffect, useState, type RefObject, type CSSProperties } from 'react';
+import { useRef, type RefObject, type CSSProperties } from 'react';
 
 /**
- * Hook that enables uniform proportional scaling of node content.
+ * Hook that provides a content ref for node internals.
  *
- * Measures the content element's natural (unconstrained) dimensions
- * on mount, then applies CSS transform: scale() when the node is
- * resized via NodeResizer (with keepAspectRatio).
- *
- * The transform creates a stacking context at z-index: auto, which
- * is below the NodeResizer handles at z-index: 20. This ensures
- * resize handles are always interactive on top of scaled content.
- * Negative margins collapse the layout overflow caused by the
- * untransformed dimensions so the parent node element matches
- * the visual size.
- *
- * This correctly handles nodes loaded from saved files where explicit
- * width/height from a previous resize would otherwise be misinterpreted
- * as the content's natural size.
+ * Content fills the node's width via CSS (width: 100%) and
+ * auto-expands vertically. No transform scaling is applied —
+ * resizing the node reflows content naturally via CSS layout.
  */
 export function useNodeScale(
-  measuredWidth?: number,
-  measuredHeight?: number,
+  _measuredWidth?: number,
 ): { contentRef: RefObject<HTMLDivElement | null>; scaleStyle: CSSProperties } {
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const naturalSize = useRef<{ w: number; h: number } | null>(null);
-  const [, setTick] = useState(0);
-
-  // Measure the content element's actual intrinsic dimensions on mount.
-  // We temporarily remove sizing constraints so the content renders at
-  // its natural size, then capture scrollWidth/scrollHeight.
-  useLayoutEffect(() => {
-    if (!naturalSize.current && contentRef.current) {
-      const el = contentRef.current;
-
-      // Save current inline styles
-      const saved = {
-        position: el.style.position,
-        width: el.style.width,
-        height: el.style.height,
-        transform: el.style.transform,
-      };
-
-      // Remove constraints to measure intrinsic content size
-      el.style.position = 'absolute';
-      el.style.width = 'max-content';
-      el.style.height = 'max-content';
-      el.style.transform = 'none';
-
-      naturalSize.current = {
-        w: el.scrollWidth,
-        h: el.scrollHeight,
-      };
-
-      // Restore original inline styles
-      el.style.position = saved.position;
-      el.style.width = saved.width;
-      el.style.height = saved.height;
-      el.style.transform = saved.transform;
-
-      // Trigger re-render to apply correct scaleStyle
-      setTick(t => t + 1);
-    }
-  }, []);
-
-  const nw = naturalSize.current?.w ?? 0;
-  const nh = naturalSize.current?.h ?? 0;
-
-  if (!measuredWidth || !measuredHeight || nw <= 0 || nh <= 0) {
-    return { contentRef, scaleStyle: {} };
-  }
-
-  const sx = measuredWidth / nw;
-  const sy = measuredHeight / nh;
-  const scale = Math.min(sx, sy);
-
-  // At or near 1:1, pin to natural dimensions without scaling
-  if (Math.abs(scale - 1) < 0.005) {
-    return { contentRef, scaleStyle: { width: nw, height: nh } };
-  }
 
   return {
     contentRef,
     scaleStyle: {
-      width: nw,
-      height: nh,
-      transformOrigin: '0 0',
-      transform: `scale(${scale})`,
-      // Collapse the extra layout space so the parent node element
-      // matches the visual (post-transform) size
-      marginRight: -(nw - measuredWidth),
-      marginBottom: -(nh - measuredHeight),
-      // The content div's layout box is nw × nh (larger than the visual
-      // area). Without this, it intercepts pointer events meant for
-      // NodeResizer handles and node selection. pointer-events is
-      // re-enabled on descendants via CSS (.node-scale-content *).
-      pointerEvents: 'none' as const,
+      width: '100%',
     },
   };
 }

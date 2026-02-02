@@ -1,0 +1,451 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+}
+
+/* Project Panel */
+/* Project Panel */
+.project-panel {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.project-name-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  min-width: 200px;
+}
+
+.minimap-toggle-btn {
+  background: rgba(26, 26, 46, 0.9);
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  color: #aaa;
+  padding: 6px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.minimap-toggle-btn:hover {
+  background: rgba(58, 58, 90, 0.9);
+  color: #fff;
+  border-color: #00aaff;
+}
+
+.project-name-input::placeholder {
+  color: #666;
+}
+
+/* Remove Button (shared) */
+/* Remove Button */
+.remove-btn {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 4px 8px;
+  line-height: 1;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.remove-btn:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.15);
+  transform: scale(1.1);
+}
+
+.remove-btn:active {
+  transform: scale(0.9);
+}
+
+/* Cursor Behavior Overrides */
+/* React Flow Customization */
+
+/* ============================================
+   Cursor Behavior Overrides
+   ============================================ */
+
+/* Canvas pane: default arrow (panning is middle-mouse only) */
+.react-flow__pane {
+  cursor: default !important;
+}
+
+.react-flow__pane.dragging {
+  cursor: grabbing !important;
+}
+
+.react-flow__pane.selection {
+  cursor: default !important;
+}
+
+/* Nodes: default arrow, not grab */
+.react-flow__node.draggable {
+  cursor: default !important;
+}
+
+.react-flow__node.draggable.dragging {
+  cursor: grabbing !important;
+}
+
+/* Selection rectangle: let events pass through so resize handles on all
+   selected nodes remain interactive. Group-dragging still works by dragging
+   any individual selected node. */
+.react-flow__nodesselection-rect {
+  pointer-events: none !important;
+}
+
+/* Grab cursor limited to node header bars */
+.node-header {
+  cursor: grab;
+}
+
+.node-header:active {
+  cursor: grabbing;
+}
+
+.note-header {
+  cursor: grab;
+}
+
+.note-header:active {
+  cursor: grabbing;
+}
+
+.image-label {
+  cursor: grab;
+}
+
+.image-label:active {
+  cursor: grabbing;
+}
+
+/* Text cursor on all text input fields inside nodes */
+.react-flow__node input[type="text"],
+.react-flow__node input:not([type]),
+.react-flow__node textarea {
+  cursor: text;
+}
+
+/* Pointer cursor on all select dropdowns inside nodes */
+.react-flow__node select {
+  cursor: pointer;
+}
+
+/* Editable title - double-click to edit (inherits grab cursor from header) */
+.editable-title {
+  cursor: inherit;
+}
+
+.editable-title-input {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 1px 4px;
+  outline: none;
+  width: 100%;
+  min-width: 60px;
+  box-sizing: border-box;
+}
+
+.editable-title-input:focus {
+  border-color: #00aaff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* React Flow Customization */
+/* ============================================ */
+
+.react-flow__handle {
+  width: 14px;
+  height: 14px;
+  background: #00aaff;
+  border: 2px solid #fff;
+  cursor: crosshair;
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.3);
+  background: #00ccff;
+  box-shadow: 0 0 8px rgba(0, 170, 255, 0.6);
+}
+
+/* Handle positioning: outside the node border, inner edge touching the outline */
+.react-flow__handle-left {
+  left: -9px;
+}
+
+.react-flow__handle-right {
+  right: -9px;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+/* Make edges appear above nodes */
+.react-flow__edges {
+  z-index: 1000 !important;
+}
+
+.react-flow__edge {
+  pointer-events: all;
+}
+
+.react-flow__edge-textbg {
+  fill: #333;
+}
+
+.react-flow__edge-text {
+  fill: #fff;
+}
+
+.react-flow__controls {
+  background: #2a2a4a;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+.react-flow__controls-button {
+  background: #2a2a4a;
+  border-bottom: 1px solid #444;
+  fill: #fff;
+  width: 28px;
+  height: 28px;
+}
+
+.react-flow__controls-button:hover {
+  background: #3a3a5a;
+}
+
+.react-flow__minimap {
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+/* Node Resizer - enlarged hit areas for easier targeting */
+.node-resizer {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+}
+
+
+/* Scale content wrappers use pointer-events: none to prevent their oversized
+   layout boxes (at natural dimensions before CSS transform: scale) from
+   blocking resize handles and node selection clicks. Re-enable on all direct
+   children so buttons, inputs, handles, and other interactive content work.
+   pointer-events is inherited, so grandchildren inherit auto from children. */
+.react-flow__node [style*="pointer-events: none"] > * {
+  pointer-events: auto;
+}
+
+.react-flow__resize-control.handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #00aaff !important;
+  border: none !important;
+  border-radius: 2px !important;
+  z-index: 20 !important;
+  pointer-events: all !important;
+}
+
+/* Explicit cursor rules for each handle corner — ensures the resize cursor
+   always shows even when the parent node sets cursor: default !important */
+.react-flow__resize-control.handle.top.left,
+.react-flow__resize-control.handle.bottom.right {
+  cursor: nwse-resize !important;
+}
+
+.react-flow__resize-control.handle.top.right,
+.react-flow__resize-control.handle.bottom.left {
+  cursor: nesw-resize !important;
+}
+
+.react-flow__resize-control.handle.top:not(.left):not(.right),
+.react-flow__resize-control.handle.bottom:not(.left):not(.right) {
+  cursor: ns-resize !important;
+}
+
+.react-flow__resize-control.handle.left:not(.top):not(.bottom),
+.react-flow__resize-control.handle.right:not(.top):not(.bottom) {
+  cursor: ew-resize !important;
+}
+
+/* Invisible expanded hit area around resize handles */
+.react-flow__resize-control.handle::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  right: -16px;
+  bottom: -16px;
+  z-index: 20;
+  pointer-events: all;
+  cursor: inherit;
+}
+
+.react-flow__resize-control.line {
+  border-color: #00aaff !important;
+  z-index: 20 !important;
+  pointer-events: all !important;
+}
+
+/* Explicit cursor rules for resize lines */
+.react-flow__resize-control.line.left,
+.react-flow__resize-control.line.right {
+  cursor: ew-resize !important;
+}
+
+.react-flow__resize-control.line.top,
+.react-flow__resize-control.line.bottom {
+  cursor: ns-resize !important;
+}
+
+/* Invisible expanded hit area on resize lines */
+.react-flow__resize-control.line::before {
+  content: '';
+  position: absolute;
+  pointer-events: all;
+  cursor: inherit;
+}
+
+.react-flow__resize-control.line.left::before,
+.react-flow__resize-control.line.right::before {
+  top: 0;
+  bottom: 0;
+  left: -8px;
+  right: -8px;
+}
+
+.react-flow__resize-control.line.top::before,
+.react-flow__resize-control.line.bottom::before {
+  left: 0;
+  right: 0;
+  top: -8px;
+  bottom: -8px;
+}
+
+/* Update Notification */
+/* Update Notification */
+.update-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4a 100%);
+  border: 1px solid #00aaff;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 20px rgba(0, 170, 255, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.update-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.update-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.update-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.update-btn.refresh {
+  background: #00aaff;
+  color: #fff;
+}
+
+.update-btn.refresh:hover {
+  background: #0088cc;
+}
+
+.update-btn.close {
+  background: transparent;
+  color: #888;
+  border: 1px solid #444;
+}
+
+.update-btn.close:hover {
+  background: #333;
+  color: #fff;
+}
+
+/* Flow Wrapper Canvas Styling */
+/* Flow Wrapper Canvas Styling */
+.flow-wrapper {
+  flex: 1;
+  background-color: #050508;
+  position: relative;
+  overflow: hidden;
+}
+
+.flow-wrapper .react-flow {
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 180px;
+    min-width: 180px;
+  }
+
+  .node-btn {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+
+  .edge-editor-modal {
+    min-width: 300px;
+    padding: 20px;
+  }
+}

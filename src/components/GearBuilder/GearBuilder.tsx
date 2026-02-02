@@ -18,7 +18,7 @@ const NODE_COLORS = [
 ];
 
 const DEFAULT_CONFIG: GearConfig = {
-  nodeType: 'genericIO',
+  nodeType: 'barcoE3',
   label: 'New Gear',
   color: '#4a9eff',
   layout: 'stacked',

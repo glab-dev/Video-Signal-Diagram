@@ -58,12 +58,11 @@ interface SidebarProps {
 
 export default function Sidebar({ onAddNode, getViewportCenter, projectData, onLoadProject, onNewProject, onUndo, onRedo, canUndo, canRedo, onExportPNG, cascadeDirection, onCascadeDirectionChange }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const placementCounter = useRef(0);
   const placementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    supernodes: true,
     sources: true,
-    processors: true,
     switchers: true,
     destinations: true,
     utilities: true,
@@ -348,42 +347,6 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
     [onLoadProject]
   );
 
-  const handleImageImport = useCallback(() => {
-    imageInputRef.current?.click();
-  }, []);
-
-  const handleImageChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string;
-          const basePos = getViewportCenter();
-          const offset = placementCounter.current * 30;
-          const pos = { x: basePos.x + offset, y: basePos.y + offset };
-          placementCounter.current += 1;
-          if (placementTimer.current) clearTimeout(placementTimer.current);
-          placementTimer.current = setTimeout(() => { placementCounter.current = 0; }, 2000);
-
-          const node: Node = {
-            id: uuidv4(),
-            type: 'image',
-            position: pos,
-            data: {
-              label: file.name,
-              imageUrl,
-            },
-          };
-          onAddNode(node);
-        };
-        reader.readAsDataURL(file);
-      }
-      event.target.value = '';
-    },
-    [onAddNode, getViewportCenter]
-  );
-
   const handleDeleteProject = useCallback(async () => {
     const projects = await getAllProjects();
     if (projects.length === 0) {
@@ -542,7 +505,7 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
                   <div key={`${originalCategory}-${item.name}-${index}`} className="sidebar-item-row">
                     <button
                       className="node-btn"
-                      onClick={() => item.type === 'image' ? handleImageImport() : addPresetNode(item)}
+                      onClick={() => addPresetNode(item)}
                     >
                       <span className="node-icon" style={{ background: item.color }}></span>
                       {item.name}
@@ -658,13 +621,6 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
         type="file"
         accept=".vsf,.json"
         onChange={handleFileChange}
-        style={{ display: 'none' }}
-      />
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleImageChange}
         style={{ display: 'none' }}
       />
       <input

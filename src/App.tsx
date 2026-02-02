@@ -36,7 +36,12 @@ import { useExportPNG } from './hooks/useExportPNG';
 import { CascadeLockContext } from './contexts/CascadeLockContext';
 import type { EdgeData } from './components/EdgeLabelEditor';
 import type { ProjectData } from './types';
-import './App.css';
+import './styles/base.css';
+import './styles/sidebar.css';
+import './styles/nodes.css';
+import './styles/edges.css';
+import './styles/dialogs.css';
+import './styles/features.css';
 
 // Custom edge types
 const edgeTypes = {
@@ -794,28 +799,6 @@ function Flow() {
         }
       }
 
-      const files = event.dataTransfer.files;
-      if (files.length > 0 && files[0].type.startsWith('image/')) {
-        const file = files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const position = screenToFlowPosition({
-            x: event.clientX,
-            y: event.clientY,
-          });
-          const node: Node = {
-            id: uuidv4(),
-            type: 'image',
-            position,
-            data: {
-              label: file.name,
-              imageUrl: e.target?.result as string,
-            },
-          };
-          setNodes((nds) => [...nds, node]);
-        };
-        reader.readAsDataURL(file);
-      }
     },
     [screenToFlowPosition, setNodes]
   );
