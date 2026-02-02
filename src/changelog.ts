@@ -1,6 +1,9 @@
 // Changelog entries keyed by version
 // Add new entries at the top when releasing a new version
 export const CHANGELOG: Record<string, string[]> = {
+  '1.0.43': [
+    'Refactor all equipment nodes to use shared NodeShell component',
+  ],
   '1.0.42': [
     'Enforce mandatory manual visual check before commits',
   ],
