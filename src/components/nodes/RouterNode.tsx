@@ -1,33 +1,20 @@
 import { memo, useCallback, useMemo } from 'react';
 import type { DragEvent } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
 import { usePermanentSources } from '../../hooks/usePermanentSources';
-import { useNodeScale } from '../../hooks/useNodeScale';
 import type { RouterNodeData, RouterRow, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import PresetMenu from '../PresetMenu';
-import EditableTitle from '../EditableTitle';
+import NodeShell from './NodeShell';
 import EditableSelect from '../EditableSelect';
-
-const NODE_COLORS = [
-  '#ff0000', // Red
-  '#00ff00', // Green
-  '#0088cc', // Blue
-  '#ff6600', // Orange
-  '#ff00ff', // Magenta
-  '#00ffff', // Cyan
-  '#ffff00', // Yellow
-  '#8800ff', // Purple
-];
 
 type RouterNodeProps = NodeProps & {
   data: RouterNodeData;
 };
 
 function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
-  const { updateNodeData, deleteElements } = useReactFlow();
+  const { updateNodeData } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
@@ -87,8 +74,6 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
   }, [nodeSummaries, id, permanentSources]);
 
   const nodeColor = data.color || '#0088cc';
-
-  // Safety default for rows array
   const rows = data.rows || [];
 
   const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
@@ -129,20 +114,6 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
     [id, rows, updateNodeData]
   );
 
-  const updateLabel = useCallback(
-    (value: string) => {
-      updateNodeData(id, { label: value });
-    },
-    [id, updateNodeData]
-  );
-
-  const updateColor = useCallback(
-    (color: string) => {
-      updateNodeData(id, { color });
-    },
-    [id, updateNodeData]
-  );
-
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
       updateNodeData(id, presetData as Partial<RouterNodeData>);
@@ -150,134 +121,97 @@ function RouterNode({ id, data, selected, width, height }: RouterNodeProps) {
     [id, updateNodeData]
   );
 
-  const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
-
   return (
-    <div
-      className={`node-router ${selected ? 'selected' : ''}`}
-      style={{
-        borderColor: data.color || '#444',
-        width: nodeWidth,
-        height: nodeHeight,
-      }}
+    <NodeShell
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+      nodeType="router"
+      nodeClassName="node-router"
+      defaultColor="#0088cc"
+      data={data}
+      minWidth={220}
+      minHeight={120}
+      placeholder="Router Name"
+      presetData={data}
+      onLoadPreset={handleLoadPreset}
+      outsideHandles={
+        <>
+          <Handle type="target" position={Position.Left} id="input" />
+          <Handle type="source" position={Position.Right} id="output" />
+        </>
+      }
+      headerButtons={
+        <button
+          className="category-drag-btn nodrag"
+          draggable
+          onDragStart={handleCategoryDragStart}
+          title="Drag to Category Overrides to set as source/destination"
+        >
+          ⊕
+        </button>
+      }
     >
-      <NodeResizer
-        minWidth={220}
-        minHeight={120}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff' }}
-      />
-      <div ref={contentRef} style={scaleStyle}>
-        <Handle type="target" position={Position.Left} id="input" />
-
-        {/* Node Header */}
-        <div className="node-header" style={{ backgroundColor: data.color || '#444' }}>
-          <EditableTitle value={data.label} placeholder="Router Name" onChange={updateLabel} className="node-title light" />
-          <PresetMenu
-            nodeType="router"
-            currentData={data}
-            currentLabel={data.label}
-            onLoadPreset={handleLoadPreset}
-            onRename={updateLabel}
-            onDelete={() => deleteElements({ nodes: [{ id }] })}
-          />
-          <button
-            className="category-drag-btn nodrag"
-            draggable
-            onDragStart={handleCategoryDragStart}
-            title="Drag to Category Overrides to set as source/destination"
-          >
-            ⊕
-          </button>
+      {/* Router Table */}
+      <div className="io-table-section">
+        <div className="io-table-header">
+          <span>ROUTING</span>
+          <button className="add-btn" onClick={addRow}>+</button>
         </div>
-
-        {/* Color Picker */}
-        <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
-          {NODE_COLORS.map((color) => (
-            <button
-              type="button"
-              key={color}
-              className={`color-btn nodrag ${(data.color || '#444') === color ? 'active' : ''}`}
-              style={{ backgroundColor: color, pointerEvents: 'auto' }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                updateColor(color);
-              }}
-            />
-          ))}
-        </div>
-
-        {/* SYSTEMS Header */}
-        <div className="systems-header">SYSTEMS</div>
-
-        {/* Router Table */}
-        <div className="io-table-section">
-          <div className="io-table-header">
-            <span>ROUTING</span>
-            <button className="add-btn" onClick={addRow}>+</button>
-          </div>
-          <table className="io-table nodrag">
-            <thead>
-              <tr>
-                <th className="col-source">SOURCE</th>
-                <th className="col-inout">IN/OUT</th>
-                <th className="col-destination">DESTINATION</th>
-                <th className="col-actions"></th>
+        <table className="io-table nodrag">
+          <thead>
+            <tr>
+              <th className="col-source">SOURCE</th>
+              <th className="col-inout">IN/OUT</th>
+              <th className="col-destination">DESTINATION</th>
+              <th className="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className="port-table-row">
+                <td className="col-source">
+                  <EditableSelect
+                    value={row.source || ''}
+                    options={sourcesWithColors}
+                    onChange={(value) => updateRow(row.id, 'source', value)}
+                    placeholder="Select Source"
+                    className="table-select"
+                  />
+                </td>
+                <td className="col-inout">
+                  <input
+                    value={row.inOut}
+                    onChange={(e) => updateRow(row.id, 'inOut', e.target.value)}
+                    placeholder="#"
+                    className="table-input inout-input"
+                  />
+                </td>
+                <td className="col-destination">
+                  <EditableSelect
+                    value={row.destination || ''}
+                    options={destinationsWithColors}
+                    onChange={(value) => updateRow(row.id, 'destination', value)}
+                    placeholder="Select Destination"
+                    className="table-select"
+                  />
+                </td>
+                <td className="col-actions">
+                  <button
+                    className="remove-btn"
+                    onClick={() => removeRow(row.id)}
+                    title="Remove row"
+                  >
+                    ×
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="port-table-row">
-                  <td className="col-source">
-                    <EditableSelect
-                      value={row.source || ''}
-                      options={sourcesWithColors}
-                      onChange={(value) => updateRow(row.id, 'source', value)}
-                      placeholder="Select Source"
-                      className="table-select"
-                    />
-                  </td>
-                  <td className="col-inout">
-                    <input
-                      value={row.inOut}
-                      onChange={(e) => updateRow(row.id, 'inOut', e.target.value)}
-                      placeholder="#"
-                      className="table-input inout-input"
-                    />
-                  </td>
-                  <td className="col-destination">
-                    <EditableSelect
-                      value={row.destination || ''}
-                      options={destinationsWithColors}
-                      onChange={(value) => updateRow(row.id, 'destination', value)}
-                      placeholder="Select Destination"
-                      className="table-select"
-                    />
-                  </td>
-                  <td className="col-actions">
-                    <button
-                      className="remove-btn"
-                      onClick={() => removeRow(row.id)}
-                      title="Remove row"
-                    >
-                      ×
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <Handle type="source" position={Position.Right} id="output" />
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </NodeShell>
   );
 }
 

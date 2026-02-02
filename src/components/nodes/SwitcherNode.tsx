@@ -1,14 +1,13 @@
 import { memo, useCallback, useState, useRef, useMemo } from 'react';
 import type { DragEvent } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
+import { Handle, Position, useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
 import { usePermanentSources } from '../../hooks/usePermanentSources';
-import { useNodeScale } from '../../hooks/useNodeScale';
+import { useHandlePositions } from '../../hooks/useHandlePositions';
 import type { ProcessorNodeData, ProcessorPort, InputFieldType, OutputFieldType, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import PresetMenu from '../PresetMenu';
-import EditableTitle from '../EditableTitle';
+import NodeShell from './NodeShell';
 import EditableSelect from '../EditableSelect';
 
 // Top 15 video resolutions plus Custom option
@@ -45,58 +44,38 @@ const OUTPUT_FIELD_CONFIG: Record<OutputFieldType, { label: string; className: s
   resolution: { label: 'RESOLUTION', className: 'resolution', flex: 1.2, minWidth: 100 }
 };
 
-const NODE_COLORS = [
-  '#ff0000', // Red
-  '#00ff00', // Green
-  '#0088cc', // Blue
-  '#ff6600', // Orange
-  '#ff00ff', // Magenta
-  '#00ffff', // Cyan
-  '#ffff00', // Yellow
-  '#8800ff', // Purple
-];
-
 type SwitcherNodeProps = NodeProps & {
   data: ProcessorNodeData;
 };
 
 function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) {
-  const { updateNodeData, deleteElements } = useReactFlow();
+  const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
-  // Get sources with colors - category overrides + pure source nodes (output-only)
+  // Get sources with colors
   const sourcesWithColors = useMemo(() => {
-    // Start with category overrides marked as 'source'
     const overrides = permanentSources
       .filter(s => s.category === 'source')
       .map(s => ({ label: s.name, color: s.color }));
 
-    // Skip nodes with destination override
     const destinationOverrideNames = new Set(
       permanentSources.filter(s => s.category === 'destination').map(s => s.name)
     );
 
-    // Add dynamic sources from nodes
     const dynamic = nodeSummaries
       .filter(n => {
         if (n.id === id || !n.label) return false;
-        // Skip if has destination override
         if (destinationOverrideNames.has(n.label)) return false;
-        // Pure sources: nodes that output signals but don't receive them
         const isPureSource =
-          // GenericIO with outputs only
           (n.hasOutputs && !n.hasInputs && !n.hasRows) ||
-          // Card configured as output type
           (n.hasOutputConnectors && !n.hasInputConnectors) ||
-          // BarcoE3 with only output cards
           (n.hasOutputCards && !n.hasInputCards);
         return isPureSource;
       })
       .map(n => ({ label: n.label, color: n.color }));
 
-    // Merge and deduplicate (overrides take precedence)
     const all = [...overrides, ...dynamic];
     const unique = all.filter((v, i, a) => a.findIndex(s => s.label === v.label) === i);
     return unique.sort((a, b) => a.label.localeCompare(b.label));
@@ -104,7 +83,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
 
   const nodeColor = data.color || '#0088cc';
 
-  // Handle drag start for category override drop zone
   const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.dataTransfer.setData('application/reactflow-node', JSON.stringify({
@@ -138,7 +116,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     [id, data.outputs, updateNodeData]
   );
 
-  // Set all input resolutions at once
   const setAllInputResolutions = useCallback(
     (resolution: string) => {
       const newInputs = data.inputs.map((port) => ({ ...port, resolution }));
@@ -147,7 +124,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     [id, data.inputs, updateNodeData]
   );
 
-  // Set all output resolutions at once
   const setAllOutputResolutions = useCallback(
     (resolution: string) => {
       const newOutputs = data.outputs.map((port) => ({ ...port, resolution }));
@@ -156,11 +132,9 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     [id, data.outputs, updateNodeData]
   );
 
-  // Toggle layout between stacked and side-by-side
   const toggleLayout = useCallback(() => {
     const newLayout = data.layout === 'sideBySide' ? 'stacked' : 'sideBySide';
     updateNodeData(id, { layout: newLayout });
-    // Force React Flow to update handle positions after layout change
     setTimeout(() => updateNodeInternals(id), 0);
   }, [id, data.layout, updateNodeData, updateNodeInternals]);
 
@@ -199,20 +173,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     [id, data.outputs, updateNodeData]
   );
 
-  const updateLabel = useCallback(
-    (value: string) => {
-      updateNodeData(id, { label: value });
-    },
-    [id, updateNodeData]
-  );
-
-  const updateColor = useCallback(
-    (color: string) => {
-      updateNodeData(id, { color });
-    },
-    [id, updateNodeData]
-  );
-
   const updateIpAddress = useCallback(
     (value: string) => {
       updateNodeData(id, { ipAddress: value });
@@ -228,7 +188,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
   );
 
   const handleReset = useCallback(() => {
-    // Reset to default configuration
     const resetInputs = data.inputs.map((port) => ({ ...port, spacing: 0 }));
     const resetOutputs = data.outputs.map((port) => ({ ...port, spacing: 0 }));
     updateNodeData(id, {
@@ -245,7 +204,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
 
   const [draggedColumn, setDraggedColumn] = useState<{type: 'input' | 'output', index: number} | null>(null);
 
-  // Vertical Space Tab feature - for spacing between rows
+  // Vertical Space Tab feature
   const [_draggedPort, setDraggedPort] = useState<string | null>(null);
   const dragStartY = useRef<number>(0);
   const dragStartSpacing = useRef<number>(0);
@@ -298,7 +257,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     setDraggedColumn(null);
   }, [reorderInputColumns, reorderOutputColumns]);
 
-  // Vertical Space Tab handlers for inputs
   const handleInputSpacingMouseDown = useCallback(
     (e: React.MouseEvent, portId: string, currentSpacing: number) => {
       e.preventDefault();
@@ -310,18 +268,15 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         const deltaY = moveEvent.clientY - dragStartY.current;
         const newSpacing = Math.max(0, dragStartSpacing.current + deltaY);
-
         const newInputs = data.inputs.map((port) =>
           port.id === portId ? { ...port, spacing: newSpacing } : port
         );
         updateNodeData(id, { inputs: newInputs });
-        // Force React Flow to update handle positions in real-time during drag
         updateNodeInternals(id);
       };
 
       const handleMouseUp = () => {
         setDraggedPort(null);
-        // Force React Flow to update handle positions after spacing change
         setTimeout(() => updateNodeInternals(id), 0);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -333,7 +288,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
     [id, data.inputs, updateNodeData, updateNodeInternals]
   );
 
-  // Vertical Space Tab handlers for outputs
   const handleOutputSpacingMouseDown = useCallback(
     (e: React.MouseEvent, portId: string, currentSpacing: number) => {
       e.preventDefault();
@@ -345,18 +299,15 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         const deltaY = moveEvent.clientY - dragStartY.current;
         const newSpacing = Math.max(0, dragStartSpacing.current + deltaY);
-
         const newOutputs = data.outputs.map((port) =>
           port.id === portId ? { ...port, spacing: newSpacing } : port
         );
         updateNodeData(id, { outputs: newOutputs });
-        // Force React Flow to update handle positions in real-time during drag
         updateNodeInternals(id);
       };
 
       const handleMouseUp = () => {
         setDraggedPort(null);
-        // Force React Flow to update handle positions after spacing change
         setTimeout(() => updateNodeInternals(id), 0);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -505,75 +456,83 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
   }, [updateOutput, sourcesWithColors, setAllOutputResolutions]);
 
   const layout = data.layout || 'sideBySide';
-  const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+
+  // DOM-measured handle positioning
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const { rowRef, positions: handlePositions } = useHandlePositions(
+    nodeRef,
+    [data.inputs, data.outputs, layout, width, height]
+  );
+
+  // Build handles outside contentRef
+  const handles = (
+    <>
+      {data.inputs.map((port) => (
+        <Handle
+          key={`input-${port.id}`}
+          type="target"
+          position={Position.Left}
+          id={`input-${port.id}`}
+          className="port-handle"
+          style={{ top: handlePositions[`input-${port.id}`] ?? 0 }}
+        />
+      ))}
+      {data.outputs.map((port) => (
+        <Handle
+          key={`output-${port.id}`}
+          type="source"
+          position={Position.Right}
+          id={`output-${port.id}`}
+          className="port-handle"
+          style={{ top: handlePositions[`output-${port.id}`] ?? 0 }}
+        />
+      ))}
+    </>
+  );
 
   return (
-    <div
-      className={`node-switcher ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
-      style={{
-        borderColor: data.color || '#4a148c',
-        width: nodeWidth,
-        height: nodeHeight,
-      }}
-    >
-      <div ref={contentRef} style={scaleStyle}>
-      <div className="node-header" style={{ backgroundColor: data.color || '#4a148c' }}>
-        <EditableTitle value={data.label} placeholder="Switcher Name" onChange={updateLabel} className="node-title light" />
-        <button
-          className="layout-toggle-btn nodrag"
-          onClick={toggleLayout}
-          title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
-        >
-          {layout === 'stacked' ? '⇄' : '⇅'}
-        </button>
-        <PresetMenu
-          nodeType="processor"
-          currentData={data}
-          currentLabel={data.label}
-          onLoadPreset={handleLoadPreset}
-          onRename={updateLabel}
-          onReset={handleReset}
-          onDelete={() => deleteElements({ nodes: [{ id }] })}
-        />
-        <button
-          className="category-drag-btn nodrag"
-          draggable
-          onDragStart={handleCategoryDragStart}
-          title="Drag to Category Overrides to set as source/destination"
-        >
-          ⊕
-        </button>
-      </div>
-
-      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
-        {NODE_COLORS.map((color) => (
+    <NodeShell
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+      nodeType="processor"
+      nodeClassName="node-switcher"
+      defaultColor="#4a148c"
+      data={data}
+      minWidth={280}
+      minHeight={120}
+      placeholder="Switcher Name"
+      presetData={data}
+      onLoadPreset={handleLoadPreset}
+      onReset={handleReset}
+      extraClassName={layout === 'sideBySide' ? 'side-by-side' : ''}
+      showIpRow
+      ipAddress={data.ipAddress}
+      onIpChange={updateIpAddress}
+      showSystemsHeader={false}
+      nodeRef={nodeRef}
+      outsideHandles={handles}
+      headerButtons={
+        <>
           <button
-            type="button"
-            key={color}
-            className={`color-btn ${(data.color || '#4a148c') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color, pointerEvents: 'auto' }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              updateColor(color);
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="node-ip-row">
-        <span className="ip-label">IP:</span>
-        <input
-          className="ip-input"
-          value={data.ipAddress || ''}
-          onChange={(e) => updateIpAddress(e.target.value)}
-          placeholder="192.168.1.100"
-        />
-      </div>
-
+            className="layout-toggle-btn nodrag"
+            onClick={toggleLayout}
+            title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
+          >
+            {layout === 'stacked' ? '⇄' : '⇅'}
+          </button>
+          <button
+            className="category-drag-btn nodrag"
+            draggable
+            onDragStart={handleCategoryDragStart}
+            title="Drag to Category Overrides to set as source/destination"
+          >
+            ⊕
+          </button>
+        </>
+      }
+    >
       <div className="switcher-content nodrag">
         {/* Inputs Column */}
         <div className="switcher-column inputs">
@@ -586,7 +545,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
               const config = INPUT_FIELD_CONFIG[fieldName];
               const isDragging = draggedColumn?.type === 'input' && draggedColumn?.index === index;
 
-              // Special handling for resolution column - add "Set All" dropdown
               if (fieldName === 'resolution') {
                 return (
                   <div
@@ -651,7 +609,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           <div className="port-list">
             {data.inputs.map((port) => (
               <div key={port.id} style={{ marginTop: `${port.spacing || 0}px` }}>
-                <div className="port-row" style={isLocked ? { paddingRight: '10px' } : undefined}>
+                <div ref={rowRef(`input-${port.id}`)} className="port-row" style={isLocked ? { paddingRight: '10px' } : undefined}>
                   <div
                     className="spacing-drag-handle nodrag"
                     onMouseDown={(e) => handleInputSpacingMouseDown(e, port.id, port.spacing || 0)}
@@ -659,12 +617,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
                   >
                     ⋮
                   </div>
-                  <Handle
-                    type="target"
-                    position={Position.Left}
-                    id={`input-${port.id}`}
-                    className="port-handle left"
-                  />
                   {inputColumnOrder.map((fieldName) => renderInputField(port, fieldName))}
                   {!isLocked && <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>}
                 </div>
@@ -684,7 +636,6 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
               const config = OUTPUT_FIELD_CONFIG[fieldName];
               const isDragging = draggedColumn?.type === 'output' && draggedColumn?.index === index;
 
-              // Special handling for resolution column - add "Set All" dropdown
               if (fieldName === 'resolution') {
                 return (
                   <div
@@ -749,7 +700,7 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
           <div className="port-list">
             {data.outputs.map((port) => (
               <div key={port.id} style={{ marginTop: `${port.spacing || 0}px` }}>
-                <div className="port-row output" style={isLocked ? { paddingRight: '10px' } : undefined}>
+                <div ref={rowRef(`output-${port.id}`)} className="port-row output" style={isLocked ? { paddingRight: '10px' } : undefined}>
                   <div
                     className="spacing-drag-handle nodrag"
                     onMouseDown={(e) => handleOutputSpacingMouseDown(e, port.id, port.spacing || 0)}
@@ -759,28 +710,13 @@ function SwitcherNode({ id, data, selected, width, height }: SwitcherNodeProps) 
                   </div>
                   {outputColumnOrder.map((fieldName) => renderOutputField(port, fieldName))}
                   {!isLocked && <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>}
-                  <Handle
-                    type="source"
-                    position={Position.Right}
-                    id={`output-${port.id}`}
-                    className="port-handle right"
-                  />
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-      </div>
-      <NodeResizer
-        minWidth={280}
-        minHeight={120}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff' }}
-      />
-    </div>
+    </NodeShell>
   );
 }
 

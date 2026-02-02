@@ -1,14 +1,13 @@
 import { memo, useCallback, useState, useRef, useMemo } from 'react';
 import type { DragEvent } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
+import { Handle, Position, useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
 import { usePermanentSources } from '../../hooks/usePermanentSources';
-import { useNodeScale } from '../../hooks/useNodeScale';
+import { useHandlePositions } from '../../hooks/useHandlePositions';
 import type { BarcoE3NodeData, BarcoCard, CardConnector, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import PresetMenu from '../PresetMenu';
-import EditableTitle from '../EditableTitle';
+import NodeShell from './NodeShell';
 import EditableSelect from '../EditableSelect';
 
 // Top 15 video resolutions plus Custom option
@@ -31,23 +30,12 @@ const VIDEO_RESOLUTIONS = [
   'Custom',
 ] as const;
 
-const NODE_COLORS = [
-  '#ff0000', // Red
-  '#00ff00', // Green
-  '#0088cc', // Blue
-  '#ff6600', // Orange
-  '#ff00ff', // Magenta
-  '#00ffff', // Cyan
-  '#ffff00', // Yellow
-  '#8800ff', // Purple
-];
-
 type BarcoE3NodeProps = NodeProps & {
   data: BarcoE3NodeData;
 };
 
 function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
-  const { updateNodeData, deleteElements } = useReactFlow();
+  const { updateNodeData } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
@@ -132,7 +120,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
 
   const destinationNames = useMemo(() => destinationsWithColors.map(d => d.label), [destinationsWithColors]);
 
-  const nodeColor = data.color || '#0088cc';
+  const nodeColor = data.color || '#006400';
 
   // Handle drag start for category override drop zone
   const handleCategoryDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
@@ -144,23 +132,9 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
     e.dataTransfer.effectAllowed = 'copy';
   }, [data.label, nodeColor]);
 
-  const updateLabel = useCallback(
-    (value: string) => {
-      updateNodeData(id, { label: value });
-    },
-    [id, updateNodeData]
-  );
-
   const updateIpAddress = useCallback(
     (value: string) => {
       updateNodeData(id, { ipAddress: value });
-    },
-    [id, updateNodeData]
-  );
-
-  const updateColor = useCallback(
-    (color: string) => {
-      updateNodeData(id, { color });
     },
     [id, updateNodeData]
   );
@@ -414,8 +388,12 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
   const systemColumn = data.systemColumn || 'output';
   const systemPosition = data.systemPosition || 'bottom';
 
+  // DOM measurement for accurate handle Y positions using shared hook
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const { rowRef, positions: handleYPositions } = useHandlePositions(nodeRef, [data.cards, layout, systemPosition, systemColumn, width, height]);
+
   // Render a single card component
-  const renderCard = useCallback((card: BarcoCard, cardType: 'input' | 'output' | 'system', allCards: BarcoCard[]) => {
+  const renderCard = useCallback((card: BarcoCard, cardType: 'input' | 'output' | 'system') => {
     const isInputCard = cardType === 'input';
 
     return (
@@ -489,22 +467,12 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
             </div>
           )}
           <div className="card-connectors">
-            {card.connectors.map((connector, connectorIndex) => (
-              <div key={`${connector.id}-${card.handleSide || 'default'}`} className="card-row">
+            {card.connectors.map((connector) => (
+              <div key={`${connector.id}-${card.handleSide || 'default'}`} className="card-row" ref={rowRef(`${card.id}-${connector.id}`)}>
                 {isInputCard ? (
                   // Input card connectors
                   card.handleSide !== 'right' ? (
                     <>
-                      <Handle
-                        key={`${card.id}-${connector.id}-left-${card.handleSide || 'default'}`}
-                        type="target"
-                        position={Position.Left}
-                        id={`${card.id}-${connector.id}-left`}
-                        className="port-handle"
-                        style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, allCards, cardType, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn)}px`
-                        }}
-                      />
                       <EditableSelect
                         value={connector.source || ''}
                         options={sourcesWithColors}
@@ -579,16 +547,6 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                         onChange={(value) => updateConnector(card.id, connector.id, 'source', value)}
                         placeholder="Select Source"
                         className="card-field source"
-                      />
-                      <Handle
-                        key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
-                        type="target"
-                        position={Position.Right}
-                        id={`${card.id}-${connector.id}-right`}
-                        className="port-handle"
-                        style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, allCards, cardType, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn)}px`
-                        }}
                       />
                     </>
                   )
@@ -596,16 +554,6 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                   // Output and System card connectors
                   card.handleSide === 'left' ? (
                     <>
-                      <Handle
-                        key={`${card.id}-${connector.id}-left-${card.handleSide || 'default'}`}
-                        type="source"
-                        position={Position.Left}
-                        id={`${card.id}-${connector.id}-left`}
-                        className="port-handle"
-                        style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, allCards, cardType, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn)}px`
-                        }}
-                      />
                       <EditableSelect
                         value={connector.destination || ''}
                         options={destinationsWithColors}
@@ -680,16 +628,6 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
                         onChange={(value) => updateConnector(card.id, connector.id, 'destination', value)}
                         placeholder="Select Destination"
                         className="card-field destination"
-                      />
-                      <Handle
-                        key={`${card.id}-${connector.id}-right-${card.handleSide || 'default'}`}
-                        type="source"
-                        position={Position.Right}
-                        id={`${card.id}-${connector.id}-right`}
-                        className="port-handle"
-                        style={{
-                          top: `${calculateHandlePosition(card.id, connectorIndex, allCards, cardType, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn)}px`
-                        }}
                       />
                     </>
                   )
@@ -701,7 +639,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         </div>
       </div>
     );
-  }, [sourceNames, destinationNames, sourcesWithColors, destinationsWithColors, updateCardLabel, handleSpacingMouseDown, toggleCardSide, removeCard, updateConnector, removeConnector, addConnector, inputCards, outputCards, systemCards, layout, systemPosition, systemColumn, isDraggingSystem]);
+  }, [sourceNames, destinationNames, sourcesWithColors, destinationsWithColors, updateCardLabel, handleSpacingMouseDown, toggleCardSide, removeCard, updateConnector, removeConnector, addConnector, isDraggingSystem, rowRef]);
 
   // Render SYSTEM subsection (draggable header + cards)
   const renderSystemSubsection = () => {
@@ -725,7 +663,7 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         </div>
         {systemCards.length > 0 && (
           <div className="cards-grid">
-            {modifiedSystemCards.map((card) => renderCard(card, 'system', modifiedSystemCards))}
+            {modifiedSystemCards.map((card) => renderCard(card, 'system'))}
           </div>
         )}
       </div>
@@ -750,85 +688,75 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
         </div>
         {includeSystemBefore && renderSystemSubsection()}
         <div className="cards-grid">
-          {cards.map((card) => renderCard(card, sectionType, cards))}
+          {cards.map((card) => renderCard(card, sectionType))}
         </div>
         {includeSystemAfter && renderSystemSubsection()}
       </div>
     );
   };
 
-  const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef: scaleRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+  // Build the Handle components to pass as outsideHandles
+  const handles = data.cards.map(card =>
+    card.connectors.map(connector => {
+      const isInput = card.cardType === 'input';
+      const side = isInput
+        ? (card.handleSide === 'right' ? 'right' : 'left')
+        : (card.handleSide === 'left' ? 'left' : 'right');
+      return (
+        <Handle
+          key={`${card.id}-${connector.id}-${side}-${card.handleSide || 'default'}`}
+          type={isInput ? 'target' : 'source'}
+          position={side === 'left' ? Position.Left : Position.Right}
+          id={`${card.id}-${connector.id}-${side}`}
+          className="port-handle"
+          style={{ top: handleYPositions[`${card.id}-${connector.id}`] ?? 0 }}
+        />
+      );
+    })
+  );
 
   return (
-    <div
-      className={`node-barco-e3 ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
-      style={{
-        borderColor: data.color || '#006400',
-        width: nodeWidth,
-        height: nodeHeight,
-      }}
-    >
-      <div ref={scaleRef} style={scaleStyle}>
-      <div className="node-header" style={{ backgroundColor: data.color || '#006400' }}>
-        <EditableTitle value={data.label} placeholder="Barco E3" onChange={updateLabel} className="node-title light" />
-        <PresetMenu
-          nodeType="barcoE3"
-          currentData={data}
-          currentLabel={data.label}
-          onLoadPreset={handleLoadPreset}
-          onRename={updateLabel}
-          onReset={handleReset}
-          onDelete={() => deleteElements({ nodes: [{ id }] })}
-        />
-        <button
-          className="layout-toggle-btn nodrag"
-          onClick={toggleLayout}
-          title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
-        >
-          {layout === 'stacked' ? '⇄' : '⇅'}
-        </button>
-        <button
-          className="category-drag-btn nodrag"
-          draggable
-          onDragStart={handleCategoryDragStart}
-          title="Drag to Category Overrides to set as source/destination"
-        >
-          ⊕
-        </button>
-      </div>
-
-      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
-        {NODE_COLORS.map((color) => (
+    <NodeShell
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+      nodeType="barcoE3"
+      nodeClassName="node-barco-e3"
+      defaultColor="#006400"
+      data={data}
+      minWidth={600}
+      minHeight={300}
+      placeholder="Barco E3 Name"
+      presetData={data}
+      onLoadPreset={handleLoadPreset}
+      onReset={handleReset}
+      extraClassName={layout === 'sideBySide' ? 'side-by-side' : ''}
+      showIpRow
+      ipAddress={data.ipAddress}
+      onIpChange={updateIpAddress}
+      nodeRef={nodeRef}
+      outsideHandles={<>{handles}</>}
+      headerButtons={
+        <>
           <button
-            type="button"
-            key={color}
-            className={`color-btn ${(data.color || '#006400') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color, pointerEvents: 'auto' }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              updateColor(color);
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="node-ip-row">
-        <span className="ip-label">IP:</span>
-        <input
-          className="ip-input"
-          value={data.ipAddress || ''}
-          onChange={(e) => updateIpAddress(e.target.value)}
-          placeholder="192.168.1.100"
-        />
-      </div>
-
-      {/* SYSTEMS Header */}
-      <div className="systems-header">SYSTEMS</div>
-
+            className="layout-toggle-btn nodrag"
+            onClick={toggleLayout}
+            title={layout === 'stacked' ? 'Switch to side-by-side layout' : 'Switch to stacked layout'}
+          >
+            {layout === 'stacked' ? '⇄' : '⇅'}
+          </button>
+          <button
+            className="category-drag-btn nodrag"
+            draggable
+            onDragStart={handleCategoryDragStart}
+            title="Drag to Category Overrides to set as source/destination"
+          >
+            ⊕
+          </button>
+        </>
+      }
+    >
       <div className="barco-e3-content nodrag">
         {layout === 'stacked' ? (
           <>
@@ -856,139 +784,8 @@ function BarcoE3Node({ id, data, selected, width, height }: BarcoE3NodeProps) {
           </>
         )}
       </div>
-      </div>
-      <NodeResizer
-        minWidth={600}
-        minHeight={300}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff' }}
-      />
-    </div>
+    </NodeShell>
   );
-}
-
-// Helper function to calculate handle vertical position
-function calculateHandlePosition(
-  cardId: string,
-  connectorIndex: number,
-  cards: BarcoCard[],
-  cardType: 'input' | 'output' | 'system',
-  allInputCards: BarcoCard[],
-  allOutputCards: BarcoCard[],
-  allSystemCards: BarcoCard[],
-  layout: 'stacked' | 'sideBySide',
-  systemPosition: 'top' | 'bottom',
-  systemColumn: 'input' | 'output'
-): number {
-  const headerHeight = 50; // Node header
-  const ipRowHeight = 30; // IP row
-  const sectionHeaderHeight = 40; // Cards section header
-  const cardTitleHeight = 32; // Card title bar
-  const cardHeaderRowHeight = 20; // Column headers row (input/output only)
-  const connectorRowHeight = 32; // Each horizontal connector row
-
-  // Find which card index this is
-  const cardIndex = cards.findIndex((c) => c.id === cardId);
-
-  // Calculate total height of previous cards in the same section
-  let previousCardsHeight = 0;
-  for (let i = 0; i < cardIndex; i++) {
-    const previousCard = cards[i];
-    const hasHeaderRow = previousCard.cardType !== 'system';
-    previousCardsHeight += cardTitleHeight + (hasHeaderRow ? cardHeaderRowHeight : 0) + (previousCard.connectors.length * connectorRowHeight) + 40; // 40 for padding and + button
-    previousCardsHeight += previousCard.spacing || 0; // Add spacing for this card
-  }
-
-  // Calculate offset based on card type and layout
-  let baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-
-  if (layout === 'stacked') {
-    // STACKED MODE
-    if (systemPosition === 'top') {
-      // System at top, then input, then output
-      if (cardType === 'system') {
-        // System is first
-        baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-      } else if (cardType === 'input') {
-        // Input is after system
-        const systemSectionHeight = allSystemCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + (allSystemCards.length > 0 ? sectionHeaderHeight : 0);
-        baseOffset = headerHeight + ipRowHeight + systemSectionHeight + sectionHeaderHeight;
-      } else if (cardType === 'output') {
-        // Output is after system and input
-        const systemSectionHeight = allSystemCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + (allSystemCards.length > 0 ? sectionHeaderHeight : 0);
-        const inputSectionHeight = allInputCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + sectionHeaderHeight;
-        baseOffset = headerHeight + ipRowHeight + systemSectionHeight + inputSectionHeight + sectionHeaderHeight;
-      }
-    } else {
-      // System at bottom (default): input, output, then system
-      if (cardType === 'input') {
-        // Input is first
-        baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-      } else if (cardType === 'output') {
-        // Output is after input
-        const inputSectionHeight = allInputCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + sectionHeaderHeight;
-        baseOffset = headerHeight + ipRowHeight + inputSectionHeight + sectionHeaderHeight;
-      } else if (cardType === 'system') {
-        // System is after input and output
-        const inputSectionHeight = allInputCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + sectionHeaderHeight;
-        const outputSectionHeight = allOutputCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + cardHeaderRowHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + sectionHeaderHeight;
-        baseOffset = headerHeight + ipRowHeight + inputSectionHeight + outputSectionHeight + sectionHeaderHeight;
-      }
-    }
-  } else {
-    // SIDE-BY-SIDE MODE
-    if (systemColumn === 'input') {
-      // System in input column: system, input, output (output rendered separately)
-      if (cardType === 'system') {
-        // System is first
-        baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-      } else if (cardType === 'input') {
-        // Input is after system
-        const systemSectionHeight = allSystemCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + (allSystemCards.length > 0 ? sectionHeaderHeight : 0);
-        baseOffset = headerHeight + ipRowHeight + systemSectionHeight + sectionHeaderHeight;
-      } else if (cardType === 'output') {
-        // Output is rendered independently
-        baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-      }
-    } else {
-      // System in output column (default): input, system, output
-      if (cardType === 'input') {
-        // Input is first
-        baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-      } else if (cardType === 'system') {
-        // System is after input (in output column)
-        baseOffset = headerHeight + ipRowHeight + sectionHeaderHeight;
-      } else if (cardType === 'output') {
-        // Output is after system
-        const systemSectionHeight = allSystemCards.reduce((sum, card) => {
-          return sum + cardTitleHeight + (card.connectors.length * connectorRowHeight) + 40 + (card.spacing || 0);
-        }, 0) + (allSystemCards.length > 0 ? sectionHeaderHeight : 0);
-        baseOffset = headerHeight + ipRowHeight + systemSectionHeight + sectionHeaderHeight;
-      }
-    }
-  }
-
-  // Center the handle vertically in the connector row
-  const handleOffsetInRow = connectorRowHeight / 2;
-  const hasHeaderRow = cardType !== 'system';
-
-  return baseOffset + previousCardsHeight + cardTitleHeight + (hasHeaderRow ? cardHeaderRowHeight : 0) + (connectorIndex * connectorRowHeight) + handleOffsetInRow;
 }
 
 export default memo(BarcoE3Node);

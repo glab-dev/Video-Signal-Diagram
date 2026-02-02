@@ -1,33 +1,21 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef } from 'react';
 import type { DragEvent } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeSummariesContext } from '../../hooks/useNodeSummaries';
 import { usePermanentSources } from '../../hooks/usePermanentSources';
-import { useNodeScale } from '../../hooks/useNodeScale';
+import { useHandlePositions } from '../../hooks/useHandlePositions';
 import type { ProcessorNodeData, ProcessorPort, NodeData } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
-import PresetMenu from '../PresetMenu';
-import EditableTitle from '../EditableTitle';
+import NodeShell from './NodeShell';
 import EditableSelect from '../EditableSelect';
-
-const NODE_COLORS = [
-  '#ff0000', // Red
-  '#00ff00', // Green
-  '#0088cc', // Blue
-  '#ff6600', // Orange
-  '#ff00ff', // Magenta
-  '#00ffff', // Cyan
-  '#ffff00', // Yellow
-  '#8800ff', // Purple
-];
 
 type ProcessorNodeProps = NodeProps & {
   data: ProcessorNodeData;
 };
 
 function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps) {
-  const { updateNodeData, deleteElements } = useReactFlow();
+  const { updateNodeData } = useReactFlow();
   const nodeSummaries = useNodeSummariesContext();
   const { sources: permanentSources } = usePermanentSources();
 
@@ -157,23 +145,9 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
     [id, outputs, updateNodeData]
   );
 
-  const updateLabel = useCallback(
-    (value: string) => {
-      updateNodeData(id, { label: value });
-    },
-    [id, updateNodeData]
-  );
-
   const updateIpAddress = useCallback(
     (value: string) => {
       updateNodeData(id, { ipAddress: value });
-    },
-    [id, updateNodeData]
-  );
-
-  const updateColor = useCallback(
-    (color: string) => {
-      updateNodeData(id, { color });
     },
     [id, updateNodeData]
   );
@@ -191,31 +165,63 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
   }, [id, data.layout, updateNodeData]);
 
   const layout = data.layout || 'stacked';
-  const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
+
+  // DOM-measured handle positioning
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const { rowRef, positions: handlePositions } = useHandlePositions(
+    nodeRef,
+    [inputs, outputs, layout, width, height]
+  );
+
+  // Build handles outside contentRef
+  const handles = (
+    <>
+      {inputs.map((port) => (
+        <Handle
+          key={`input-${port.id}`}
+          type="target"
+          position={Position.Left}
+          id={`input-${port.id}`}
+          className="port-handle"
+          style={{ top: handlePositions[`input-${port.id}`] ?? 0 }}
+        />
+      ))}
+      {outputs.map((port) => (
+        <Handle
+          key={`output-${port.id}`}
+          type="source"
+          position={Position.Right}
+          id={`output-${port.id}`}
+          className="port-handle"
+          style={{ top: handlePositions[`output-${port.id}`] ?? 0 }}
+        />
+      ))}
+    </>
+  );
 
   return (
-    <div
-      className={`node-processor ${selected ? 'selected' : ''} ${layout === 'sideBySide' ? 'side-by-side' : ''}`}
-      style={{
-        borderColor: data.color || '#0088cc',
-        width: nodeWidth,
-        height: nodeHeight,
-      }}
-    >
-      <div ref={contentRef} style={scaleStyle}>
-        {/* Node Header */}
-        <div className="node-header" style={{ backgroundColor: data.color || '#0088cc' }}>
-          <EditableTitle value={data.label} placeholder="Processor Name" onChange={updateLabel} className="node-title light" />
-          <PresetMenu
-            nodeType="processor"
-            currentData={data}
-            currentLabel={data.label}
-            onLoadPreset={handleLoadPreset}
-            onRename={updateLabel}
-            onDelete={() => deleteElements({ nodes: [{ id }] })}
-          />
+    <NodeShell
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+      nodeType="processor"
+      nodeClassName="node-processor"
+      defaultColor="#9b59b6"
+      data={data}
+      minWidth={300}
+      minHeight={150}
+      placeholder="Processor Name"
+      presetData={data}
+      onLoadPreset={handleLoadPreset}
+      extraClassName={layout === 'sideBySide' ? 'side-by-side' : ''}
+      showIpRow
+      ipAddress={data.ipAddress}
+      onIpChange={updateIpAddress}
+      nodeRef={nodeRef}
+      outsideHandles={handles}
+      headerButtons={
+        <>
           <button
             className="layout-toggle-btn nodrag"
             onClick={toggleLayout}
@@ -231,172 +237,116 @@ function ProcessorNode({ id, data, selected, width, height }: ProcessorNodeProps
           >
             ⊕
           </button>
-        </div>
-
-        {/* Color Picker */}
-        <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
-          {NODE_COLORS.map((color) => (
-            <button
-              type="button"
-              key={color}
-              className={`color-btn ${(data.color || '#0088cc') === color ? 'active' : ''}`}
-              style={{ backgroundColor: color, pointerEvents: 'auto' }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                updateColor(color);
-              }}
-            />
-          ))}
-        </div>
-
-        {/* IP Address Row */}
-        <div className="node-ip-row">
-          <span className="ip-label">IP:</span>
-          <input
-            className="ip-input"
-            value={data.ipAddress || ''}
-            onChange={(e) => updateIpAddress(e.target.value)}
-            placeholder="192.168.1.100"
-          />
-        </div>
-
-        {/* SYSTEMS Header */}
-        <div className="systems-header">SYSTEMS</div>
-
-        {/* Input/Output Tables */}
-        <div className="processor-content nodrag">
-          {/* INPUTS Table */}
-          <div className="io-table-section">
-            <div className="io-table-header">
-              <span>INPUT</span>
-              <button className="add-btn" onClick={addInput}>+</button>
-            </div>
-            <table className="io-table">
-              <thead>
-                <tr>
-                  <th className="col-name">NAME</th>
-                  <th className="col-connection">CONNECTION</th>
-                  <th className="col-resolution">RESOLUTION</th>
-                  <th className="col-actions"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {inputs.map((port) => (
-                  <tr key={port.id} className="port-table-row">
-                    <td className="col-name">
-                      <div className="cell-with-handle">
-                        <Handle
-                          type="target"
-                          position={Position.Left}
-                          id={`input-${port.id}`}
-                          className="port-handle left"
-                        />
-                        <input
-                          value={port.name}
-                          onChange={(e) => updateInput(port.id, 'name', e.target.value)}
-                          className="table-input"
-                          placeholder="Source"
-                        />
-                      </div>
-                    </td>
-                    <td className="col-connection">
-                      <EditableSelect
-                        value={port.connection || ''}
-                        options={sourceOptions}
-                        onChange={(value) => updateInput(port.id, 'connection', value)}
-                        placeholder="Select Source"
-                        className="table-select"
-                      />
-                    </td>
-                    <td className="col-resolution">
-                      <input
-                        value={port.resolution}
-                        onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
-                        className="table-input"
-                        placeholder="Resolution"
-                      />
-                    </td>
-                    <td className="col-actions">
-                      <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        </>
+      }
+    >
+      {/* Input/Output Tables */}
+      <div className="processor-content nodrag">
+        {/* INPUTS Table */}
+        <div className="io-table-section">
+          <div className="io-table-header">
+            <span>INPUT</span>
+            <button className="add-btn" onClick={addInput}>+</button>
           </div>
-
-          {/* OUTPUTS Table */}
-          <div className="io-table-section">
-            <div className="io-table-header">
-              <span>OUTPUT</span>
-              <button className="add-btn" onClick={addOutput}>+</button>
-            </div>
-            <table className="io-table">
-              <thead>
-                <tr>
-                  <th className="col-connection">CONNECTION</th>
-                  <th className="col-resolution">RESOLUTION</th>
-                  <th className="col-destination">DESTINATION</th>
-                  <th className="col-actions"></th>
+          <table className="io-table">
+            <thead>
+              <tr>
+                <th className="col-name">NAME</th>
+                <th className="col-connection">CONNECTION</th>
+                <th className="col-resolution">RESOLUTION</th>
+                <th className="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {inputs.map((port) => (
+                <tr key={port.id} ref={rowRef(`input-${port.id}`)} className="port-table-row">
+                  <td className="col-name">
+                    <input
+                      value={port.name}
+                      onChange={(e) => updateInput(port.id, 'name', e.target.value)}
+                      className="table-input"
+                      placeholder="Source"
+                    />
+                  </td>
+                  <td className="col-connection">
+                    <EditableSelect
+                      value={port.connection || ''}
+                      options={sourceOptions}
+                      onChange={(value) => updateInput(port.id, 'connection', value)}
+                      placeholder="Select Source"
+                      className="table-select"
+                    />
+                  </td>
+                  <td className="col-resolution">
+                    <input
+                      value={port.resolution}
+                      onChange={(e) => updateInput(port.id, 'resolution', e.target.value)}
+                      className="table-input"
+                      placeholder="Resolution"
+                    />
+                  </td>
+                  <td className="col-actions">
+                    <button className="remove-btn" onClick={() => removeInput(port.id)}>×</button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {outputs.map((port) => (
-                  <tr key={port.id} className="port-table-row">
-                    <td className="col-connection">
-                      <input
-                        value={port.connection}
-                        onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
-                        className="table-input"
-                        placeholder="Connection"
-                      />
-                    </td>
-                    <td className="col-resolution">
-                      <input
-                        value={port.resolution}
-                        onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
-                        className="table-input"
-                        placeholder="Resolution"
-                      />
-                    </td>
-                    <td className="col-destination">
-                      <div className="cell-with-handle">
-                        <EditableSelect
-                          value={port.destination || ''}
-                          options={destinationOptions}
-                          onChange={(value) => updateOutput(port.id, 'destination', value)}
-                          placeholder="Select Destination"
-                          className="table-select"
-                        />
-                        <Handle
-                          type="source"
-                          position={Position.Right}
-                          id={`output-${port.id}`}
-                          className="port-handle right"
-                        />
-                      </div>
-                    </td>
-                    <td className="col-actions">
-                      <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* OUTPUTS Table */}
+        <div className="io-table-section">
+          <div className="io-table-header">
+            <span>OUTPUT</span>
+            <button className="add-btn" onClick={addOutput}>+</button>
           </div>
+          <table className="io-table">
+            <thead>
+              <tr>
+                <th className="col-connection">CONNECTION</th>
+                <th className="col-resolution">RESOLUTION</th>
+                <th className="col-destination">DESTINATION</th>
+                <th className="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {outputs.map((port) => (
+                <tr key={port.id} ref={rowRef(`output-${port.id}`)} className="port-table-row">
+                  <td className="col-connection">
+                    <input
+                      value={port.connection}
+                      onChange={(e) => updateOutput(port.id, 'connection', e.target.value)}
+                      className="table-input"
+                      placeholder="Connection"
+                    />
+                  </td>
+                  <td className="col-resolution">
+                    <input
+                      value={port.resolution}
+                      onChange={(e) => updateOutput(port.id, 'resolution', e.target.value)}
+                      className="table-input"
+                      placeholder="Resolution"
+                    />
+                  </td>
+                  <td className="col-destination">
+                    <EditableSelect
+                      value={port.destination || ''}
+                      options={destinationOptions}
+                      onChange={(value) => updateOutput(port.id, 'destination', value)}
+                      placeholder="Select Destination"
+                      className="table-select"
+                    />
+                  </td>
+                  <td className="col-actions">
+                    <button className="remove-btn" onClick={() => removeOutput(port.id)}>×</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-      <NodeResizer
-        minWidth={300}
-        minHeight={150}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff' }}
-      />
-    </div>
+    </NodeShell>
   );
 }
 

@@ -2,16 +2,17 @@ import { useCallback, useRef, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '@xyflow/react';
 import type { ProjectData, NodePreset } from '../types';
-import { exportProject, importProject, deleteProject, getAllProjects, getAllPresets, deletePreset, savePreset } from '../store/db';
+import { exportProject, importProject, deleteProject, getAllProjects, getAllPresets, deletePreset, savePreset, saveProject, loadProject } from '../store/db';
 import { useSidebarCustomization } from '../hooks/useSidebarCustomization';
 import { EQUIPMENT_PRESETS } from '../data/nodeCategories';
 import type { PresetItem } from '../data/nodeCategories';
 import { createNodeFromPreset } from '../utils/createNodeFromPreset';
 
-// Recent files stored in localStorage
+// Recent files stored in localStorage, project data in IndexedDB
 interface RecentFile {
   name: string;
   path: string;
+  projectId: string;
   timestamp: number;
 }
 
@@ -27,12 +28,12 @@ const getRecentFiles = (): RecentFile[] => {
   }
 };
 
-const addToRecentFiles = (name: string, path: string) => {
+const addToRecentFiles = (name: string, path: string, projectId: string) => {
   const recents = getRecentFiles();
-  // Remove if already exists
-  const filtered = recents.filter(r => r.path !== path);
+  // Remove if already exists (by project ID or path)
+  const filtered = recents.filter(r => r.projectId !== projectId && r.path !== path);
   // Add to front
-  filtered.unshift({ name, path, timestamp: Date.now() });
+  filtered.unshift({ name, path, projectId, timestamp: Date.now() });
   // Keep only MAX_RECENTS
   const trimmed = filtered.slice(0, MAX_RECENTS);
   localStorage.setItem(RECENTS_KEY, JSON.stringify(trimmed));
@@ -217,14 +218,20 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
   const handleSave = useCallback(() => {
     const filename = prompt('Save As:', projectData.name);
     if (filename) {
-      const json = exportProject(projectData);
-      const blob = new Blob([json], { type: 'application/json' });
+      const projectToSave = { ...projectData, name: filename };
+      const json = exportProject(projectToSave);
+      const blob = new Blob([json], { type: 'application/vsf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${filename.replace(/\s+/g, '_')}.json`;
+      const downloadName = `${filename.replace(/\s+/g, '_')}.vsf`;
+      a.download = downloadName;
       a.click();
       URL.revokeObjectURL(url);
+      // Save to IndexedDB and update recents
+      saveProject(projectToSave);
+      const updated = addToRecentFiles(filename, downloadName, projectToSave.id);
+      setRecentFiles(updated);
     }
   }, [projectData]);
 
@@ -246,6 +253,11 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
         const writable = await handle.createWritable();
         await writable.write(json);
         await writable.close();
+        // Save to IndexedDB and update recents
+        saveProject(projectData);
+        const savedName = handle.name;
+        const updated = addToRecentFiles(projectData.name, savedName, projectData.id);
+        setRecentFiles(updated);
         alert('Project saved successfully!');
       } catch (err) {
         // User cancelled or error
@@ -258,6 +270,9 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
     } else {
       // Fallback for browsers without File System Access API
       fallbackDownload(json, fileName);
+      saveProject(projectData);
+      const updated = addToRecentFiles(projectData.name, fileName, projectData.id);
+      setRecentFiles(updated);
     }
   }, [projectData]);
 
@@ -286,10 +301,11 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
         const file = await handle.getFile();
         const content = await file.text();
         try {
-          const project = importProject(content);
+          const project = importProject(content, file.name);
           onLoadProject(project);
-          // Add to recents
-          const updated = addToRecentFiles(project.name || file.name, file.name);
+          // Save to IndexedDB and update recents
+          saveProject(project);
+          const updated = addToRecentFiles(project.name, file.name, project.id);
           setRecentFiles(updated);
         } catch {
           alert('Invalid project file');
@@ -315,10 +331,11 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
-            const project = importProject(e.target?.result as string);
+            const project = importProject(e.target?.result as string, file.name);
             onLoadProject(project);
-            // Add to recents
-            const updated = addToRecentFiles(project.name || file.name, file.name);
+            // Save to IndexedDB and update recents
+            saveProject(project);
+            const updated = addToRecentFiles(project.name, file.name, project.id);
             setRecentFiles(updated);
           } catch {
             alert('Invalid project file');
@@ -421,10 +438,16 @@ export default function Sidebar({ onAddNode, getViewportCenter, projectData, onL
                 <button
                   key={index}
                   className="recents-item"
-                  onClick={() => {
-                    // Re-open the file picker - can't reopen same file due to browser security
-                    // But show the name for reference
-                    alert(`To reopen "${file.name}", use the Open button and select the file:\n\n${file.path}`);
+                  onClick={async () => {
+                    if (file.projectId) {
+                      const project = await loadProject(file.projectId);
+                      if (project) {
+                        onLoadProject(project);
+                        setShowRecents(false);
+                        return;
+                      }
+                    }
+                    alert(`Project data not found in browser storage. Use the Open button to re-import the file.`);
                     setShowRecents(false);
                   }}
                   title={file.path}

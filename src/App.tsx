@@ -63,7 +63,7 @@ function Flow() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeIds: string[] } | null>(null);
   const [cascadeDirection, setCascadeDirection] = useState<'right' | 'left'>('right');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition, getNodes, setViewport, deleteElements } = useReactFlow();
+  const { screenToFlowPosition, getNodes, setViewport, deleteElements, fitView } = useReactFlow();
 
   // Refs for stable callback access
   const nodesRef = useRef<Node[]>(nodes);
@@ -487,8 +487,10 @@ function Flow() {
       setProjectName(project.name);
       setProjectId(project.id);
       resetCopiedNodes();
+      // Fit view after React Flow renders the new nodes
+      setTimeout(() => fitView({ padding: 0.1 }), 50);
     },
-    [setNodes, setEdges, resetHistory, isUndoRedo, resetCopiedNodes]
+    [setNodes, setEdges, resetHistory, isUndoRedo, resetCopiedNodes, fitView]
   );
 
   const onNewProject = useCallback(() => {

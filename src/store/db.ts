@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import type { IDBPDatabase } from 'idb';
+import { v4 as uuidv4 } from 'uuid';
 import type { ProjectData, NodePreset } from '../types';
 
 const DB_NAME = 'video-signal-flow';
@@ -88,14 +89,20 @@ export function exportProject(project: ProjectData): string {
   return JSON.stringify(project, null, 2);
 }
 
-export function importProject(jsonString: string): ProjectData {
+export function importProject(jsonString: string, fileName?: string): ProjectData {
   const data = JSON.parse(jsonString);
-  // Validate basic structure
-  if (!data.id || !data.name || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+  // Must have nodes and edges arrays at minimum
+  if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
     throw new Error('Invalid project file format');
   }
+  // Derive a name from the filename if provided (strip extension and underscores)
+  const nameFromFile = fileName
+    ? fileName.replace(/\.(vsf|json)$/i, '').replace(/_/g, ' ')
+    : undefined;
   return {
     ...data,
+    id: data.id || uuidv4(),
+    name: nameFromFile || data.name || 'Untitled Project',
     updatedAt: Date.now(),
   };
 }

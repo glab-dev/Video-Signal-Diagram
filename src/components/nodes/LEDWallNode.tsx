@@ -1,43 +1,16 @@
 import { memo, useCallback, useRef } from 'react';
-import { Handle, Position, useReactFlow, NodeResizer } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { LEDWallNodeData, NodeData } from '../../types';
-import PresetMenu from '../PresetMenu';
-import { useNodeScale } from '../../hooks/useNodeScale';
-import EditableTitle from '../EditableTitle';
-
-const NODE_COLORS = [
-  '#ff0000', // Red
-  '#00ff00', // Green
-  '#0088cc', // Blue
-  '#ff6600', // Orange
-  '#ff00ff', // Magenta
-  '#00ffff', // Cyan
-  '#ffff00', // Yellow
-  '#8800ff', // Purple
-];
+import NodeShell from './NodeShell';
 
 type LEDWallNodeProps = NodeProps & {
   data: LEDWallNodeData;
 };
 
 function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
-  const { updateNodeData, deleteElements } = useReactFlow();
+  const { updateNodeData } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const updateLabel = useCallback(
-    (value: string) => {
-      updateNodeData(id, { label: value });
-    },
-    [id, updateNodeData]
-  );
-
-  const updateColor = useCallback(
-    (color: string) => {
-      updateNodeData(id, { color });
-    },
-    [id, updateNodeData]
-  );
 
   const handleLoadPreset = useCallback(
     (presetData: NodeData) => {
@@ -72,51 +45,29 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
     fileInputRef.current?.click();
   }, []);
 
-  const nodeWidth = width || undefined;
-  const nodeHeight = height || undefined;
-  const { contentRef, scaleStyle } = useNodeScale(nodeWidth, nodeHeight);
-
   return (
-    <div
-      className={`node-led-wall ${selected ? 'selected' : ''}`}
-      style={{
-        borderColor: data.color || '#ff6600',
-        width: nodeWidth,
-        height: nodeHeight,
-      }}
+    <NodeShell
+      id={id}
+      selected={selected}
+      width={width}
+      height={height}
+      nodeType="ledWall"
+      nodeClassName="node-led-wall"
+      defaultColor="#ff6600"
+      data={data}
+      minWidth={160}
+      minHeight={120}
+      placeholder="LED Wall Name"
+      presetData={data}
+      onLoadPreset={handleLoadPreset}
+      showSystemsHeader={false}
+      outsideHandles={
+        <>
+          <Handle type="target" position={Position.Left} id="input" />
+          <Handle type="source" position={Position.Right} id="output" />
+        </>
+      }
     >
-      <div ref={contentRef} style={scaleStyle}>
-      <Handle type="target" position={Position.Left} id="input" />
-
-      <div className="node-header" style={{ backgroundColor: data.color || '#ff6600' }}>
-        <EditableTitle value={data.label} placeholder="LED Wall Name" onChange={updateLabel} className="node-title light" />
-        <PresetMenu
-          nodeType="ledWall"
-          currentData={data}
-          currentLabel={data.label}
-          onLoadPreset={handleLoadPreset}
-          onRename={updateLabel}
-          onDelete={() => deleteElements({ nodes: [{ id }] })}
-        />
-      </div>
-
-      <div className="color-picker-row nodrag" style={{ pointerEvents: 'auto' }}>
-        {NODE_COLORS.map((color) => (
-          <button
-            type="button"
-            key={color}
-            className={`color-btn ${(data.color || '#ff6600') === color ? 'active' : ''}`}
-            style={{ backgroundColor: color, pointerEvents: 'auto' }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              updateColor(color);
-            }}
-          />
-        ))}
-      </div>
-
       <div className="led-wall-content">
         {data.imageUrl ? (
           <div className="led-wall-image-container">
@@ -139,18 +90,7 @@ function LEDWallNode({ id, data, selected, width, height }: LEDWallNodeProps) {
           style={{ display: 'none' }}
         />
       </div>
-
-      <Handle type="source" position={Position.Right} id="output" />
-      </div>
-      <NodeResizer
-        minWidth={160}
-        minHeight={120}
-        keepAspectRatio
-        isVisible={selected}
-        lineStyle={{ borderColor: '#00aaff' }}
-        handleStyle={{ backgroundColor: '#00aaff' }}
-      />
-    </div>
+    </NodeShell>
   );
 }
 

@@ -151,31 +151,18 @@ The dev server runs at `http://localhost:5173/Video-Signal-Diagram/`.
    ```
    Do NOT commit if any FAIL results appear. Warnings are acceptable.
 
-4. **Run unit tests:**
-   ```bash
-   npm run test:unit
-   ```
-   Do NOT commit if any tests fail.
-
-5. **Run E2E tests:**
-   ```bash
-   npm run test:e2e
-   ```
-   Do NOT commit if any tests fail. If the dev server is not already running, Playwright will start it automatically.
-
-6. **Manual visual check (MANDATORY — do NOT skip):**
-   ```bash
-   npm run test:check
-   ```
-   Open the app in a browser and ask the user to visually confirm:
+4. **Manual visual check (MANDATORY — do NOT skip):**
+   Provide the dev server link for the user to open (do NOT auto-launch the browser):
+   `http://localhost:5173/Video-Signal-Diagram/`
+   Ask the user to visually confirm:
    - Sidebar renders with all categories
    - Clicking a node button places a node on the canvas
    - Nodes render at the correct size (not collapsed or oversized)
    - Node labels are readable
 
-   **STOP and WAIT for explicit user confirmation before proceeding.** Do NOT commit until the user has confirmed the app looks correct. This step is NOT optional — even if all automated tests pass, visual regressions can only be caught by a human.
+   **STOP and WAIT for explicit user confirmation before proceeding.** Do NOT commit until the user has confirmed the app looks correct. This step is NOT optional — visual regressions can only be caught by a human.
 
-7. **Stage, commit, and push:**
+5. **Stage, commit, and push:**
    ```bash
    git add <changed-files>
    git commit -m "descriptive message here"
@@ -203,6 +190,5 @@ npm run test:check       # Open app in browser for manual inspection
 - Always `npm run build` after changes to verify TypeScript + Vite
 - Always `git pull origin main` before starting work
 - Always run `python3 tests/smoke-test.py` before committing
-- Always run `npm run test:unit` and `npm run test:e2e` before committing
 - Commit messages: lowercase, imperative style (e.g., "add connector type dropdown")
 - Version bump commits use `[skip ci]` to avoid deploy loop

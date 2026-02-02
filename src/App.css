@@ -482,28 +482,27 @@
   color: #666;
 }
 
-/* Node Base Styles */
+/* Node Base Styles — shared by all NodeShell-wrapped equipment nodes */
+.node-shell {
+  position: relative;
+  overflow: visible;
+  border: 2px solid;
+}
+
+.node-shell.selected,
+.node-note.selected,
+.node-image.selected {
+  box-shadow: 0 0 0 2px #00aaff;
+}
+
 .node-router,
 .node-processor,
 .node-switcher,
 .node-led-wall,
 .node-generic-io {
-  position: relative;
-  overflow: visible;
   background: #1a1a2e;
-  border: 2px solid #444;
   border-radius: 6px;
   font-size: 13px;
-}
-
-.node-router.selected,
-.node-processor.selected,
-.node-switcher.selected,
-.node-led-wall.selected,
-.node-generic-io.selected,
-.node-note.selected,
-.node-image.selected {
-  box-shadow: 0 0 0 2px #00aaff;
 }
 
 /* Cascade Lock Toggle */
@@ -1178,17 +1177,25 @@
   background: #00aaff !important;
   border: 2px solid #1a1a1a !important;
   border-radius: 50% !important;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-/* GenericIONode handles - positioned at node edge via style.top */
-.node-generic-io > .port-handle {
-  transform: translateY(-50%) !important;
+.port-handle:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 8px rgba(0, 170, 255, 0.6);
 }
+
+/* 12px port handles: offset for inner edge to touch 2px border outer face */
+.port-handle[data-handlepos="left"] {
+  left: -8px !important;
+}
+
+.port-handle[data-handlepos="right"] {
+  right: -8px !important;
+}
+
 
 /* Router Node */
-.node-router {
-}
-
 .router-table {
   width: 100%;
   border-collapse: collapse;
@@ -1921,12 +1928,13 @@
   box-shadow: 0 0 8px rgba(0, 170, 255, 0.6);
 }
 
+/* Handle positioning: outside the node border, inner edge touching the outline */
 .react-flow__handle-left {
-  left: -7px;
+  left: -9px;
 }
 
 .react-flow__handle-right {
-  right: -7px;
+  right: -9px;
 }
 
 .react-flow__edge-path {
@@ -2152,17 +2160,11 @@
 /* Card Node Styles */
 .node-card {
   background: #1a1a1a;
-  border: 2px solid;
   border-radius: 8px;
   min-width: 280px;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  position: relative;
-}
-
-.node-card.selected {
-  box-shadow: 0 0 0 2px #00aaff;
 }
 
 .card-content {
@@ -2277,43 +2279,16 @@
   transform: scale(0.98);
 }
 
-.node-card .port-handle {
-  width: 12px;
-  height: 12px;
-  background: #00aaff;
-  border: 2px solid #1a1a1a;
-  border-radius: 50%;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.node-card .port-handle:hover {
-  transform: scale(1.3);
-  box-shadow: 0 0 8px rgba(0, 170, 255, 0.6);
-}
-
-.node-card.card-input .port-handle {
-  left: -7px;
-}
-
-.node-card.card-output .port-handle {
-  right: -7px;
-}
 
 /* Barco E3 Node Styles */
 .node-barco-e3 {
   background: #1a1a1a;
-  border: 2px solid;
   border-radius: 8px;
   min-width: 600px;
   min-height: 300px;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  position: relative;
-}
-
-.node-barco-e3.selected {
-  box-shadow: 0 0 0 2px #00aaff;
 }
 
 .barco-e3-content {
@@ -2640,28 +2615,6 @@
   background: #444;
 }
 
-.node-barco-e3 .port-handle {
-  width: 12px;
-  height: 12px;
-  background: #00aaff;
-  border: 2px solid #1a1a1a;
-  border-radius: 50%;
-  position: absolute;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.node-barco-e3 .port-handle:hover {
-  transform: scale(1.3);
-  box-shadow: 0 0 8px rgba(0, 170, 255, 0.6);
-}
-
-.node-barco-e3 .port-handle[data-handlepos="left"] {
-  left: -6px;
-}
-
-.node-barco-e3 .port-handle[data-handlepos="right"] {
-  right: -6px;
-}
 
 /* Preset Menu Styles */
 .preset-menu-container {
